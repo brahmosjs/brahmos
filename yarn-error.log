@@ -1,0 +1,55 @@
+Arguments: 
+  /usr/local/bin/node /usr/local/bin/yarn install
+
+PATH: 
+  /Users/sudhanshuyadav/.rvm/gems/ruby-2.4.2/bin:/Users/sudhanshuyadav/.rvm/gems/ruby-2.4.2@global/bin:/Users/sudhanshuyadav/.rvm/rubies/ruby-2.4.2/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/sudhanshuyadav/.rvm/bin
+
+Yarn version: 
+  1.10.1
+
+Node version: 
+  8.15.0
+
+Platform: 
+  darwin x64
+
+Trace: 
+  SyntaxError: /Users/sudhanshuyadav/github/react-lit-html/package.json: Unexpected token } in JSON at position 784
+      at JSON.parse (<anonymous>)
+      at /usr/local/lib/node_modules/yarn/lib/cli.js:1136:59
+      at Generator.next (<anonymous>)
+      at step (/usr/local/lib/node_modules/yarn/lib/cli.js:98:30)
+      at /usr/local/lib/node_modules/yarn/lib/cli.js:109:13
+      at <anonymous>
+
+npm manifest: 
+  {
+    "name": "react-lit-html",
+    "version": "0.1.0",
+    "description": "A new framework with react api and lit-html templating engine",
+    "main": "lib/index.js",
+    "author": "s-yadav <sudhanshuyadav2@gmail.com>",
+    "license": "MIT",
+    "devDependencies": {
+      "@babel/cli": "^7.2.3",
+      "@babel/core": "^7.3.4",
+      "@babel/plugin-proposal-class-properties": "^7.3.4",
+      "@babel/plugin-proposal-object-rest-spread": "^7.3.4",
+      "@babel/preset-env": "^7.3.4",
+      "babel-eslint": "^9.0.0",
+      "cross-env": "^5.2.0",
+      "eslint": "^5.9.0",
+      "eslint-config-airbnb-base": "^13.1.0",
+      "eslint-config-standard": "^12.0.0",
+      "eslint-plugin-import": "^2.14.0",
+      "eslint-plugin-node": "^8.0.0",
+      "eslint-plugin-promise": "^4.0.1",
+      "eslint-plugin-standard": "^4.0.0",
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
