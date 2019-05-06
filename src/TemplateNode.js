@@ -2,8 +2,7 @@ import { attrMarker, marker } from './TemplateResult';
 import { remove } from './utils';
 
 export default class TemplateNode {
-  constructor (target, templateResult) {
-    this.target = target;
+  constructor (templateResult) {
     this.templateResult = templateResult;
     this.parts = this.getParts();
   }

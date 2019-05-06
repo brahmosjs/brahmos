@@ -13,10 +13,3 @@ function traverseAndRender (node, target) {
 
   }
 }
-
-function render (node, target) {
-  const { children } = target;
-  if (children.length) {
-
-  }
-}

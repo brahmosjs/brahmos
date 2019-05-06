@@ -30,7 +30,7 @@ function Test () {
     expressions: [
       'abcasd',
       true,
-      { a: 2, b: 3, __$isReactLitSpread__: true },
+      { a: 2, b: 3 },
       {
         type: Test,
         props: {},

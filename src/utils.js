@@ -63,3 +63,10 @@ export function remove (nodes) {
     node.parentNode.removeChild(node);
   }
 }
+
+/**
+ * Get the key of looped node
+ */
+export function getKey (node, index) {
+  return node.key !== undefined ? node.key : index;
+}
