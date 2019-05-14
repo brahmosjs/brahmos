@@ -1,30 +1,19 @@
-import './styles.css';
-import { parts, node } from './get_parts';
+import TemplateNode from './TemplateNode';
+import { getEventName, isEventAttribute, isNonZeroFalsy } from './utils';
+import {
+  getEffectiveEventName,
+  getInputStateType,
+  handleInputProperty,
+  getPatchedEventHandler,
+} from './reactEvents';
+import functionalComponentInstance from './functionalComponentInstance';
 
-document.getElementById('app').innerHTML = `
-<h1>Hello Vanilla!</h1>
-<div>
-  We use Parcel to bundle this sandbox, you can find more info about Parcel
-  <a href="https://parceljs.org" target="_blank" rel="noopener noreferrer">here</a>.
-</div>
-`;
-
-function isAttrOverridden (tagAttrs, attrName, attrIndex) {
-  const lastIndex = tagAttrs.lastIndexOf(attrName);
-  return lastIndex !== -1 && lastIndex !== attrIndex;
-}
-
-function setAttribute (node, attrName, attrValue) {
-  /*
-    if node has property with attribute name, set the value directly as property
-    otherwise set it as attribute
-  */
-
-  if (attrName in node) {
-    node[attrName] = attrValue;
-  } else {
-    node.setAttribute(attrName.toLowerCase(), attrValue);
+function changeToNode (value) {
+  if (value instanceof Node) {
+    return value;
   }
+
+  return document.createTextNode(value.toString());
 }
 
 function deleteNodesBetween (parent, start, end) {
@@ -42,17 +31,9 @@ function deleteNodesBetween (parent, start, end) {
   }
 
   while (node && node !== end) {
-    node.parent.removeChild(node);
+    parent.removeChild(node);
     node = node.nextSibling;
   }
-}
-
-function changeToNode (value) {
-  if (value instanceof Node) {
-    return value;
-  }
-
-  return document.createTextNode(value.toString());
 }
 
 function addNodesBetween (parent, start, end, value) {
@@ -60,50 +41,190 @@ function addNodesBetween (parent, start, end, value) {
   if (!start && !end) {
     parent.appendChild(node);
   } else if (!start) {
-    end.insertAdjacentElement('beforebegin', node);
+    parent.insertBefore(node, end);
   } else {
-    start.insertAdjacentElement('afterend', node);
+    parent.insertBefore(node, start.nextSibling);
   }
 }
 
-function updater (parts, values) {
+function getCurrentNode (parentNode, previousSibling, nextSibling) {
+  if (previousSibling) {
+    return previousSibling.nextSibling;
+  } else if (nextSibling) {
+    return nextSibling.previousSibling;
+  } else {
+    return parentNode.firstChild;
+  }
+}
+
+function updateTextNode (part, node, oldNode) {
+  const { parentNode, previousSibling, nextSibling } = part;
+  /**
+   * In case of old node is not a text node, or not present
+   * delete old node and add new node
+   */
+  if (!oldNode || typeof oldNode !== 'string') {
+    if (oldNode) {
+      // delete the existing elements
+      deleteNodesBetween(parentNode, previousSibling, nextSibling);
+    }
+
+    // add nodes at the right location
+    addNodesBetween(parentNode, previousSibling, nextSibling, node);
+  } else {
+    console.log(node);
+    // just update the content of the textNode
+    const textNode = getCurrentNode(parentNode, previousSibling, nextSibling);
+    textNode.textContent = node;
+  }
+}
+
+function updateNode (part, node, oldNode) {
+  if (isNonZeroFalsy(node)) {
+    /**
+     * If the new node is falsy value and
+     * the oldNode is present we have to delete the old node
+     * */
+    if (oldNode) {
+      const { parentNode, previousSibling, nextSibling } = part;
+
+      // delete the existing elements
+      deleteNodesBetween(parentNode, previousSibling, nextSibling);
+    }
+  } else if (Array.isArray(node)) {
+    /**
+     *
+     * TODO: Handle array of nodes
+     * */
+
+  } else if (node.__$isReactLitComponent$__) {
+    const {
+      type: Component,
+      props,
+      __$isReactLitFunctionalComponent$__: isFunctionalComponent,
+    } = node;
+
+    /** If Component instance is not present on node create a new instance */
+    let { componentInstance } = node;
+
+    if (!componentInstance) {
+      // create an instance of the component
+      componentInstance = isFunctionalComponent
+        ? functionalComponentInstance(Component)
+        : new Component(props);
+
+      /**
+         * store the part information on the component instance,
+         * so every component have the information of where it has to render
+         */
+      componentInstance.__part = part;
+
+      // keep the reference of instance to the node.
+      node.componentInstance = componentInstance;
+    }
+
+    // render nodes
+    const renderNodes = componentInstance.__render(props);
+
+    updater([part], [renderNodes]);
+  } else if (node.__$isReactLitTag$__) {
+    let { templateNode, values, oldValues } = node;
+    const { parentNode, previousSibling, nextSibling } = part;
+    let freshRender;
+
+    /**
+     * if you don't get the old template node it means you have to render the node firts time
+     * in such cases delete the nodes where the template node is supposed to be present.
+     */
+    if (!templateNode) {
+      freshRender = true;
+      templateNode = new TemplateNode(node.template);
+
+      // add templateNode to node so we can access it on next updates
+      node.templateNode = templateNode;
+    }
+
+    if (freshRender) {
+      // delete the existing elements
+      deleteNodesBetween(parentNode, previousSibling, nextSibling);
+
+      // add nodes at the right location
+      addNodesBetween(parentNode, previousSibling, nextSibling, templateNode.node);
+    }
+
+    updater(templateNode.parts, values, oldValues);
+  } else if (typeof node === 'string' && node !== oldNode) {
+    updateTextNode(part, node, oldNode);
+  }
+}
+
+function isAttrOverridden (tagAttrs, attrName, attrIndex) {
+  const lastIndex = tagAttrs.lastIndexOf(attrName);
+  return lastIndex !== -1 && lastIndex !== attrIndex;
+}
+
+function updateAttribute (part, attrName, attrValue, oldAttrValue) {
+  const { node, tagAttrs, attrIndex } = part;
+  if (
+    attrValue !== oldAttrValue &&
+    !isAttrOverridden(tagAttrs, attrName, attrIndex)
+  ) {
+    setAttribute(node, attrName, attrValue, oldAttrValue);
+  }
+}
+
+function setAttribute (node, attrName, attrValue, oldAttrValue) {
+  /*
+    if node has property with attribute name, set the value directly as property
+    otherwise set it as attribute
+  */
+
+  const isEventAttr = isEventAttribute(attrName);
+  if (attrName in node || isEventAttr) {
+    const inputStateType = getInputStateType(node);
+    /*
+     if it is a property check if it is a event callback
+     or other property and handle it accordingly
+    */
+    if (isEventAttr) {
+      let eventName = getEventName(attrName);
+      eventName = getEffectiveEventName(eventName, node);
+      const patchedEventHandler = getPatchedEventHandler(node, attrValue);
+
+      // remove old event and assign it again
+      if (oldAttrValue) {
+        node.removeEventListener(eventName, oldAttrValue);
+      }
+
+      node.addEventListener(eventName, patchedEventHandler);
+    } else if (inputStateType) {
+      handleInputProperty(inputStateType, node, attrName, attrValue);
+    } else {
+      // if attribute is value property
+      node[attrName] = attrValue;
+    }
+  } else {
+    node.setAttribute(attrName.toLowerCase(), attrValue);
+  }
+}
+
+export default function updater (parts, values, oldValues = []) {
   for (let i = 0, ln = parts.length; i < ln; i++) {
     const part = parts[i];
     const value = values[i];
-    const { isAttrValue, isSpreadAttr, tagAttrs, attrIndex, isNode } = part;
+    const oldValue = oldValues[i];
 
-    if (isAttrValue) {
-      const { attrName, node } = part;
-      if (!isAttrOverridden(tagAttrs, attrName, attrIndex)) {
-        setAttribute(node, attrName, value);
-      }
-    } else if (isSpreadAttr) {
+    const { isAttribute, isNode } = part;
+    if (isAttribute) {
       const keys = Object.keys(value);
       for (let j = 0, keysLn = keys.length; j < keysLn; j++) {
-        const attrName = keys[i];
+        const attrName = keys[j];
         const attrValue = value[attrName];
-        if (!isAttrOverridden(tagAttrs, attrName, attrIndex)) {
-          setAttribute(part.node, attrName, attrValue);
-        }
+        const oldAttrValue = oldValue && oldValue[attrName];
+        updateAttribute(part, attrName, attrValue, oldAttrValue);
       }
     } else if (isNode) {
-      const { parentNode, previousSibling, nextSibling } = part;
-      deleteNodesBetween(parentNode, previousSibling, nextSibling);
-      addNodesBetween(parentNode, previousSibling, nextSibling, value);
+      updateNode(part, value, oldValue);
     }
   }
 }
-
-const values = [
-  'something',
-  { 'data-test-id': 2, 'data-linked': true },
-  'Hello World',
-];
-
-console.log('-----', node.content);
-
-if (node.children.length) {
-  document.getElementById('app').appendChild(node);
-}
-
-updater(parts, values);

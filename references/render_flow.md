@@ -42,7 +42,6 @@ function render(node, target) {
 - Inside a component, we will map all the occurrence of htmlParts (we will have node template instance for this) and reactNodeParts (we will have component instance for this).
 
 ```js
-
 function componentRender() {
   const componentInstance = this;
   const { instances } = this;
@@ -113,5 +112,4 @@ function createFunctionalComponentInstance(node) {
     ref: null, //as functional component can't have ref set it to null
   }
 }
-
 ```

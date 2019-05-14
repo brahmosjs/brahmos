@@ -14,6 +14,18 @@ function formNodeMap (nodes) {
 
 export default function associateInstance (renderTree, lastRenderedTree) {
   const node = renderTree;
+
+  /**
+   * if node is not an object (tag, component), or an array of tag or component
+   * no need to associate any previous instance to it.
+   */
+  if (typeof node !== 'object') { // this will check for  both array and object
+    return;
+  }
+
+  console.log(node);
+
+  debugger;
   const defaultNode = Array.isArray(node) ? [] : {};
   const oldNode = lastRenderedTree || defaultNode;
 
@@ -36,16 +48,24 @@ export default function associateInstance (renderTree, lastRenderedTree) {
       return;
     }
 
+    /**
+     * store the already created TemplateNode instance to the new node,
+     * and also store the old node values so we can compare before applying any changes
+     */
     node.templateNode = oldNode.templateNode;
+    node.oldValues = oldNode.values;
 
-    for (let i = 0, ln = node.expressions.length; i < ln; i++) {
-      associateInstance(node.expressions[i], oldNode.templateNode[i]);
+    for (let i = 0, ln = node.values.length; i < ln; i++) {
+      associateInstance(node.values[i], oldNode.values[i]);
     }
   } else if (node.__$isReactLitComponent$__) {
     if (node.type !== oldNode.type) {
       return;
     }
 
+    /**
+     * store the already created component instance to the new node,
+     */
     node.componentInstance = oldNode.componentInstance;
   }
 }

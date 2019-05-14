@@ -1,6 +1,5 @@
-import booleanAttributes from './boolean_attibutes';
-import { isArray } from 'util';
-
+import booleanAttributes from './booleanAttributes';
+import { Component } from './Component';
 /**
  * Method to identify if a jsx element is a html element or custom component
  * Taken from https://github.com/babel/babel/blob/master/packages/babel-types/src/validators/react/isCompatTag.js
@@ -14,6 +13,11 @@ export function isEventAttribute (attrName) {
   // must start with on prefix
   // used indexOf for cross browser support
   return attrName.indexOf('on') === 0;
+}
+
+// get the node name from the node in lowercase format
+export function getNodeName (node) {
+  return node.nodeName.toLowerCase();
 }
 
 export function getEventName (attrName) {
@@ -40,6 +44,7 @@ export function omit (obj, keys) {
     const key = objKeys[i];
     if (!keys[key]) newObj[key] = obj[key];
   }
+  return newObj;
 }
 
 /**
@@ -69,4 +74,15 @@ export function remove (nodes) {
  */
 export function getKey (node, index) {
   return node.key !== undefined ? node.key : index;
+}
+
+export function isClassComponent (element) {
+  return element.prototype instanceof Component;
+}
+
+/**
+ * Check if a value is non zero falsy value
+ */
+export function isNonZeroFalsy (value) {
+  return !value && value !== 0;
 }

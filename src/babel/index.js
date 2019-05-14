@@ -1,76 +1,153 @@
-import BabelPluginSyntaxJsx from '@babel/plugin-syntax-jsx';
-import { isHTMLElement, isEventAttribute, isBooleanAttribute, isCustomElement } from './utils';
-
-function convertJSXExpressionToLiteralExpression (node) {
-
+function isHTMLElement (tagName) {
+  // Must start with a lowercase ASCII letter
+  return !!tagName && /^[a-z]/.test(tagName);
 }
 
-function extractNodeAndAttributes (node, t) {
-  const element = node.openingElement;
-  const tagNameNode = element.name;
-  const isHTMLTag = isHTMLElement(tagNameNode.name);
-  const iCustomElement = isCustomElement(tagNameNode.name);
-  const attributes = element.attributes.map((attribute) => {
-    const isSpreadAttribute = t.isJSXSpreadAttribute(attribute);
+function needsToBeExpression (tagName, attrName) {
+  /**
+   * TODO: No need to change value attribute of a checkbox or radio button.
+   */
+  const tags = ['input', 'select', 'textarea'];
+  const attributes = ['value', 'defaultValue', 'checked', 'defaultCheckd'];
+  return tags.includes(tagName) && attributes.includes(attrName);
+}
 
-    if (isSpreadAttribute) {
-      return {
-        isSpreadAttribute: true,
-        object: attribute.argument,
-      };
+function BabelPluginReactLit (babel) {
+  const { types: t } = babel;
+
+  function getTaggedTemplateCallExpression (node) {
+    const { strings, expressions } = getLiteralParts(node);
+    const taggedTemplate = t.taggedTemplateExpression(t.identifier('html'), t.templateLiteral(strings, expressions));
+    const callExpression = t.callExpression(taggedTemplate, []);
+    return callExpression;
+  }
+
+  function getLiteralParts (rootNode, strings = [], expressions = [], stringPart = []) {
+    function pushToStrings (tail) {
+      const string = stringPart.join('');
+      strings.push(t.templateElement({ raw: string, cooked: string }, tail));
+      stringPart = [];
     }
 
-    const { name: attrNameNode, value: attrValueNode } = attribute;
-    const hasExpressionValue = t.isJSXExpressionContainer(attrValueNode);
+    function pushToExpressions (expression) {
+      pushToStrings();
+      expressions.push(expression);
+    }
 
-    const attributeMeta = {
-      name: attrNameNode,
-      value: attrValueNode,
-      hasExpressionValue,
+    function createAttributeExpression (name, value) {
+      return t.objectExpression([createObjectProperty(name, value)]);
+    }
+
+    function createObjectProperty (name, value) {
+      const propName = t.identifier(name.name);
+      const propValue = t.isJSXExpressionContainer(value) ? value.expression : value;
+      return t.objectProperty(propName, propValue, false, propName.name === propValue.name);
+    }
+
+    function recurseNode (node) {
+      if (t.isJSXElement(node)) {
+        const { openingElement, children } = node;
+        const { attributes, name } = openingElement;
+        const tagName = name.name;
+
+        if (isHTMLElement(tagName)) {
+          // Handle opening tag
+          stringPart.push(`<${tagName} `);
+
+          // push all attributes to opening tag
+          attributes.forEach(attribute => {
+            // if we encounter spread attribute, push the argument as expression
+            if (t.isJSXSpreadAttribute(attribute)) {
+              pushToExpressions(attribute.argument);
+            } else {
+              const { name, value } = attribute;
+              const attrName = name.name;
+
+              /**
+               * check if the attribute should go as expression or the value is and actual expression
+               * then push it to expression other wise push it as string part
+               */
+
+              if (needsToBeExpression(tagName, attrName) || t.isJSXExpressionContainer(value)) {
+                pushToExpressions(createAttributeExpression(name, value));
+                // keep space after expressions
+                stringPart.push(' ');
+              } else {
+                stringPart.push(` ${attrName}${value ? `="${value.value}" ` : ''}`);
+              }
+            }
+          });
+
+          stringPart.push('>');
+
+          // handle children
+          children.forEach(child => {
+            recurseNode(child);
+          });
+
+          // handle closing tag
+          stringPart.push(`</${tagName}>`);
+        } else {
+          const componentName = name;
+
+          // add props
+          const props = [];
+          attributes.forEach(attribute => {
+            if (t.isJSXSpreadAttribute(attribute)) {
+              props.push(t.spreadElement(attribute.argument));
+            } else {
+              const { name, value } = attribute;
+              props.push(createObjectProperty(name, value));
+            }
+          });
+
+          const createElementArguments = [
+            t.identifier(componentName.name),
+            t.objectExpression(props),
+          ];
+
+          if (children && children.length) {
+            createElementArguments.push(getTaggedTemplateCallExpression(children));
+          }
+
+          const expression = t.callExpression(t.identifier('createElement'), createElementArguments);
+
+          pushToExpressions(expression);
+        }
+      } else if (t.isJSXText(node)) {
+        stringPart.push(node.value);
+      } else if (t.isJSXExpressionContainer(node) && !t.isJSXEmptyExpression(node.expression)) {
+        pushToExpressions(node.expression);
+      } else if (Array.isArray(node)) {
+        node.forEach((nodeItem) => recurseNode(nodeItem));
+      } else if (t.isJSXFragment(node)) {
+        node.children.forEach((nodeItem) => recurseNode(nodeItem));
+      }
+    }
+
+    recurseNode(rootNode);
+
+    // add the last template element
+    pushToStrings(true);
+
+    return {
+      strings,
+      expressions,
     };
+  }
 
-    if (isHTMLTag && !iCustomElement) {
-      attributeMeta.isEvent = isEventAttribute(attrNameNode.name);
-      attributeMeta.isBoolean = isBooleanAttribute(attrNameNode.name);
-    }
-
-    return attributeMeta;
-  });
-
+  function visitorCallback (path) {
+    const { node } = path;
+    const tagExpression = getTaggedTemplateCallExpression(node);
+    path.replaceWith(tagExpression);
+  }
   return {
-    tagName: tagNameNode,
-    attributes,
-    isHTMLTag,
-    iCustomElement,
-  };
-};
-
-function transform ({
-  path,
-  node,
-  t,
-  state,
-}) {
-  console.log(state);
-  console.log(path.node.openingElement.name.name);
-}
-
-export default function babelPluginReactLit (api) {
-  api.assertVersion(7);
-  const t = api.types;
-
-  return {
-    inherits: BabelPluginSyntaxJsx,
+    name: 'ast-transform', // not required
     visitor: {
-      JSXElement (path, state) {
-        transform({ path, t, state });
-
-        // path.replaceWith(transformElement(renderElement(path.node)));
-      },
-      JSXFragment (path) {
-        // console.log(path);
-        // path.replaceWith(transformElement(renderElement(path.node)));
-      },
+      JSXElement: visitorCallback,
+      JSXFragment: visitorCallback,
     },
   };
 }
+
+module.exports = BabelPluginReactLit;

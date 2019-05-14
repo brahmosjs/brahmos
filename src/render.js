@@ -1,15 +1,10 @@
-function render (node) {
-  if (Array.isArray(node)) {
 
-  } else if (node.__$isReactLitTag$__) {
-    if (node.expressions.length) {
+import updater from './updater';
 
-    }
-  }
-}
-
-function traverseAndRender (node, target) {
-  if (node.__$isReactLitComponent$__) {
-
-  }
+export default function render (node, target) {
+  const part = {
+    parentNode: target,
+    isNode: true,
+  };
+  updater([part], [node]);
 }

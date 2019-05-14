@@ -4,7 +4,18 @@ import { remove } from './utils';
 export default class TemplateNode {
   constructor (templateResult) {
     this.templateResult = templateResult;
+
+    // create the template first time the element is used
+    templateResult.create();
+
+    // create dom node out of template
+    this.node = this.createNode();
+
     this.parts = this.getParts();
+  }
+  createNode () {
+    const { template } = this.templateResult;
+    return document.importNode(template.content, true);
   }
   createWalker (node) {
     /**
@@ -25,8 +36,9 @@ export default class TemplateNode {
     );
   }
   getParts () {
-    const { template, partsMeta } = this.templateResult;
-    const node = document.importNode(template.content, true);
+    const { node, templateResult } = this;
+
+    const { partsMeta } = templateResult;
     const walker = this.createWalker(node);
 
     let partIndex = 0;
@@ -44,9 +56,10 @@ export default class TemplateNode {
     while (walker.nextNode()) {
       const current = walker.currentNode;
       const { nodeType, parentNode, previousSibling, nextSibling, textContent } = current;
+      window.temp = current.parentNode;
       /**
-     * If its a elemt check if it has attribute marker as attribute
-     * and if avialbale add the node info on the part so we can access
+     * If its a element check if it has attribute marker as attribute
+     * and if available add the node info on the part so we can access
      * the node while updates. Also look for the consecutive parts to
      * see if they exist on same node, we make that assumption based on
      * tagAttr list. Same tag parts will shared same tagAttr list
@@ -56,7 +69,8 @@ export default class TemplateNode {
         current.removeAttribute(attrMarker);
         const { tagAttrs } = partMeta;
         while (
-          (partMeta.isAttrValue || partMeta.isSpreadAttr) &&
+          // eslint-disable-next-line no-unmodified-loop-condition
+          partMeta && (partMeta.isAttrValue || partMeta.isSpreadAttr) &&
         partMeta.tagAttrs === tagAttrs
         ) {
           parts.push({

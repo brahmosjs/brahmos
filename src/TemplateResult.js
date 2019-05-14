@@ -9,13 +9,13 @@ const EXPRESSION_ATTR_NAME_REGEX = /([^\s"]*)=$/;
 
 /**
  * attribute name on the string part can be
- * Any character except control character space \s, ", ', =
+ * Any character except control character space \s, ", ', =, <
  * followed by = or space or closing tag >
  * and should start after \s or should be the first character
  *
  * Pick the third value on the exec group
  */
-const ATTR_NAME_REGEX = /(^|\s)([^\s"'=<]*)(?=[\s=>])/g;
+const ATTR_NAME_REGEX = /(^|\s)([^\s"'=<]+)(?=[\s=>])/g;
 
 export const attrMarker = 'data-react-lit-attr';
 export const marker = '{{react-lit}}';
@@ -24,7 +24,13 @@ export const nodeMarker = `<!--${marker}-->`;
 function extractAttributeName (str) {
   let result;
   const names = [];
-  while ((result = ATTR_NAME_REGEX.exec(str)) !== null) names.push(result[2]);
+  while ((result = ATTR_NAME_REGEX.exec(str)) !== null) {
+    const attrName = result[2];
+
+    if (attrName) {
+      names.push(result[2]);
+    }
+  }
   return names;
 }
 
@@ -35,11 +41,13 @@ export default class TemplateResult {
   create () {
     if (this.template) return;
 
-    this.partsMeta = this.partsMeta();
+    this.partsMeta = this.getPartsMeta();
+
+    this.createTemplate();
   }
   getPartsMeta () {
     const { strings } = this;
-    let hasTagPart, tagStarted, quoteStart;
+    let tagStarted, quoteStart;
     let tagAttrs = [];
     const partsMeta = [];
     /**
@@ -53,39 +61,33 @@ export default class TemplateResult {
     for (let i = 0, l = strings.length; i < l; i++) {
       const str = strings[i];
 
-      let result, isAttrValue, isSpreadAttr, attrName, isNode, subStrIndex, subEndIndex;
+      let result, isAttrValue, isAttribute, isSpreadAttr, attrName, isNode, subStrIndex, subEndIndex;
 
       while ((result = TAG_QUOTE_REGEX.exec(str)) !== null) {
         /**
-         * Once we find < we assume tag is started and we will keep the hasTagPart
-         * until we find >, on the next string part it will be
+         * Once we find < we assume tag is started and we will keep the tagStarted until we find >.
+         * On tag start we reset the tag attributes
          */
         if (result[0] === '<' && !quoteStart) {
-          hasTagPart = true;
           tagStarted = true;
-          // store index of place where tag is started
-          subStrIndex = result[1];
+          tagAttrs = [];
+
+          // store index of place where tag is started and reset the tag end string
+          subStrIndex = result.index;
+          subEndIndex = undefined;
         } else if (result[0] === '"') {
           quoteStart = !quoteStart;
         } else if (tagStarted && result[0] === '>' && !quoteStart) {
           tagStarted = false;
           // store index of place where tag is ending
-          subEndIndex = result[1];
+          subEndIndex = result.index;
         }
       }
 
-      /**
-       * if we don't find any subEndIndex or tag is closed it means, tag is closed in
-       * one of previous string parts. In that case reset tagStarted and tag attribute;
-       */
-      if (!subEndIndex && !tagStarted) {
-        hasTagPart = false;
-        tagAttrs = [];
-      }
-
       // if it has a tag part extract all the attribute names from the string
-      if (hasTagPart) {
-        const subStr = strings.substring(subStrIndex || 0, subEndIndex || str.length);
+      if (tagStarted) {
+        const subStr = str.substring(subStrIndex || 0, subEndIndex || str.length);
+
         tagAttrs.push.apply(tagAttrs, extractAttributeName(subStr));
       }
 
@@ -100,6 +102,7 @@ export default class TemplateResult {
         } else {
           isSpreadAttr = true;
         }
+        isAttribute = true;
       } else {
         isNode = true;
       }
@@ -115,6 +118,7 @@ export default class TemplateResult {
           tagAttrs,
           attrIndex: tagAttrs.length,
           isSpreadAttr,
+          isAttribute,
           isNode,
         });
       }

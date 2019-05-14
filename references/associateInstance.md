@@ -72,15 +72,40 @@ function associateInstance(renderTree, lastRenderedTree) {
 
 ```js
 function renderNodes(node, part) {
+  let firstRender = true;
   if (Array.isArray(node)) {
-
+    
   } else if (node.__$isReactLitTag$__) {
     if (!node.templateNode) {
-      node.templateNode = new TemplateNode(templates);
+      node.templateNode = new TemplateNode(node.templates);
+      firstRender = false;
     }
 
-    updater([part], [node]);
+  } else if (node.__$isReactLitComponent$__){
+    if (!node.componentInstance) {
+      
+      node.componentInstance =  node.__$isReactLitFunctionalComponent__ ? createFunctionalComponentInstance(node) : createClassComponentInstance(node);
+      
+      firstRender = false;
+    }
+  }
 
+  updater([part], [node], firstRender);
+}
+
+function createClassComponentInstance(node) {
+  const { type, props, key, ref } = node;
+
+  return {
+    ...node,
+    instance: new node.type(props), 
+  }
+}
+
+function createFunctionalComponentInstance(node) {
+  return {
+    ...node,
+    ref: null, //as functional component can't have ref set it to null
   }
 }
 ```
