@@ -1,5 +1,14 @@
 import TemplateNode from './TemplateNode';
-import { getEventName, isEventAttribute, isNonZeroFalsy } from './utils';
+import {
+  getEventName,
+  isEventAttribute,
+  isNonZeroFalsy,
+  isReactLitNode,
+  isPrimitiveNode,
+  toArray,
+  lastItem,
+} from './utils';
+
 import {
   getEffectiveEventName,
   getInputStateType,
@@ -11,6 +20,12 @@ import functionalComponentInstance from './functionalComponentInstance';
 function changeToNode (value) {
   if (value instanceof Node) {
     return value;
+  } else if (Array.isArray(value) || value instanceof NodeList) {
+    const fragment = document.createDocumentFragment();
+    for (let i = 0, ln = value.length; i < ln; i++) {
+      fragment.appendChild(value[i]);
+    }
+    return fragment;
   }
 
   return document.createTextNode(value.toString());
@@ -31,13 +46,18 @@ function deleteNodesBetween (parent, start, end) {
   }
 
   while (node && node !== end) {
+    const { nextSibling } = node;
     parent.removeChild(node);
-    node = node.nextSibling;
+    node = nextSibling;
   }
 }
 
 function addNodesBetween (parent, start, end, value) {
   const node = changeToNode(value);
+  const persistentNode = node instanceof DocumentFragment
+    ? toArray(node.childNodes)
+    : node;
+
   if (!start && !end) {
     parent.appendChild(node);
   } else if (!start) {
@@ -45,6 +65,8 @@ function addNodesBetween (parent, start, end, value) {
   } else {
     parent.insertBefore(node, start.nextSibling);
   }
+
+  return persistentNode;
 }
 
 function getCurrentNode (parentNode, previousSibling, nextSibling) {
@@ -59,44 +81,94 @@ function getCurrentNode (parentNode, previousSibling, nextSibling) {
 
 function updateTextNode (part, node, oldNode) {
   const { parentNode, previousSibling, nextSibling } = part;
+  // get the last text node
+  let textNode = getCurrentNode(parentNode, previousSibling, nextSibling);
+
   /**
    * In case of old node is not a text node, or not present
    * delete old node and add new node
    */
-  if (!oldNode || typeof oldNode !== 'string') {
+  if (!isPrimitiveNode(oldNode)) {
     if (oldNode) {
       // delete the existing elements
       deleteNodesBetween(parentNode, previousSibling, nextSibling);
     }
 
     // add nodes at the right location
-    addNodesBetween(parentNode, previousSibling, nextSibling, node);
+    textNode = addNodesBetween(parentNode, previousSibling, nextSibling, node);
   } else {
-    console.log(node);
     // just update the content of the textNode
     const textNode = getCurrentNode(parentNode, previousSibling, nextSibling);
     textNode.textContent = node;
   }
+
+  return textNode;
 }
 
-function updateNode (part, node, oldNode) {
+function isArrayNodesChanged (nodes, oldNodes) {
+  const nodesLength = nodes.length;
+  if (nodesLength !== oldNodes.length) return true;
+  for (let i = 0; i < nodesLength; i++) {
+    const node = nodes[i];
+    const oldNode = oldNodes[i];
+    if (node && isReactLitNode(node)) {
+      /**
+       * If node has a key, and old node is present and old node's key and newNode keys match
+       * then the value is not changed, if not then return true
+       */
+      if (!(node.key && oldNodes && node.key === oldNode.key)) return true;
+    } else if (isReactLitNode(oldNode)) {
+      /**
+       * if oldNode is reactLitNode and new node is not (that will be checked on last if )
+       * then return true
+       */
+      return true;
+    }
+    // No need to match two non ReactLitNodes
+  }
+}
+
+function updateArrayNodes (part, nodes, oldNodes = []) {
+  const { parentNode, previousSibling, nextSibling } = part;
+
+  const nodesLength = nodes.length;
+  let lastChild = previousSibling;
+  for (let i = 0; i < nodesLength; i++) {
+    const node = nodes[i];
+    const oldNode = oldNodes[i];
+    /**
+     * Pass forceUpdate as true, when newNodes and oldNodes keys are not same
+     */
+
+    const forceUpdate = !(node && oldNode && node.key === oldNode.key);
+
+    lastChild = updateNode({
+      parentNode,
+      previousSibling: lastChild,
+      nextSibling: lastChild.nextSibling,
+    }, node, oldNode, forceUpdate);
+  }
+
+  // remove all extra nodes between lastChild and nextSibling
+  deleteNodesBetween(parentNode, lastChild, nextSibling);
+
+  return lastChild;
+}
+
+function updateNode (part, node, oldNode, forceRender) {
+  const { parentNode, previousSibling, nextSibling } = part;
+
   if (isNonZeroFalsy(node)) {
     /**
      * If the new node is falsy value and
      * the oldNode is present we have to delete the old node
      * */
     if (oldNode) {
-      const { parentNode, previousSibling, nextSibling } = part;
-
       // delete the existing elements
       deleteNodesBetween(parentNode, previousSibling, nextSibling);
     }
   } else if (Array.isArray(node)) {
-    /**
-     *
-     * TODO: Handle array of nodes
-     * */
-
+    return updateArrayNodes(part, node, oldNode);
   } else if (node.__$isReactLitComponent$__) {
     const {
       type: Component,
@@ -126,10 +198,9 @@ function updateNode (part, node, oldNode) {
     // render nodes
     const renderNodes = componentInstance.__render(props);
 
-    updater([part], [renderNodes]);
+    return updateNode(part, renderNodes, null, forceRender);
   } else if (node.__$isReactLitTag$__) {
     let { templateNode, values, oldValues } = node;
-    const { parentNode, previousSibling, nextSibling } = part;
     let freshRender;
 
     /**
@@ -144,17 +215,29 @@ function updateNode (part, node, oldNode) {
       node.templateNode = templateNode;
     }
 
+    /**
+     * update parts before attaching elements to dom,
+     * so most of the work happens on fragment
+     */
+
+    updater(templateNode.parts, values, oldValues);
+
     if (freshRender) {
       // delete the existing elements
       deleteNodesBetween(parentNode, previousSibling, nextSibling);
 
-      // add nodes at the right location
-      addNodesBetween(parentNode, previousSibling, nextSibling, templateNode.node);
+      // add nodes first time
+      addNodesBetween(parentNode, previousSibling, nextSibling, templateNode.fragment);
     }
 
-    updater(templateNode.parts, values, oldValues);
-  } else if (typeof node === 'string' && node !== oldNode) {
-    updateTextNode(part, node, oldNode);
+    if (forceRender) {
+      // add nodes at the right location
+      addNodesBetween(parentNode, previousSibling, nextSibling, templateNode.nodes);
+    }
+
+    return lastItem(templateNode.nodes);
+  } else if (isPrimitiveNode(node) && node !== oldNode) {
+    return updateTextNode(part, node, oldNode);
   }
 }
 

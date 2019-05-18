@@ -3,13 +3,18 @@ function isHTMLElement (tagName) {
   return !!tagName && /^[a-z]/.test(tagName);
 }
 
+const RESERVED_ATTRIBUTES = {
+  key: 1,
+  ref: 1,
+};
+
 function needsToBeExpression (tagName, attrName) {
   /**
    * TODO: No need to change value attribute of a checkbox or radio button.
    */
   const tags = ['input', 'select', 'textarea'];
-  const attributes = ['value', 'defaultValue', 'checked', 'defaultCheckd'];
-  return tags.includes(tagName) && attributes.includes(attrName);
+  const attributes = ['value', 'defaultValue', 'checked', 'defaultChecked'];
+  return RESERVED_ATTRIBUTES[attrName] || (tags.includes(tagName) && attributes.includes(attrName));
 }
 
 function BabelPluginReactLit (babel) {

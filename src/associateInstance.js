@@ -23,22 +23,18 @@ export default function associateInstance (renderTree, lastRenderedTree) {
     return;
   }
 
-  console.log(node);
-
-  debugger;
   const defaultNode = Array.isArray(node) ? [] : {};
   const oldNode = lastRenderedTree || defaultNode;
 
   if (Array.isArray(node)) {
     const nodes = node;
     const oldNodes = oldNode;
-    const oldNodesMap = formNodeMap(oldNodes);
 
+    const oldNodesMap = formNodeMap(oldNodes);
     for (let i = 0, ln = nodes.length; i < ln; i++) {
       const node = nodes[i];
       const key = getKey(node, i);
       const oldNode = oldNodesMap[key];
-
       if (oldNode) {
         associateInstance(node, oldNode);
       }

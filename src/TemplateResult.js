@@ -96,6 +96,10 @@ export default class TemplateResult {
        * or an spread attribute. Otherwise it will be a node expression.
        */
       if (tagStarted) {
+        /**
+         * TODO: Remove this if. This might not be needed as
+         * we are always treating expression as spread attribute
+         */
         if (str.endsWith('=')) {
           attrName = str.match(EXPRESSION_ATTR_NAME_REGEX)[1];
           isAttrValue = true;

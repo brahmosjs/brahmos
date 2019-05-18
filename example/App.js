@@ -1,5 +1,9 @@
 import { Component, html, createElement } from '../src';
 
+const items = ['Sudhanshu', 'Hactor', 'Himanshu', 'Himan'];
+
+// .filter(str => str.startsWith(value))
+
 function Input (props) {
   const { onChange, value, children } = props;
   console.log(children);
@@ -11,7 +15,7 @@ function Input (props) {
 
 export default class App extends Component {
   state = {
-    value: 'test',
+    value: '',
   }
   handleChange = (e) => {
     const { value } = e.target;
@@ -20,13 +24,18 @@ export default class App extends Component {
   render () {
     const { name } = this.props;
     const { value } = this.state;
+    const filteredItems = items.filter(str => str.toLowerCase().startsWith(value.toLowerCase()));
     return (
       <div id="test">
         <span>Hello {name}</span>
         <Input value={value} onChange={this.handleChange}>
           <span>Hello {value}</span>
         </Input>
-        <span class="from"> ({value})</span>
+        <ul>
+          {filteredItems.map((item) => {
+            return <li key={item} >{item}</li>;
+          })}
+        </ul>
       </div>
     );
   }

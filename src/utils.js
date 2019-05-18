@@ -73,7 +73,34 @@ export function remove (nodes) {
  * Get the key of looped node
  */
 export function getKey (node, index) {
-  return node.key !== undefined ? node.key : index;
+  /**
+   * Get the key from node directly if not
+   * found search key on the values
+   */
+  let key = node && node.key;
+  if (key === undefined && node && node.__$isReactLitTag$__) {
+    /**
+       * TODO: This might be buggy, it can give key from any node,
+       * not necessarily key from the root node.
+       */
+    const { values } = node;
+    for (let i = 0, ln = values.length; i < ln; i++) {
+      const value = values[i];
+      if (value.key !== undefined) {
+        key = value.key;
+        break;
+      }
+    }
+
+    // store the calculated key on node so we don't have to search next time on same node
+    node.key = key;
+  }
+
+  /**
+   * if key is defined use key or else use index as key.
+   * Also key should always be a string
+   */
+  return (key !== undefined ? key : index).toString();
 }
 
 export function isClassComponent (element) {
@@ -85,4 +112,35 @@ export function isClassComponent (element) {
  */
 export function isNonZeroFalsy (value) {
   return !value && value !== 0;
+}
+
+/**
+ * Convert an array like object to array
+ */
+
+export function toArray (list) {
+  return Array.prototype.slice.call(list);
+}
+
+/**
+ * Check if a given object is a react lit node
+ */
+export function isReactLitNode (node) {
+  return node.__$isReactLitComponent$__ || node.__$isReactLitTag$__;
+}
+
+/**
+ * Function to check if a node should be rendered as string
+ */
+export function isPrimitiveNode (node) {
+  return !(isNonZeroFalsy(node) || isReactLitNode(node) || Array.isArray(node));
+}
+
+/**
+ * Function to return lastItem in the list
+ */
+
+export function lastItem (list) {
+  if (!Array.isArray(list)) return list;
+  return list[list.length - 1];
 }

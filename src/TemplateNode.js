@@ -1,5 +1,5 @@
 import { attrMarker, marker } from './TemplateResult';
-import { remove } from './utils';
+import { remove, toArray } from './utils';
 
 export default class TemplateNode {
   constructor (templateResult) {
@@ -8,10 +8,14 @@ export default class TemplateNode {
     // create the template first time the element is used
     templateResult.create();
 
-    // create dom node out of template
-    this.node = this.createNode();
+    // create dom fragment out of template
+    this.fragment = this.createNode();
 
     this.parts = this.getParts();
+
+    // keep the reference of child nodes
+    // TODO: Check if you want to use Array.from instead
+    this.nodes = toArray(this.fragment.childNodes);
   }
   createNode () {
     const { template } = this.templateResult;
@@ -36,10 +40,10 @@ export default class TemplateNode {
     );
   }
   getParts () {
-    const { node, templateResult } = this;
+    const { fragment, templateResult } = this;
 
     const { partsMeta } = templateResult;
-    const walker = this.createWalker(node);
+    const walker = this.createWalker(fragment);
 
     let partIndex = 0;
     let partMeta = partsMeta[partIndex];
