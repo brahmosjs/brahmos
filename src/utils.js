@@ -1,5 +1,11 @@
 import booleanAttributes from './booleanAttributes';
 import { Component } from './Component';
+
+export const RESERVED_ATTRIBUTES = {
+  key: 1,
+  ref: 1,
+};
+
 /**
  * Method to identify if a jsx element is a html element or custom component
  * Taken from https://github.com/babel/babel/blob/master/packages/babel-types/src/validators/react/isCompatTag.js
@@ -126,7 +132,7 @@ export function toArray (list) {
  * Check if a given object is a react lit node
  */
 export function isReactLitNode (node) {
-  return node.__$isReactLitComponent$__ || node.__$isReactLitTag$__;
+  return node && (node.__$isReactLitComponent$__ || node.__$isReactLitTag$__);
 }
 
 /**
@@ -143,4 +149,11 @@ export function isPrimitiveNode (node) {
 export function lastItem (list) {
   if (!Array.isArray(list)) return list;
   return list[list.length - 1];
+}
+
+/** Function to remove a list of childs from parent */
+export function removeNodes (parent, childNodes) {
+  for (let i = 0, ln = childNodes.length; i < ln; i++) {
+    parent.removeChild(childNodes[i]);
+  }
 }

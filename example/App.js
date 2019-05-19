@@ -32,7 +32,7 @@ export default class App extends Component {
           <span>Hello {value}</span>
         </Input>
         <ul>
-          {filteredItems.map((item) => {
+          {filteredItems.map((item, index) => {
             return <li key={item} >{item}</li>;
           })}
         </ul>
@@ -40,32 +40,3 @@ export default class App extends Component {
     );
   }
 }
-
-// class Input extends Component {
-//   render () {
-//     const { onChange, value } = this.props;
-//     return html`<input type="text" ${{ value }} ${{ onChange }}>`();
-//   }
-// }
-
-// export default class App extends Component {
-//   state = {
-//     value: 'test',
-//   }
-//   handleChange = (e) => {
-//     const { value } = e.target;
-//     console.log(value);
-//     this.setState({ value });
-//   }
-//   render () {
-//     const { name } = this.props;
-//     const { value } = this.state;
-//     return html`
-//       <div id="test">
-//         <span>Hello ${name}</span>
-//         ${createElement(Input, { value, onChange: this.handleChange })}
-//         <span class="from"> (${value})</span>
-//       </div>
-//     `();
-//   }
-// }

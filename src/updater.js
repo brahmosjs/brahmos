@@ -7,6 +7,8 @@ import {
   isPrimitiveNode,
   toArray,
   lastItem,
+  removeNodes,
+  RESERVED_ATTRIBUTES,
 } from './utils';
 
 import {
@@ -105,34 +107,20 @@ function updateTextNode (part, node, oldNode) {
   return textNode;
 }
 
-function isArrayNodesChanged (nodes, oldNodes) {
-  const nodesLength = nodes.length;
-  if (nodesLength !== oldNodes.length) return true;
-  for (let i = 0; i < nodesLength; i++) {
-    const node = nodes[i];
-    const oldNode = oldNodes[i];
-    if (node && isReactLitNode(node)) {
-      /**
-       * If node has a key, and old node is present and old node's key and newNode keys match
-       * then the value is not changed, if not then return true
-       */
-      if (!(node.key && oldNodes && node.key === oldNode.key)) return true;
-    } else if (isReactLitNode(oldNode)) {
-      /**
-       * if oldNode is reactLitNode and new node is not (that will be checked on last if )
-       * then return true
-       */
-      return true;
-    }
-    // No need to match two non ReactLitNodes
-  }
-}
-
 function updateArrayNodes (part, nodes, oldNodes = []) {
   const { parentNode, previousSibling, nextSibling } = part;
 
   const nodesLength = nodes.length;
   let lastChild = previousSibling;
+
+  // remove all the unused old nodes
+  for (let i = 0, ln = oldNodes.length; i < ln; i++) {
+    const oldNode = oldNodes[i];
+    if (isReactLitNode(oldNode) && !oldNode.isReused) {
+      removeNodes(parentNode, oldNode.templateNode.nodes);
+    }
+  }
+
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
     const oldNode = oldNodes[i];
@@ -230,8 +218,14 @@ function updateNode (part, node, oldNode, forceRender) {
       addNodesBetween(parentNode, previousSibling, nextSibling, templateNode.fragment);
     }
 
-    if (forceRender) {
-      // add nodes at the right location
+    /**
+     * Rearrange node if forceRender is set and the element is not on correct position
+     */
+    const firstChild = templateNode.nodes[0];
+    const onCorrectPos = firstChild && firstChild.previousSibling === previousSibling;
+
+    if (forceRender && !onCorrectPos) {
+      // add nodes at the right position
       addNodesBetween(parentNode, previousSibling, nextSibling, templateNode.nodes);
     }
 
@@ -250,7 +244,8 @@ function updateAttribute (part, attrName, attrValue, oldAttrValue) {
   const { node, tagAttrs, attrIndex } = part;
   if (
     attrValue !== oldAttrValue &&
-    !isAttrOverridden(tagAttrs, attrName, attrIndex)
+    !isAttrOverridden(tagAttrs, attrName, attrIndex) &&
+    !RESERVED_ATTRIBUTES[attrName]
   ) {
     setAttribute(node, attrName, attrValue, oldAttrValue);
   }

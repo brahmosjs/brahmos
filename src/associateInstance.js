@@ -51,6 +51,12 @@ export default function associateInstance (renderTree, lastRenderedTree) {
     node.templateNode = oldNode.templateNode;
     node.oldValues = oldNode.values;
 
+    /**
+     * Add a flag on oldNode that it will be reused. This will help us to identify
+     * oldNodes which are unused. Like for deleting all the oldNodes which are not used any more
+     */
+    oldNode.isReused = true;
+
     for (let i = 0, ln = node.values.length; i < ln; i++) {
       associateInstance(node.values[i], oldNode.values[i]);
     }
@@ -63,5 +69,8 @@ export default function associateInstance (renderTree, lastRenderedTree) {
      * store the already created component instance to the new node,
      */
     node.componentInstance = oldNode.componentInstance;
+
+    /** Add a flag on oldNode that it will be reused */
+    oldNode.isReused = true;
   }
 }
