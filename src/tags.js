@@ -16,7 +16,7 @@ export function html (strings, ...values) {
       values,
       key,
       ref,
-      __$isReactLitTag$__: true,
+      __$isWaspTag$__: true,
     };
   };
 }

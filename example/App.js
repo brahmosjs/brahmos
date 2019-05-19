@@ -26,7 +26,7 @@ export default class App extends Component {
     const { value } = this.state;
     const filteredItems = items.filter(str => str.toLowerCase().startsWith(value.toLowerCase()));
     return (
-      <div id="test">
+      <div className="app">
         <span>Hello {name}</span>
         <Input value={value} onChange={this.handleChange}>
           <span>Hello {value}</span>

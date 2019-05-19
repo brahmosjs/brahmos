@@ -8,6 +8,11 @@ const RESERVED_ATTRIBUTES = {
   ref: 1,
 };
 
+const propertyToAttrMap = {
+  'className': 'class',
+  'htmlFor': 'for',
+};
+
 function needsToBeExpression (tagName, attrName) {
   /**
    * TODO: No need to change value attribute of a checkbox or radio button.
@@ -17,7 +22,7 @@ function needsToBeExpression (tagName, attrName) {
   return RESERVED_ATTRIBUTES[attrName] || (tags.includes(tagName) && attributes.includes(attrName));
 }
 
-function BabelPluginReactLit (babel) {
+function BabelPluginWasp (babel) {
   const { types: t } = babel;
 
   function getTaggedTemplateCallExpression (node) {
@@ -66,7 +71,7 @@ function BabelPluginReactLit (babel) {
               pushToExpressions(attribute.argument);
             } else {
               const { name, value } = attribute;
-              const attrName = name.name;
+              let attrName = name.name;
 
               /**
                * check if the attribute should go as expression or the value is and actual expression
@@ -78,6 +83,12 @@ function BabelPluginReactLit (babel) {
                 // keep space after expressions
                 stringPart.push(' ');
               } else {
+              /**
+               * Check if attrName needs to be changed, to form html attribute like className -> class
+               * Change the property name only if the value is string type so at comes along with
+               * string part. In case of value is expression we don't need to do it
+               */
+                attrName = propertyToAttrMap[attrName] || attrName;
                 stringPart.push(` ${attrName}${value ? `="${value.value}" ` : ''}`);
               }
             }
@@ -155,4 +166,4 @@ function BabelPluginReactLit (babel) {
   };
 }
 
-module.exports = BabelPluginReactLit;
+module.exports = BabelPluginWasp;

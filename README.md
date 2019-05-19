@@ -1,2 +1,2 @@
-# react-lit
-React API with supercharged literal templating. 
+# wasp
+Super charged UI library with modern React API and native templates.

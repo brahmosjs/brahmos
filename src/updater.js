@@ -3,7 +3,7 @@ import {
   getEventName,
   isEventAttribute,
   isNonZeroFalsy,
-  isReactLitNode,
+  isWaspNode,
   isPrimitiveNode,
   toArray,
   lastItem,
@@ -116,7 +116,7 @@ function updateArrayNodes (part, nodes, oldNodes = []) {
   // remove all the unused old nodes
   for (let i = 0, ln = oldNodes.length; i < ln; i++) {
     const oldNode = oldNodes[i];
-    if (isReactLitNode(oldNode) && !oldNode.isReused) {
+    if (isWaspNode(oldNode) && !oldNode.isReused) {
       removeNodes(parentNode, oldNode.templateNode.nodes);
     }
   }
@@ -157,11 +157,11 @@ function updateNode (part, node, oldNode, forceRender) {
     }
   } else if (Array.isArray(node)) {
     return updateArrayNodes(part, node, oldNode);
-  } else if (node.__$isReactLitComponent$__) {
+  } else if (node.__$isWaspComponent$__) {
     const {
       type: Component,
       props,
-      __$isReactLitFunctionalComponent$__: isFunctionalComponent,
+      __$isWaspFunctionalComponent$__: isFunctionalComponent,
     } = node;
 
     /** If Component instance is not present on node create a new instance */
@@ -187,7 +187,7 @@ function updateNode (part, node, oldNode, forceRender) {
     const renderNodes = componentInstance.__render(props);
 
     return updateNode(part, renderNodes, null, forceRender);
-  } else if (node.__$isReactLitTag$__) {
+  } else if (node.__$isWaspTag$__) {
     let { templateNode, values, oldValues } = node;
     let freshRender;
 

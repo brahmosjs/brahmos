@@ -1,7 +1,7 @@
 {
-  "name": "react-lit",
+  "name": "waspjs",
   "version": "0.1.0",
-  "description": "A new framework with react api and lit-html templating engine",
+  "description": "Super charged UI library with modern React API and native templates.",
   "main": "lib/index.js",
   "author": "s-yadav <sudhanshuyadav2@gmail.com>",
   "license": "MIT",

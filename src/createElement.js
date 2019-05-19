@@ -18,8 +18,8 @@ export default function createElement (
     key,
     ref: _isClassComponent ? ref : null,
     children,
-    __$isReactLitComponent$__: true,
-    __$isReactLitClassComponent$__: _isClassComponent,
-    __$isReactLitFunctionalComponent$__: !_isClassComponent,
+    __$isWaspComponent$__: true,
+    __$isWaspClassComponent$__: _isClassComponent,
+    __$isWaspFunctionalComponent$__: !_isClassComponent,
   };
 }

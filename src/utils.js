@@ -59,7 +59,7 @@ export function omit (obj, keys) {
 export function spreadProps (obj) {
   return {
     ...obj,
-    __$isReactLitSpread$__: true,
+    __$isWaspSpread$__: true,
   };
 }
 
@@ -84,7 +84,7 @@ export function getKey (node, index) {
    * found search key on the values
    */
   let key = node && node.key;
-  if (key === undefined && node && node.__$isReactLitTag$__) {
+  if (key === undefined && node && node.__$isWaspTag$__) {
     /**
        * TODO: This might be buggy, it can give key from any node,
        * not necessarily key from the root node.
@@ -131,15 +131,15 @@ export function toArray (list) {
 /**
  * Check if a given object is a react lit node
  */
-export function isReactLitNode (node) {
-  return node && (node.__$isReactLitComponent$__ || node.__$isReactLitTag$__);
+export function isWaspNode (node) {
+  return node && (node.__$isWaspComponent$__ || node.__$isWaspTag$__);
 }
 
 /**
  * Function to check if a node should be rendered as string
  */
 export function isPrimitiveNode (node) {
-  return !(isNonZeroFalsy(node) || isReactLitNode(node) || Array.isArray(node));
+  return !(isNonZeroFalsy(node) || isWaspNode(node) || Array.isArray(node));
 }
 
 /**

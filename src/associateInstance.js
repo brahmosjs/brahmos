@@ -39,7 +39,7 @@ export default function associateInstance (renderTree, lastRenderedTree) {
         associateInstance(node, oldNode);
       }
     }
-  } else if (node.__$isReactLitTag$__) {
+  } else if (node.__$isWaspTag$__) {
     if (node.template !== oldNode.template) {
       return;
     }
@@ -60,7 +60,7 @@ export default function associateInstance (renderTree, lastRenderedTree) {
     for (let i = 0, ln = node.values.length; i < ln; i++) {
       associateInstance(node.values[i], oldNode.values[i]);
     }
-  } else if (node.__$isReactLitComponent$__) {
+  } else if (node.__$isWaspComponent$__) {
     if (node.type !== oldNode.type) {
       return;
     }
