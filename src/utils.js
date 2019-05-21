@@ -157,3 +157,80 @@ export function removeNodes (parent, childNodes) {
     parent.removeChild(childNodes[i]);
   }
 }
+
+/**
+ * Given a object/string crate a node which can be appended.
+ */
+function changeToNode (value) {
+  if (value instanceof Node) {
+    return value;
+  // if it is a array of Nodes or NodList return a fragment
+  } else if (Array.isArray(value) || value instanceof NodeList) {
+    const fragment = document.createDocumentFragment();
+    for (let i = 0, ln = value.length; i < ln; i++) {
+      fragment.appendChild(value[i]);
+    }
+    return fragment;
+  }
+
+  // In other case it will be string so return a text node
+  return document.createTextNode(value.toString());
+}
+
+/**
+ * Function to delete all child nodes of a parent between start and end node
+ */
+export function deleteNodesBetween (parent, start, end) {
+  // If both start and end is null, it means we want to clear all the children
+  if (!start && !end) {
+    parent.innerHTML = '';
+    return;
+  }
+
+  let node;
+
+  if (!start) {
+    node = parent.firstChild;
+  } else {
+    node = start.nextSibling;
+  }
+
+  while (node && node !== end) {
+    const { nextSibling } = node;
+    parent.removeChild(node);
+    node = nextSibling;
+  }
+}
+
+/**
+ * Function to add child nodes before endNode, if it is not defined or null
+ * It will add nodes on the last
+ */
+export function insertBefore (parent, end = null, value) {
+  const node = changeToNode(value);
+
+  /**
+   * Fragment child nodes gets cleared after its appended to dom.
+   * So if it is fragment keep the reference of all childNodes as array.
+   */
+  const persistentNode = node instanceof DocumentFragment
+    ? toArray(node.childNodes)
+    : node;
+
+  parent.insertBefore(node, end);
+
+  return persistentNode;
+}
+
+/**
+ * Get the node reference based on previousSibling, nextSibling or parentNode
+ */
+export function getCurrentNode (parentNode, previousSibling, nextSibling) {
+  if (previousSibling) {
+    return previousSibling.nextSibling;
+  } else if (nextSibling) {
+    return nextSibling.previousSibling;
+  } else {
+    return parentNode.firstChild;
+  }
+}

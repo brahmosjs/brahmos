@@ -6,7 +6,6 @@ const items = ['Sudhanshu', 'Hactor', 'Himanshu', 'Himan'];
 
 function Input (props) {
   const { onChange, value, children } = props;
-  console.log(children);
   return (<div>
     {<input type="text" value={value} defaultValue="Sudhanshu" onChange={onChange}/>}
     {children}
@@ -25,6 +24,7 @@ export default class App extends Component {
     const { name } = this.props;
     const { value } = this.state;
     const filteredItems = items.filter(str => str.toLowerCase().startsWith(value.toLowerCase()));
+
     return (
       <div className="app">
         <span>Hello {name}</span>
