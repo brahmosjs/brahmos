@@ -1,4 +1,4 @@
-# wasp
+# brahmos
 Supercharged UI library with modern React API and native templates.
 
 ## Features
@@ -77,8 +77,8 @@ With this now we have a clear static and dynamic part separation. And on any dyn
 Tagged template literals also have unique property where the reference of static string array on every call of the tag will always remain same if the static part is same. No matter how may times they are called, or from where ever they are called.
 With this we can use string array as a cache key and return the same intermediate html template the library creates.
 
-Tagged template is natively supported by browser unlike the JSX which has to be transpiled to React.createElement calls. So the output generated to run wasp has smaller footprint than the output generated for the react. 
-For the above example the WASP output is 685 bytes, compared to 824 bytes from the React output. More the static html part greater the difference will be.
+Tagged template is natively supported by browser unlike the JSX which has to be transpiled to React.createElement calls. So the output generated to run brahmos has smaller footprint than the output generated for the react. 
+For the above example the Brahmos output is 685 bytes, compared to 824 bytes from the React output. More the static html part greater the difference will be.
 
 
 ## Progress

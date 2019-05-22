@@ -16,7 +16,7 @@ export function html (strings, ...values) {
       values,
       key,
       ref,
-      __$isWaspTag$__: true,
+      __$isBrahmosTag$__: true,
     };
   };
 }

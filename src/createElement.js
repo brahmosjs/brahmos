@@ -18,8 +18,8 @@ export default function createElement (
     key,
     ref: _isClassComponent ? ref : null,
     children,
-    __$isWaspComponent$__: true,
-    __$isWaspClassComponent$__: _isClassComponent,
-    __$isWaspFunctionalComponent$__: !_isClassComponent,
+    __$isBrahmosComponent$__: true,
+    __$isBrahmosClassComponent$__: _isClassComponent,
+    __$isBrahmosFunctionalComponent$__: !_isClassComponent,
   };
 }

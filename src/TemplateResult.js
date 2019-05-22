@@ -17,8 +17,8 @@ const EXPRESSION_ATTR_NAME_REGEX = /([^\s"]*)=$/;
  */
 const ATTR_NAME_REGEX = /(^|\s)([^\s"'=<]+)(?=[\s=>])/g;
 
-export const attrMarker = 'data-wasp-attr';
-export const marker = '{{wasp}}';
+export const attrMarker = 'data-brahmos-attr';
+export const marker = '{{brahmos}}';
 export const nodeMarker = `<!--${marker}-->`;
 
 function extractAttributeName (str) {

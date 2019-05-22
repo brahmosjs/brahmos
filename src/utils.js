@@ -1,4 +1,3 @@
-import booleanAttributes from './booleanAttributes';
 import { Component } from './Component';
 
 export const RESERVED_ATTRIBUTES = {
@@ -30,11 +29,6 @@ export function getEventName (attrName) {
   return attrName.replace('on', '').toLowerCase();
 }
 
-export function isBooleanAttribute (attrName) {
-  // used indexOf for cross browser support
-  return booleanAttributes.indexOf(attrName) !== -1;
-}
-
 export function isCustomElement (tagName) {
   // Must match html tag check and have a hyphen in the tag name
   return isHTMLElement(tagName) && tagName.indexOf('-') !== -1;
@@ -59,7 +53,7 @@ export function omit (obj, keys) {
 export function spreadProps (obj) {
   return {
     ...obj,
-    __$isWaspSpread$__: true,
+    __$isBrahmosSpread$__: true,
   };
 }
 
@@ -84,7 +78,7 @@ export function getKey (node, index) {
    * found search key on the values
    */
   let key = node && node.key;
-  if (key === undefined && node && node.__$isWaspTag$__) {
+  if (key === undefined && node && node.__$isBrahmosTag$__) {
     /**
        * TODO: This might be buggy, it can give key from any node,
        * not necessarily key from the root node.
@@ -131,15 +125,15 @@ export function toArray (list) {
 /**
  * Check if a given object is a react lit node
  */
-export function isWaspNode (node) {
-  return node && (node.__$isWaspComponent$__ || node.__$isWaspTag$__);
+export function isBrahmosNode (node) {
+  return node && (node.__$isBrahmosComponent$__ || node.__$isBrahmosTag$__);
 }
 
 /**
  * Function to check if a node should be rendered as string
  */
 export function isPrimitiveNode (node) {
-  return !(isNonZeroFalsy(node) || isWaspNode(node) || Array.isArray(node));
+  return !(isNonZeroFalsy(node) || isBrahmosNode(node) || Array.isArray(node));
 }
 
 /**

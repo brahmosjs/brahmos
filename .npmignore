@@ -1,0 +1,9 @@
+# Ignore source and reference files
+src
+node_modules
+reference
+
+# Ignore config files
+.eslintrc
+.gitignore
+webpack.config.js

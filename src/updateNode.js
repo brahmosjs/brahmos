@@ -3,7 +3,7 @@ import functionalComponentInstance from './functionalComponentInstance';
 
 import {
   isNonZeroFalsy,
-  isWaspNode,
+  isBrahmosNode,
   isPrimitiveNode,
   deleteNodesBetween,
   insertBefore,
@@ -55,7 +55,7 @@ function updateArrayNodes (part, nodes, oldNodes = []) {
   // remove all the unused old nodes
   for (let i = 0, ln = oldNodes.length; i < ln; i++) {
     const oldNode = oldNodes[i];
-    if (isWaspNode(oldNode) && !oldNode.isReused) {
+    if (isBrahmosNode(oldNode) && !oldNode.isReused) {
       removeNodes(parentNode, oldNode.templateNode.nodes);
     }
   }
@@ -99,11 +99,11 @@ export default function updateNode (part, node, oldNode, forceRender) {
     }
   } else if (Array.isArray(node)) {
     return updateArrayNodes(part, node, oldNode);
-  } else if (node.__$isWaspComponent$__) {
+  } else if (node.__$isBrahmosComponent$__) {
     const {
       type: Component,
       props,
-      __$isWaspFunctionalComponent$__: isFunctionalComponent,
+      __$isBrahmosFunctionalComponent$__: isFunctionalComponent,
     } = node;
 
     /** If Component instance is not present on node create a new instance */
@@ -129,7 +129,7 @@ export default function updateNode (part, node, oldNode, forceRender) {
     const renderNodes = componentInstance.__render(props);
 
     return updateNode(part, renderNodes, null, forceRender);
-  } else if (node.__$isWaspTag$__) {
+  } else if (node.__$isBrahmosTag$__) {
     let { templateNode, values, oldValues } = node;
     let freshRender;
 

@@ -22,7 +22,7 @@ function needsToBeExpression (tagName, attrName) {
   return RESERVED_ATTRIBUTES[attrName] || (tags.includes(tagName) && attributes.includes(attrName));
 }
 
-function BabelPluginWasp (babel) {
+function BabelPluginBrahmos (babel) {
   const { types: t } = babel;
 
   function getTaggedTemplateCallExpression (node) {
@@ -166,4 +166,4 @@ function BabelPluginWasp (babel) {
   };
 }
 
-module.exports = BabelPluginWasp;
+module.exports = BabelPluginBrahmos;
