@@ -1,12 +1,12 @@
 {
   "name": "brahmos",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Super charged UI library with modern React API and native templates.",
   "main": "lib/index.js",
   "author": "s-yadav <sudhanshuyadav2@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "start": "webpack-dev-server --open",
+    "start": "yarn build && webpack-dev-server --open",
     "build": "babel src --out-dir lib"
   },
   "devDependencies": {

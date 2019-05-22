@@ -1,12 +1,6 @@
-function isHTMLElement (tagName) {
-  // Must start with a lowercase ASCII letter
-  return !!tagName && /^[a-z]/.test(tagName);
-}
+import jsx from '@babel/plugin-syntax-jsx';
 
-const RESERVED_ATTRIBUTES = {
-  key: 1,
-  ref: 1,
-};
+import { isHTMLElement, RESERVED_ATTRIBUTES } from '../utils';
 
 const propertyToAttrMap = {
   'className': 'class',
@@ -158,7 +152,8 @@ function BabelPluginBrahmos (babel) {
     path.replaceWith(tagExpression);
   }
   return {
-    name: 'ast-transform', // not required
+    name: 'brahmos',
+    inherits: jsx,
     visitor: {
       JSXElement: visitorCallback,
       JSXFragment: visitorCallback,
