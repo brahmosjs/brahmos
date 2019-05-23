@@ -1,6 +1,14 @@
-import jsx from '@babel/plugin-syntax-jsx';
+const jsx = require('@babel/plugin-syntax-jsx').default;
 
-import { isHTMLElement, RESERVED_ATTRIBUTES } from '../utils';
+const RESERVED_ATTRIBUTES = {
+  key: 1,
+  ref: 1,
+};
+
+function isHTMLElement (tagName) {
+  // Must start with a lowercase ASCII letter
+  return !!tagName && /^[a-z]/.test(tagName);
+};
 
 const propertyToAttrMap = {
   'className': 'class',
