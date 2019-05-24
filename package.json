@@ -1,6 +1,6 @@
 {
   "name": "brahmos",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Super charged UI library with modern React API and native templates.",
   "main": "lib/index.js",
   "author": "s-yadav <sudhanshuyadav2@gmail.com>",

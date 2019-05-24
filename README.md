@@ -81,19 +81,25 @@ Tagged template is natively supported by browser unlike the JSX which has to be 
 For the above example the Brahmos output is 685 bytes, compared to 824 bytes from the React output. More the static html part greater the difference will be.
 
 
+## Demo
+Todo MVC with Brahmos
+[https://s-yadav.github.io/brahmos-todo-mvc](https://s-yadav.github.io/brahmos-todo-mvc)
+
+
 ## Progress
 - [x] Component and props
 - [x] States and setState
 - [x] Functional Component and props
 - [x] List
 - [x] Keyed list
-- [x] Synthetic input events onChange support
+- [x] Synthetic input events - onChange support
 - [x] Babel Plugin to transpile JSX to tagged template
 - [ ] Life cycle events
 - [ ] PureComponent
 - [ ] Context API
 - [ ] Hooks
 - [ ] React Utilities and Methods
+- [ ] SVG Support
 - [ ] Handle server rendering
 - [ ] Performance improvement
 - [ ] Bug fixes
