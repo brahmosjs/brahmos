@@ -1086,6 +1086,13 @@ babel-loader@^8.0.6:
     mkdirp "^0.5.1"
     pify "^4.0.1"
 
+babel-plugin-brahmos@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/babel-plugin-brahmos/-/babel-plugin-brahmos-0.1.2.tgz#0c239d78d7de7147680a79680681228d88c89e8e"
+  integrity sha512-njAXIG1ui4jkb6lM+NwknkiNz1WfsorHuLJeea+RkYrjRJbvJ/+BsFbAP4+UDzF7XDW4WR4jstc+hlTWTPPZJw==
+  dependencies:
+    "@babel/plugin-syntax-jsx" "^7.2.0"
+
 balanced-match@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.0.tgz#89b4d199ab2bee49de164ea02b89ce462d71b767"
