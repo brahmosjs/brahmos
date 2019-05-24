@@ -9,6 +9,7 @@ import {
   getInputStateType,
   handleInputProperty,
   getPatchedEventHandler,
+  eventHandlerCache,
 } from './reactEvents';
 
 function isAttrOverridden (tagAttrs, attrName, attrIndex) {
@@ -36,7 +37,8 @@ function setAttribute (node, attrName, attrValue, oldAttrValue) {
 
       // remove old event and assign it again
       if (oldAttrValue) {
-        node.removeEventListener(eventName, oldAttrValue);
+        const oldPatchedHandler = eventHandlerCache.get(oldAttrValue) || oldAttrValue;
+        node.removeEventListener(eventName, oldPatchedHandler);
       }
 
       node.addEventListener(eventName, patchedEventHandler);

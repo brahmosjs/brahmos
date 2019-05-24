@@ -1,7 +1,4 @@
 import App from './App.js';
-import { render, createElement } from '../src';
+import { render, html, createElement } from '../src';
 
-const a = performance.now();
-render(createElement(App, { name: 'World' }), document.getElementById('app'));
-
-console.log(performance.now() - a);
+render(<App />, document.getElementById('app'));

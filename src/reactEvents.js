@@ -1,9 +1,15 @@
 import { getNodeName } from './utils';
 
-const eventHandlerCache = new WeakMap();
+const RENAMED_EVENTS = {
+  'doubleclick': 'dblclick',
+};
+
+export const eventHandlerCache = new WeakMap();
 
 export function getEffectiveEventName (eventName, node) {
   const nodeName = getNodeName(node);
+
+  if (RENAMED_EVENTS[eventName]) return RENAMED_EVENTS[eventName];
 
   return nodeName === 'input' && eventName === 'change' ? 'input' : eventName;
 }

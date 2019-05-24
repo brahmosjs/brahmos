@@ -1,4 +1,4 @@
-import { getKey } from './utils';
+import { getKey, isBrahmosNode } from './utils';
 
 function formNodeMap (nodes) {
   const maps = {};
@@ -19,7 +19,7 @@ export default function associateInstance (renderTree, lastRenderedTree) {
    * if node is not an object (tag, component), or an array of tag or component
    * no need to associate any previous instance to it.
    */
-  if (typeof node !== 'object') { // this will check for  both array and object
+  if (!(isBrahmosNode(node) || Array.isArray(node))) {
     return;
   }
 

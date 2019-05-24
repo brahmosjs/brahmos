@@ -9,6 +9,7 @@ import {
   insertBefore,
   getCurrentNode,
   lastItem,
+  toArray,
   removeNodes,
 } from './utils';
 
@@ -72,12 +73,12 @@ function updateArrayNodes (part, nodes, oldNodes = []) {
     lastChild = updateNode({
       parentNode,
       previousSibling: lastChild,
-      nextSibling: lastChild.nextSibling,
+      nextSibling: lastChild && lastChild.nextSibling,
     }, node, oldNode, forceUpdate);
   }
 
   // remove all extra nodes between lastChild and nextSibling
-  deleteNodesBetween(parentNode, lastChild, nextSibling);
+  if (lastChild) deleteNodesBetween(parentNode, lastChild, nextSibling);
 
   return lastChild;
 }
@@ -156,6 +157,12 @@ export default function updateNode (part, node, oldNode, forceRender) {
       // delete the existing elements
       deleteNodesBetween(parentNode, previousSibling, nextSibling);
 
+      /**
+       * if we are rendering fragment it means the fragment might have childNodes
+       * which templateNode does not have, so for such cases we should reset nodeList on templateNode;
+       */
+      templateNode.nodes = toArray(templateNode.fragment.children);
+
       // add nodes first time
       insertBefore(parentNode, nextSibling, templateNode.fragment);
     }
@@ -166,7 +173,7 @@ export default function updateNode (part, node, oldNode, forceRender) {
     const firstChild = templateNode.nodes[0];
     const onCorrectPos = firstChild && firstChild.previousSibling === previousSibling;
 
-    if (forceRender && !onCorrectPos) {
+    if (firstChild && forceRender && !onCorrectPos) {
       // add nodes at the right position
       insertBefore(parentNode, nextSibling, templateNode.nodes);
     }
