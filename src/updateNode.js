@@ -13,6 +13,8 @@ import {
   removeNodes,
 } from './utils';
 
+import getTagNode from './TagNode';
+
 import updater from './updater';
 
 /**
@@ -131,16 +133,17 @@ export default function updateNode (part, node, oldNode, forceRender) {
 
     return updateNode(part, renderNodes, null, forceRender);
   } else if (node.__$isBrahmosTag$__) {
-    let { templateNode, values, oldValues } = node;
+    let { templateNode, values, oldValues, __$isBrahmosTagElement$__: isTagElement } = node;
     let freshRender;
 
     /**
-       * if you don't get the old template node it means you have to render the node firts time
+       * if you don't get the old template node it means you have to render the node first time
        * in such cases delete the nodes where the template node is supposed to be present.
        */
     if (!templateNode) {
       freshRender = true;
-      templateNode = new TemplateNode(node.template);
+
+      templateNode = isTagElement ? getTagNode(node) : new TemplateNode(node.template);
 
       // add templateNode to node so we can access it on next updates
       node.templateNode = templateNode;

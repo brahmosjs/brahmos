@@ -1,4 +1,4 @@
-# brahmos 🚀
+# Brahmos 🚀
 Supercharged UI library with modern React API and native templates.
 
 ## Features

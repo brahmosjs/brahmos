@@ -40,7 +40,7 @@ export default function associateInstance (renderTree, lastRenderedTree) {
       }
     }
   } else if (node.__$isBrahmosTag$__) {
-    if (node.template !== oldNode.template) {
+    if (node.template !== oldNode.template || node.element !== oldNode.element) {
       return;
     }
 
