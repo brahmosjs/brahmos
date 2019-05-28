@@ -15,6 +15,10 @@ function Input (props) {
 export default class App extends Component {
   state = {
     value: '',
+    error: null,
+  }
+  static getDerivedStateFromError (error) {
+    return { error };
   }
   handleChange = (e) => {
     const { value } = e.target;
@@ -22,8 +26,12 @@ export default class App extends Component {
   }
   render () {
     const { name } = this.props;
-    const { value } = this.state;
+    const { value, error } = this.state;
     const filteredItems = items.filter(str => str.toLowerCase().startsWith(value.toLowerCase()));
+
+    if (error) {
+      return <div>Some Error occurred while rendering {error.message}</div>;
+    }
 
     return (
       <div className="app">

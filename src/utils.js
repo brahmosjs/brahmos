@@ -233,6 +233,9 @@ export function getCurrentNode (parentNode, previousSibling, nextSibling) {
  * Merge newState with old state for components
  */
 export function mergeState (state, newState) {
+  // if new state is not present or any falsy value, just return the state
+  if (!newState) return state;
+
   // allow all type of objects to be spread
   // this behaviour is similar to react
   if (typeof newState === 'object') {
