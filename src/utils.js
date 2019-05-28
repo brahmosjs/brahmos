@@ -228,3 +228,15 @@ export function getCurrentNode (parentNode, previousSibling, nextSibling) {
     return parentNode.firstChild;
   }
 }
+
+/**
+ * Merge newState with old state for components
+ */
+export function mergeState (state, newState) {
+  // allow all type of objects to be spread
+  // this behaviour is similar to react
+  if (typeof newState === 'object') {
+    state = { ...state, ...newState };
+  }
+  return state;
+}

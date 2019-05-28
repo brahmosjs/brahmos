@@ -1,5 +1,6 @@
 import associateInstance from './associateInstance';
 import updater from './updater';
+import { mergeState } from './utils';
 
 export class Component {
   constructor (props, context) {
@@ -7,11 +8,13 @@ export class Component {
     this.context = context;
   }
   setState (newState, callback) {
-    if (typeof newState === 'function') {
-      this.state = newState(this.state);
-    } else {
-      this.state = { ...(this.state || {}), ...newState };
-    }
+    let state = this.__unCommittedState || this.state || {};
+    const _newState = typeof newState === 'function'
+      ? newState(state) : newState;
+
+    state = mergeState(state, _newState);
+
+    this.__unCommittedState = state;
 
     this.__batchStateChange().then((state) => {
       this.__updatesPromise = null;
@@ -27,15 +30,10 @@ export class Component {
     return this.__updatesPromise;
   }
   __applyUpdates () {
-    const nodes = this.__render(this.props);
-    const { __part: part } = this;
-    updater([part], [nodes]);
+    const { __part: part, __componentNode: node } = this;
+    updater([part], [node]);
   }
-  __render (props) {
-    if (props !== this.props) {
-      this.props = props;
-      // call the life cycles
-    }
+  __render () {
     // get the new rendered node
     const nodes = this.render();
 
@@ -47,3 +45,5 @@ export class Component {
     return nodes;
   }
 }
+
+export class PureComponent extends Component {};
