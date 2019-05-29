@@ -41,7 +41,7 @@ function renderWithErrorBoundaries (part, node, forceRender, handleError) {
       }
 
       // call componentDidCatch lifecycle with error
-      if (componentDidCatch) componentDidCatch(err);
+      if (componentDidCatch) componentDidCatch.call(componentInstance, err);
 
       // if both componentDidCatch and getDerivedStateFromError is not defined throw error
       if (!(componentDidCatch || getDerivedStateFromError)) throw err;
@@ -117,7 +117,7 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
        * Also we shouldn't call shouldComponentUpdate on first render
        */
     if (shouldComponentUpdate && shouldUpdate && !firstRender) {
-      shouldUpdate = shouldComponentUpdate(props);
+      shouldUpdate = shouldComponentUpdate.call(componentInstance, props, state);
     }
 
     // set the new state and props and reset uncommitted state
