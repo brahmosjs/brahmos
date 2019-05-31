@@ -1,6 +1,6 @@
 import functionalComponentInstance from './functionalComponentInstance';
 import { PureComponent } from './Component';
-import { mergeState } from './utils';
+import { mergeState, callLifeCycle } from './utils';
 
 import updateNode from './updateNode';
 
@@ -31,7 +31,7 @@ function renderWithErrorBoundaries (part, node, forceRender, handleError) {
 
       const { getDerivedStateFromError } = Component;
 
-      const errorState = getDerivedStateFromError ? getDerivedStateFromError(props, state) : null;
+      const errorState = callLifeCycle(Component, 'getDerivedStateFromError', [props, state]);
 
       // if there is any error state try rendering component again
       if (errorState) {
@@ -41,7 +41,7 @@ function renderWithErrorBoundaries (part, node, forceRender, handleError) {
       }
 
       // call componentDidCatch lifecycle with error
-      if (componentDidCatch) componentDidCatch.call(componentInstance, err);
+      callLifeCycle(componentInstance, 'componentDidCatch', [err]);
 
       // if both componentDidCatch and getDerivedStateFromError is not defined throw error
       if (!(componentDidCatch || getDerivedStateFromError)) throw err;
@@ -91,17 +91,14 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
   // call the life cycle methods for class component, which comes before rendering
   if (isClassComponent) {
     const { __unCommittedState, shouldComponentUpdate } = componentInstance;
-    const { getDerivedStateFromProps } = Component;
 
     let state = __unCommittedState || componentInstance.state;
-    // call getDerivedStateFromProps hook with the unCommitted state
-    if (getDerivedStateFromProps) {
-      state = mergeState(
-        state,
-        getDerivedStateFromProps(props, state)
-      );
-    }
 
+    // call getDerivedStateFromProps hook with the unCommitted state
+    state = mergeState(
+      state,
+      callLifeCycle(Component, 'getDerivedStateFromProps', [props, state])
+    );
     /**
        * check if component is instance of PureComponent, if yes then,
        * do shallow check for props and states
@@ -112,10 +109,10 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
     }
 
     /**
-       * check if component should update or not. If PureComponent shallow check has already
-       * marked component to not update then we don't have to call shouldComponentUpdate
-       * Also we shouldn't call shouldComponentUpdate on first render
-       */
+     * check if component should update or not. If PureComponent shallow check has already
+     * marked component to not update then we don't have to call shouldComponentUpdate
+     * Also we shouldn't call shouldComponentUpdate on first render
+     */
     if (shouldComponentUpdate && shouldUpdate && !firstRender) {
       shouldUpdate = shouldComponentUpdate.call(componentInstance, props, state);
     }

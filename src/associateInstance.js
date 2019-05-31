@@ -58,7 +58,8 @@ export default function associateInstance (renderTree, lastRenderedTree) {
     oldNode.isReused = true;
 
     for (let i = 0, ln = node.values.length; i < ln; i++) {
-      associateInstance(node.values[i], oldNode.values[i]);
+      const oldValues = oldNode.values || [];
+      associateInstance(node.values[i], oldValues[i]);
     }
   } else if (node.__$isBrahmosComponent$__) {
     if (node.type !== oldNode.type) {

@@ -2,7 +2,6 @@ import TemplateNode from './TemplateNode';
 import updateComponentNode from './updateComponentNode';
 
 import {
-  isNonZeroFalsy,
   isBrahmosNode,
   isPrimitiveNode,
   deleteNodesBetween,
@@ -10,9 +9,10 @@ import {
   getCurrentNode,
   lastItem,
   toArray,
-  removeNodes,
+  isRenderableNode,
 } from './utils';
 
+import tearDown from './tearDown';
 import getTagNode from './TagNode';
 
 import updater from './updater';
@@ -30,9 +30,9 @@ function updateTextNode (part, node, oldNode) {
      * delete old node and add new node
      */
   if (!isPrimitiveNode(oldNode)) {
-    if (oldNode) {
+    if (oldNode !== undefined) {
       // delete the existing elements
-      deleteNodesBetween(parentNode, previousSibling, nextSibling);
+      tearDown(oldNode, part);
     }
 
     // add nodes at the right location
@@ -46,6 +46,18 @@ function updateTextNode (part, node, oldNode) {
   return textNode;
 }
 
+function getOldNodeNextSibling (oldNode) {
+  let lastNode;
+
+  if (oldNode.__$isBrahmosTag$__) {
+    lastNode = lastItem(oldNode.templateNode.nodes);
+  } else if (oldNode.__$isBrahmosComponent$__) {
+    lastNode = oldNode.componentInstance.__lastNode;
+  }
+
+  return lastNode && lastNode.nextSibling;
+}
+
 /**
    * Updater to handle array of nodes
    */
@@ -53,30 +65,49 @@ function updateArrayNodes (part, nodes, oldNodes = []) {
   const { parentNode, previousSibling, nextSibling } = part;
 
   const nodesLength = nodes.length;
+  const oldNodesLength = oldNodes.length;
   let lastChild = previousSibling;
-
-  // remove all the unused old nodes
-  for (let i = 0, ln = oldNodes.length; i < ln; i++) {
-    const oldNode = oldNodes[i];
-    if (isBrahmosNode(oldNode) && !oldNode.isReused) {
-      removeNodes(parentNode, oldNode.templateNode.nodes);
-    }
-  }
 
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
     const oldNode = oldNodes[i];
+
+    /**
+     * remove the oldNode if it is not reused,
+     * We don't have to worry about non brahmos node, as they can't have key
+     * and any way it will cause unnecessary rerender. And un-keyed array's are not suggested
+     * Removing part of other nodes will be handled on last part of this function
+     * where we delete all the overflowing nodes.
+     */
+    if (isBrahmosNode(oldNode) && !oldNode.isReused) {
+      tearDown(oldNode, {
+        parentNode,
+        previousSibling: lastChild,
+        nextSibling: getOldNodeNextSibling(oldNode),
+      });
+    }
+
     /**
        * Pass forceUpdate as true, when newNodes and oldNodes keys are not same
        */
-
     const forceUpdate = !(node && oldNode && node.key === oldNode.key);
+
+    /**
+     * if lasChild is not present it means the node has to be added before the firstChild
+     * Otherwise it has to added after lastChild of previous node.
+     */
+    const _nextSibling = lastChild ? lastChild.nextSibling : parentNode.firstChild;
 
     lastChild = updateNode({
       parentNode,
       previousSibling: lastChild,
-      nextSibling: lastChild && lastChild.nextSibling,
+      nextSibling: _nextSibling,
     }, node, oldNode, forceUpdate);
+  }
+
+  // teardown all extra old node
+  for (let i = nodesLength; i < oldNodesLength; i++) {
+    tearDown(oldNodes[i]);
   }
 
   // remove all extra nodes between lastChild and nextSibling
@@ -116,7 +147,7 @@ function updateTagNode (part, node, oldNode, forceRender) {
 
   if (freshRender) {
     // delete the existing elements
-    deleteNodesBetween(parentNode, previousSibling, nextSibling);
+    tearDown(oldNode, part);
 
     /**
      * if we are rendering fragment it means the fragment might have childNodes
@@ -146,16 +177,14 @@ function updateTagNode (part, node, oldNode, forceRender) {
    * Updater to handle any type of node
    */
 export default function updateNode (part, node, oldNode, forceRender) {
-  const { parentNode, previousSibling, nextSibling } = part;
-
-  if (isNonZeroFalsy(node)) {
+  if (!isRenderableNode(node)) {
     /**
        * If the new node is falsy value and
        * the oldNode is present we have to delete the old node
        * */
-    if (oldNode) {
+    if (oldNode !== undefined) {
       // delete the existing elements
-      deleteNodesBetween(parentNode, previousSibling, nextSibling);
+      tearDown(oldNode, part);
     }
   } else if (Array.isArray(node)) {
     return updateArrayNodes(part, node, oldNode);

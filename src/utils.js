@@ -108,13 +108,6 @@ export function isClassComponent (element) {
 }
 
 /**
- * Check if a value is non zero falsy value
- */
-export function isNonZeroFalsy (value) {
-  return !value && value !== 0;
-}
-
-/**
  * Convert an array like object to array
  */
 
@@ -133,13 +126,19 @@ export function isBrahmosNode (node) {
  * Function to check if a node should be rendered as string
  */
 export function isPrimitiveNode (node) {
-  return !(isNonZeroFalsy(node) || isBrahmosNode(node) || Array.isArray(node));
+  return typeof node === 'string' || typeof node === 'number';
+}
+
+/**
+ * Function to check if node can be rendered or not
+ */
+export function isRenderableNode (node) {
+  return isPrimitiveNode(node) || isBrahmosNode(node) || Array.isArray(node);
 }
 
 /**
  * Function to return lastItem in the list
  */
-
 export function lastItem (list) {
   if (!Array.isArray(list)) return list;
   return list[list.length - 1];
@@ -242,4 +241,13 @@ export function mergeState (state, newState) {
     state = { ...state, ...newState };
   }
   return state;
+}
+
+/**
+ * Function to call life cycle of given component, or component instance
+ */
+export function callLifeCycle (object, method, args) {
+  if (object[method]) {
+    return object[method].apply(object, args);
+  }
 }
