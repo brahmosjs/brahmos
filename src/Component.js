@@ -31,7 +31,7 @@ export class Component {
   }
   __applyUpdates () {
     const { __part: part, __componentNode: node } = this;
-    updater([part], [node]);
+    updater([part], [node], [], true);
   }
   __render () {
     // get the new rendered node

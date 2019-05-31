@@ -244,7 +244,7 @@ export function mergeState (state, newState) {
 }
 
 /**
- * Function to call life cycle of given component, or component instance
+ * Function to call life cycle of a given component, or component instance
  */
 export function callLifeCycle (object, method, args) {
   if (object[method]) {

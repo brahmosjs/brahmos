@@ -1,7 +1,9 @@
 import updateAttribute from './updateAttribute';
 import updateNode from './updateNode';
 
-export default function updater (parts, values, oldValues = []) {
+import { applyHandlers } from './mountHandlerQueue';
+
+export default function updater (parts, values, oldValues = [], root) {
   for (let i = 0, ln = parts.length; i < ln; i++) {
     const part = parts[i];
     const value = values[i];
@@ -19,5 +21,13 @@ export default function updater (parts, values, oldValues = []) {
     } else if (isNode) {
       updateNode(part, value, oldValue);
     }
+  }
+
+  /**
+   * if the node is the root of the mount
+   * call the mount/update handlers once dom nodes are attached
+   */
+  if (root) {
+    applyHandlers();
   }
 }

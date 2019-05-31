@@ -6,5 +6,5 @@ export default function render (node, target) {
     parentNode: target,
     isNode: true,
   };
-  updater([part], [node]);
+  updater([part], [node], [], true);
 }

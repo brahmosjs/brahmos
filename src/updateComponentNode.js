@@ -2,6 +2,8 @@ import functionalComponentInstance from './functionalComponentInstance';
 import { PureComponent } from './Component';
 import { mergeState, callLifeCycle } from './utils';
 
+import { addHandler } from './mountHandlerQueue';
+
 import updateNode from './updateNode';
 
 function renderWithErrorBoundaries (part, node, forceRender, handleError) {
@@ -88,11 +90,18 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
     firstRender = true;
   }
 
+  const {
+    __unCommittedState,
+    shouldComponentUpdate,
+    props: prevProps,
+    state: prevState,
+  } = componentInstance;
+
+  let snapshot;
+
   // call the life cycle methods for class component, which comes before rendering
   if (isClassComponent) {
-    const { __unCommittedState, shouldComponentUpdate } = componentInstance;
-
-    let state = __unCommittedState || componentInstance.state;
+    let state = __unCommittedState || prevState;
 
     // call getDerivedStateFromProps hook with the unCommitted state
     state = mergeState(
@@ -121,11 +130,28 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
     componentInstance.state = state;
     componentInstance.props = props;
     componentInstance.__unCommittedState = undefined;
+
+    // call getSnapshotBeforeUpdate life cycle method
+    snapshot = callLifeCycle(componentInstance, 'getSnapshotBeforeUpdate', [prevProps, prevState]);
   }
 
   // update a component update only if it can be updated based on shouldComponentUpdate
   if (shouldUpdate) {
     renderWithErrorBoundaries(part, node, forceRender, true);
+  }
+
+  // After the mount/update call the lifecycle method
+  if (isClassComponent) {
+    /**
+     * if it is a first render then schedule the componentDidMount otherwise call componentDidUpdate
+     * We schedule componentDidMount as the component may mount in fragment, but we want to
+     * call componentDidMount only after it is attached to the DOM
+     */
+    if (firstRender) {
+      addHandler(componentInstance, 'componentDidMount');
+    } else {
+      callLifeCycle(componentInstance, 'componentDidUpdate', [prevProps, prevState, snapshot]);
+    }
   }
 
   // return the component's lastNode
