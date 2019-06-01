@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./brahmos.svg" alt="Brahmos.js" width="250">
+  <img src="https://unpkg.com/brahmos/brahmos.svg" alt="Brahmos.js" width="250">
 </p>
 
 # Brahmos
