@@ -16,4 +16,6 @@ export function applyHandlers () {
     const { object, method, args } = queue[i];
     callLifeCycle(object, method, args);
   }
+
+  queue = [];
 }

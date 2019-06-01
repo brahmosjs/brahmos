@@ -1,9 +1,27 @@
-export { default as createElement } from './createElement';
+import createElement from './createElement';
 
-export { default as render } from './render';
+import render from './render';
 
-/** Export Component classes */
-export { Component, PureComponent } from './Component';
+/** Component classes */
+import { Component, PureComponent } from './Component';
 
 /** Export React lit tags */
-export { html } from './tags';
+import { html } from './tags';
+
+const Brahmos = {
+  createElement,
+  render,
+  Component,
+  PureComponent,
+  html,
+};
+
+export {
+  createElement,
+  render,
+  Component,
+  PureComponent,
+  html,
+};
+
+export default Brahmos;

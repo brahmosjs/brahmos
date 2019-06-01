@@ -77,18 +77,22 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
       : new Component(props);
 
     /**
-       * store the part and node information on the component instance,
-       * so every component have the createElement instance of self and
-       * the information of where it has to render
-       */
+     * store the part on the component instance,
+     * so every component have the information of where it has to render
+     */
     componentInstance.__part = part;
-    componentInstance.__componentNode = node;
 
     // keep the reference of instance to the node.
     node.componentInstance = componentInstance;
 
     firstRender = true;
   }
+
+  /**
+   * store the node information on componentInstance, so every component
+   * have the createElement instance of self
+   */
+  componentInstance.__componentNode = node;
 
   const {
     __unCommittedState,
