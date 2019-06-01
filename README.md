@@ -20,7 +20,7 @@ It's unlike the VDOM which compares the whole last rendered VDOM to the new VDOM
 
 Even though tagged template literals are the key to static and dynamic part separation, the developer has to code on well adopted JSX.
 
-Using the brahmos-babel-plugin it transforms JSX into tagged template literals which are optimized for render/updates and the output size.
+Using the babel-plugin-brahmos it transforms JSX into tagged template literals which are optimized for render/updates and the output size.
 
 Consider this example, 
 ```jsx
