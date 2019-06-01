@@ -103,8 +103,8 @@ Todo MVC with Brahmos
 - [x] Keyed list
 - [x] Synthetic input events - onChange support
 - [x] Babel Plugin to transpile JSX to tagged template
-- [ ] Life cycle events
-- [ ] PureComponent
+- [x] Life cycle methods (Only non deprecated methods)
+- [x] PureComponent
 - [ ] Context API
 - [ ] Hooks
 - [ ] React Utilities and Methods
@@ -113,3 +113,4 @@ Todo MVC with Brahmos
 - [ ] Performance improvement
 - [ ] Bug fixes
 - [ ] Test Cases
+- [ ] 3rd Party React Component support (In Progress, partially supported)
