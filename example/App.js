@@ -1,4 +1,4 @@
-import Brahmos, { Component } from '../src';
+import Brahmos, { Component, useState } from '../src';
 
 const items = ['Sudhanshu', 'Hactor', 'Himanshu', 'Himan'];
 
@@ -9,6 +9,21 @@ function Input (props) {
   return (<div>
     {<input type="text" value={value} defaultValue="Sudhanshu" onChange={onChange}/>}
     {children}
+  </div>);
+}
+
+function Increment2 () {
+  const [state, setState] = useState(1);
+
+  return <button onClick={() => setState(state + 1)}>Increment: {state}</button>;
+}
+
+function Increment () {
+  const [state, setState] = useState(1);
+
+  return (<div>
+    <button onClick={() => setState(state + 1)}>Increment: {state}</button>;
+    <Increment2 />
   </div>);
 }
 
@@ -36,6 +51,7 @@ export default class App extends Component {
             return <li key={item} >{item}</li>;
           })}
         </ul>
+        <Increment />
       </div>
     );
   }
