@@ -34,7 +34,7 @@ function extractAttributeName (str) {
   return names;
 }
 
-export default class TemplateResult {
+export default class TemplateTag {
   constructor (strings) {
     this.strings = strings;
   }

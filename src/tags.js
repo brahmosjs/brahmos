@@ -1,13 +1,12 @@
-import TemplateResult from './TemplateResult';
-const templateResultCache = new WeakMap();
+import TemplateTag from './TemplateTag';
+const templateTagCache = new WeakMap();
 
 export function html (strings, ...values) {
-  const cachedTemplate = templateResultCache.get(strings);
+  let template = templateTagCache.get(strings);
 
-  const template = cachedTemplate || new TemplateResult(strings);
-
-  if (!cachedTemplate) {
-    templateResultCache.set(strings, template);
+  if (!template) {
+    template = new TemplateTag(strings);
+    templateTagCache.set(strings, template);
   }
 
   return function (key, ref) {

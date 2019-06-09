@@ -1,4 +1,4 @@
-import { attrMarker, marker } from './TemplateResult';
+import { attrMarker, marker } from './TemplateTag';
 import { remove, toArray } from './utils';
 
 export default class TemplateNode {
