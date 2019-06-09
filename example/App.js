@@ -1,4 +1,4 @@
-import { Component, html, createElement } from '../src';
+import Brahmos, { Component } from '../src';
 
 const items = ['Sudhanshu', 'Hactor', 'Himanshu', 'Himan'];
 

@@ -1,6 +1,6 @@
 {
   "name": "brahmos",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Super charged UI library with modern React API and native templates.",
   "main": "dist/brahmos.js",
   "module": "dist/brahmos.mjs",

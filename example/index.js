@@ -1,4 +1,4 @@
 import App from './App.js';
-import { render, html, createElement } from '../src';
+import Brahmos, { render } from '../src';
 
 render(<App />, document.getElementById('app'));
