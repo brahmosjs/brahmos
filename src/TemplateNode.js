@@ -60,11 +60,11 @@ export default class TemplateNode {
     while (walker.nextNode()) {
       const current = walker.currentNode;
       const { nodeType, parentNode, previousSibling, nextSibling, textContent } = current;
-      window.temp = current.parentNode;
       /**
-     * If its a element check if it has attribute marker as attribute
-     * and if available add the node info on the part so we can access
-     * the node while updates. Also look for the consecutive parts to
+     * If its a element check and if it has attribute marker as attribute
+     * remove the marker and create a part with the node info to it so we
+     * know which attribute that node belongs to.
+     * Also look for the consecutive parts to
      * see if they exist on same node, we make that assumption based on
      * tagAttr list. Same tag parts will shared same tagAttr list
      */
@@ -74,8 +74,7 @@ export default class TemplateNode {
         const { tagAttrs } = partMeta;
         while (
           // eslint-disable-next-line no-unmodified-loop-condition
-          partMeta && (partMeta.isAttrValue || partMeta.isSpreadAttr) &&
-        partMeta.tagAttrs === tagAttrs
+          partMeta && partMeta.isAttribute && partMeta.tagAttrs === tagAttrs
         ) {
           parts.push({
             ...partMeta,

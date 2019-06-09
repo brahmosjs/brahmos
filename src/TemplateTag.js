@@ -1,13 +1,6 @@
 const TAG_QUOTE_REGEX = /[<>"]/g;
 
 /**
- * attribute which has expression as value can be
- * Any character except control character space \s and ", followed by =
- * No need to worry about / and = as they are invalid just before a attr name.
- */
-const EXPRESSION_ATTR_NAME_REGEX = /([^\s"]*)=$/;
-
-/**
  * attribute name on the string part can be
  * Any character except control character space \s, ", ', =, <
  * followed by = or space or closing tag >
@@ -61,7 +54,7 @@ export default class TemplateTag {
     for (let i = 0, l = strings.length; i < l; i++) {
       const str = strings[i];
 
-      let result, isAttrValue, isAttribute, isSpreadAttr, attrName, isNode, subStrIndex, subEndIndex;
+      let result, isAttribute, isNode, subStrIndex, subEndIndex;
 
       while ((result = TAG_QUOTE_REGEX.exec(str)) !== null) {
         /**
@@ -92,20 +85,10 @@ export default class TemplateTag {
       }
 
       /**
-       * If tag is started the next expression part will be either attribute value
-       * or an spread attribute. Otherwise it will be a node expression.
+       * If tag is started the next expression part will be an attribute spread value
+       *  Otherwise it will be a node expression.
        */
       if (tagStarted) {
-        /**
-         * TODO: Remove this if. This might not be needed as
-         * we are always treating expression as spread attribute
-         */
-        if (str.endsWith('=')) {
-          attrName = str.match(EXPRESSION_ATTR_NAME_REGEX)[1];
-          isAttrValue = true;
-        } else {
-          isSpreadAttr = true;
-        }
         isAttribute = true;
       } else {
         isNode = true;
@@ -117,11 +100,8 @@ export default class TemplateTag {
       */
       if (i < l - 1) {
         partsMeta.push({
-          isAttrValue,
-          attrName,
           tagAttrs,
           attrIndex: tagAttrs.length,
-          isSpreadAttr,
           isAttribute,
           isNode,
         });
@@ -139,15 +119,11 @@ export default class TemplateTag {
     for (let i = 0, l = strings.length - 1; i < l; i++) {
       let str = strings[i];
       const part = partsMeta[i];
-      const { isAttrValue, isSpreadAttr, isNode } = part;
-
-      if (isAttrValue) {
-        str = str.replace(EXPRESSION_ATTR_NAME_REGEX, '');
-      }
+      const { isNode } = part;
 
       if (isNode) {
         htmlStr = htmlStr + str + nodeMarker;
-      } else if (isAttrValue || isSpreadAttr) {
+      } else {
         htmlStr = htmlStr + str + attrMarker;
       }
     }
