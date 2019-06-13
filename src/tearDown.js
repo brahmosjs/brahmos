@@ -4,12 +4,19 @@ import {
   callLifeCycle,
 } from './utils';
 
+import { cleanEffects } from './hooks';
+
 function handleUnmount (node) {
   if (!isRenderableNode(node)) return;
 
-  // if node is classComponent We may have to call componentWillUnmount lifecycle method
-  if (node && node.__$isBrahmosClassComponent$__) {
+  /**
+   * if node is classComponent We may have to call componentWillUnmount lifecycle method
+   * In case of functional component we have to clean all the effects for that component
+   */
+  if (node.__$isBrahmosClassComponent$__) {
     callLifeCycle(node.componentInstance, 'componentWillUnmount');
+  } else if (node.__$isBrahmosFunctionalComponent$__) {
+    cleanEffects(node.componentInstance, true);
   }
 
   /**

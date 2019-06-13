@@ -5,8 +5,11 @@ import render from './render';
 /** Component classes */
 import { Component, PureComponent } from './Component';
 
-/** Export React lit tags */
+/** React lit tags */
 import { html } from './tags';
+
+/** Hooks */
+import { useState, useEffect, useRef, useReducer, useMemo, useCallback, useLayoutEffect } from './hooks';
 
 const Brahmos = {
   createElement,
@@ -14,6 +17,13 @@ const Brahmos = {
   Component,
   PureComponent,
   html,
+  useState,
+  useEffect,
+  useRef,
+  useReducer,
+  useMemo,
+  useCallback,
+  useLayoutEffect,
 };
 
 export {
@@ -22,6 +32,13 @@ export {
   Component,
   PureComponent,
   html,
+  useState,
+  useEffect,
+  useRef,
+  useReducer,
+  useMemo,
+  useCallback,
+  useLayoutEffect,
 };
 
 export default Brahmos;
