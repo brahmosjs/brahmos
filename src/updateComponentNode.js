@@ -1,12 +1,13 @@
 import functionalComponentInstance from './functionalComponentInstance';
 import { PureComponent } from './Component';
 import { mergeState, callLifeCycle } from './utils';
+import { runEffects, cleanEffects } from './hooks';
 
 import { addHandler } from './mountHandlerQueue';
 
 import updateNode from './updateNode';
 
-function renderWithErrorBoundaries (part, node, forceRender, handleError) {
+function renderWithErrorBoundaries (part, node, forceRender, isFirstRender, handleError) {
   const {
     type: Component,
     componentInstance,
@@ -16,6 +17,14 @@ function renderWithErrorBoundaries (part, node, forceRender, handleError) {
 
   // render nodes
   const renderNodes = componentInstance.__render(props);
+
+  /**
+   * clean effects for functional component,
+   * no need to clean anything on the first render
+   */
+  if (!isFirstRender && !isClassComponent) {
+    cleanEffects(componentInstance);
+  }
 
   try {
     /**
@@ -39,7 +48,7 @@ function renderWithErrorBoundaries (part, node, forceRender, handleError) {
       if (errorState) {
         state = mergeState(state, errorState);
         componentInstance.state = state;
-        renderWithErrorBoundaries(part, node, forceRender, false);
+        renderWithErrorBoundaries(part, node, forceRender, isFirstRender, false);
       }
 
       // call componentDidCatch lifecycle with error
@@ -61,10 +70,9 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
     type: Component,
     props,
     __$isBrahmosClassComponent$__: isClassComponent,
-    __$isBrahmosFunctionalComponent$__: isFunctionalComponent,
   } = node;
 
-  let firstRender = false;
+  let isFirstRender = false;
   let shouldUpdate = true;
 
   /** If Component instance is not present on node create a new instance */
@@ -72,9 +80,9 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
 
   if (!componentInstance) {
     // create an instance of the component
-    componentInstance = isFunctionalComponent
-      ? functionalComponentInstance(Component)
-      : new Component(props);
+    componentInstance = isClassComponent
+      ? new Component(props)
+      : functionalComponentInstance(Component);
 
     /**
      * store the part on the component instance,
@@ -85,7 +93,7 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
     // keep the reference of instance to the node.
     node.componentInstance = componentInstance;
 
-    firstRender = true;
+    isFirstRender = true;
   }
 
   /**
@@ -126,7 +134,7 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
      * marked component to not update then we don't have to call shouldComponentUpdate
      * Also we shouldn't call shouldComponentUpdate on first render
      */
-    if (shouldComponentUpdate && shouldUpdate && !firstRender) {
+    if (shouldComponentUpdate && shouldUpdate && !isFirstRender) {
       shouldUpdate = shouldComponentUpdate.call(componentInstance, props, state);
     }
 
@@ -141,7 +149,7 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
 
   // update a component update only if it can be updated based on shouldComponentUpdate
   if (shouldUpdate) {
-    renderWithErrorBoundaries(part, node, forceRender, true);
+    renderWithErrorBoundaries(part, node, forceRender, isFirstRender, true);
   }
 
   // After the mount/update call the lifecycle method
@@ -151,11 +159,14 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
      * We schedule componentDidMount as the component may mount in fragment, but we want to
      * call componentDidMount only after it is attached to the DOM
      */
-    if (firstRender) {
+    if (isFirstRender) {
       addHandler(componentInstance, 'componentDidMount');
     } else {
       callLifeCycle(componentInstance, 'componentDidUpdate', [prevProps, prevState, snapshot]);
     }
+  } else {
+    // call effects of functional component
+    runEffects(componentInstance);
   }
 
   // return the component's lastNode
