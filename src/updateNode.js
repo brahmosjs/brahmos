@@ -59,34 +59,43 @@ function getOldNodeNextSibling (oldNode) {
 }
 
 /**
+ * This method removes all the unused brahmos node till the given index
+ * and returns the used/non brahmos node at that index
+ */
+function spliceUnusedNodes (index, oldNodes, parentNode, previousSibling) {
+  let oldNode = oldNodes[index];
+  /**
+   * remove all the oldNode until we don't get a non Brahmos node or reused node,
+   * We don't have to worry about non brahmos node, as they can't have key
+   * and any way it will cause unnecessary rerender. And un-keyed array's are not suggested
+   * Removing part of other nodes will be handled on last part of this function
+   * where we delete all the overflowing nodes.
+   */
+  while (isBrahmosNode(oldNode) && !oldNode.isReused) {
+    tearDown(oldNode, {
+      parentNode,
+      previousSibling,
+      nextSibling: getOldNodeNextSibling(oldNode),
+    });
+    oldNodes.splice(index, 1);
+    oldNode = oldNodes[index];
+  }
+
+  return oldNode;
+}
+
+/**
    * Updater to handle array of nodes
    */
 function updateArrayNodes (part, nodes, oldNodes = []) {
   const { parentNode, previousSibling, nextSibling } = part;
 
   const nodesLength = nodes.length;
-  const oldNodesLength = oldNodes.length;
   let lastChild = previousSibling;
 
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
-    const oldNode = oldNodes[i];
-
-    /**
-     * remove the oldNode if it is not reused,
-     * We don't have to worry about non brahmos node, as they can't have key
-     * and any way it will cause unnecessary rerender. And un-keyed array's are not suggested
-     * Removing part of other nodes will be handled on last part of this function
-     * where we delete all the overflowing nodes.
-     */
-    if (isBrahmosNode(oldNode) && !oldNode.isReused) {
-      tearDown(oldNode, {
-        parentNode,
-        previousSibling: lastChild,
-        nextSibling: getOldNodeNextSibling(oldNode),
-      });
-    }
-
+    const oldNode = spliceUnusedNodes(i, oldNodes, parentNode, lastChild);
     /**
        * Pass forceUpdate as true, when newNodes and oldNodes keys are not same
        */
@@ -105,8 +114,8 @@ function updateArrayNodes (part, nodes, oldNodes = []) {
     }, node, oldNode, forceUpdate);
   }
 
-  // teardown all extra old node
-  for (let i = nodesLength; i < oldNodesLength; i++) {
+  // teardown all extra pending old nodes
+  for (let i = nodesLength, ln = oldNodes.length; i < ln; i++) {
     tearDown(oldNodes[i]);
   }
 
