@@ -105,8 +105,8 @@ Todo MVC with Brahmos
 - [x] Babel Plugin to transpile JSX to tagged template
 - [x] Life cycle methods (Only non deprecated methods)
 - [x] PureComponent
+- [x] Hooks
 - [ ] Context API
-- [ ] Hooks
 - [ ] React Utilities and Methods
 - [ ] SVG Support
 - [ ] Handle server rendering

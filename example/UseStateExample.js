@@ -13,7 +13,6 @@ export default function UseStateExample () {
       <input value={filterStr} onChange={(e) => setFilter(e.target.value)}/>
       <ul>
         {filteredFriend.map(({ _id, name }) => {
-          console.log(_id);
           return (<li key={_id}>{name}</li>);
         })}
       </ul>
