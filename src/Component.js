@@ -3,9 +3,8 @@ import updater from './updater';
 import { mergeState } from './utils';
 
 export class Component {
-  constructor (props, context) {
+  constructor (props) {
     this.props = props;
-    this.context = context;
   }
   setState (newState, callback) {
     let state = this.__unCommittedState || this.state || {};
@@ -30,8 +29,8 @@ export class Component {
     return this.__updatesPromise;
   }
   __applyUpdates () {
-    const { __part: part, __componentNode: node } = this;
-    updater([part], [node], [], true);
+    const { __part: part, __componentNode: node, __context: context } = this;
+    updater([part], [node], [], context, true);
   }
   __render () {
     // get the new rendered node

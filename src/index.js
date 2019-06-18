@@ -11,6 +11,9 @@ import { html } from './tags';
 /** Hooks */
 import { useState, useEffect, useRef, useReducer, useMemo, useCallback, useLayoutEffect } from './hooks';
 
+/** createContext */
+import { createContext } from './createContext';
+
 const Brahmos = {
   createElement,
   render,
@@ -24,6 +27,7 @@ const Brahmos = {
   useMemo,
   useCallback,
   useLayoutEffect,
+  createContext,
 };
 
 export {
@@ -39,6 +43,7 @@ export {
   useMemo,
   useCallback,
   useLayoutEffect,
+  createContext,
 };
 
 export default Brahmos;

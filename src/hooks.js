@@ -19,8 +19,8 @@ function isDependenciesChanged (deps, oldDeps) {
  */
 function updateComponentIfRequired (component, state, lastState) {
   if (!Object.is(state, lastState)) {
-    const { __part: part, __componentNode: node } = component;
-    updater([part], [node], [], true);
+    const { __part: part, __componentNode: node, __context: context } = component;
+    updater([part], [node], [], context, true);
   }
 }
 

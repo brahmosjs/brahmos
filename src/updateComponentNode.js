@@ -7,7 +7,16 @@ import { addHandler } from './mountHandlerQueue';
 
 import updateNode from './updateNode';
 
-function renderWithErrorBoundaries (part, node, forceRender, isFirstRender, handleError) {
+function getCurrentContext (Component, componentInstance, context) {
+  // component is not a provider return the same context
+  if (!Component.__isContextProvider) return context;
+
+  // if it is provider create a new context extending the parent context
+  const newContext = Object.create(context);
+  newContext[Component.id] = componentInstance;
+}
+
+function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRender, handleError) {
   const {
     type: Component,
     componentInstance,
@@ -31,7 +40,7 @@ function renderWithErrorBoundaries (part, node, forceRender, isFirstRender, hand
      * store lastNode into the component instance so later
      * if the component does not have to update it should return the stored lastNode
      */
-    componentInstance.__lastNode = updateNode(part, renderNodes, null, forceRender);
+    componentInstance.__lastNode = updateNode(part, renderNodes, null, context, forceRender);
   } catch (err) {
     if (isClassComponent && handleError) {
       let { state, componentDidCatch } = componentInstance;
@@ -48,7 +57,7 @@ function renderWithErrorBoundaries (part, node, forceRender, isFirstRender, hand
       if (errorState) {
         state = mergeState(state, errorState);
         componentInstance.state = state;
-        renderWithErrorBoundaries(part, node, forceRender, isFirstRender, false);
+        renderWithErrorBoundaries(part, node, context, forceRender, isFirstRender, false);
       }
 
       // call componentDidCatch lifecycle with error
@@ -65,10 +74,10 @@ function renderWithErrorBoundaries (part, node, forceRender, isFirstRender, hand
 /**
  * Update component node
  */
-export default function updateComponentNode (part, node, oldNode, forceRender) {
+export default function updateComponentNode (part, node, oldNode, context, forceRender) {
   const {
     type: Component,
-    props,
+    props = {},
     __$isBrahmosClassComponent$__: isClassComponent,
   } = node;
 
@@ -90,10 +99,23 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
      */
     componentInstance.__part = part;
 
+    // get current context
+    context = getCurrentContext(Component, componentInstance, context);
+
+    // store context information on componentInstance
+    node.__context = context;
+
     // keep the reference of instance to the node.
     node.componentInstance = componentInstance;
 
     isFirstRender = true;
+  }
+
+  /**
+   * If it is a context consumer add provider on the props
+   */
+  if (Component.__isContextConsumer) {
+    props.provider = context[Component.ccId];
   }
 
   /**
@@ -149,7 +171,7 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
 
   // update a component update only if it can be updated based on shouldComponentUpdate
   if (shouldUpdate) {
-    renderWithErrorBoundaries(part, node, forceRender, isFirstRender, true);
+    renderWithErrorBoundaries(part, node, context, forceRender, isFirstRender, true);
   }
 
   // After the mount/update call the lifecycle method

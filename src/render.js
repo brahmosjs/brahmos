@@ -6,5 +6,6 @@ export default function render (node, target) {
     parentNode: target,
     isNode: true,
   };
-  updater([part], [node], [], true);
+  // pass the context as empty object
+  updater([part], [node], [], {}, true);
 }
