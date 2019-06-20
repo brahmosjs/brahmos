@@ -1,4 +1,5 @@
-import updater from './updater';
+import { reRender } from './render';
+import { getConsumerCallback } from './createContext';
 
 let currentComponent;
 
@@ -15,12 +16,11 @@ function isDependenciesChanged (deps, oldDeps) {
 }
 
 /**
- * Function to update component if state is changed
+ * Function to rerender component if state is changed
  */
-function updateComponentIfRequired (component, state, lastState) {
+function reRenderComponentIfRequired (component, state, lastState) {
   if (!Object.is(state, lastState)) {
-    const { __part: part, __componentNode: node, __context: context } = component;
-    updater([part], [node], [], context, true);
+    reRender(component);
   }
 }
 
@@ -66,7 +66,7 @@ export function useState (initialState) {
     const hook = [initialState, (state) => {
       const lastState = hook[0];
       hook[0] = state;
-      updateComponentIfRequired(component, state, lastState);
+      reRenderComponentIfRequired(component, state, lastState);
     }];
 
     return hook;
@@ -106,7 +106,7 @@ export function useReducer (reducer, initialState, getInitialState) {
       const state = reducer(lastState, action);
       hook[0] = state;
 
-      updateComponentIfRequired(component, state, lastState);
+      reRenderComponentIfRequired(component, state, lastState);
     }];
 
     return hook;
@@ -195,6 +195,37 @@ export function useLayoutEffect (callback, dependencies) {
  */
 export function useDebugValue () {
   // This is just a placeholder for react compatibility
+}
+
+/**
+ * Create context hook
+ */
+export function useContext (Context) {
+  const { ccId, defaultValue } = Context;
+  const { __context: context } = currentComponent;
+  const provider = context[ccId];
+
+  let value = provider ? provider.props.value : defaultValue;
+
+  useLayoutEffect(() => {
+    // subscribe to provider for the context value change
+    if (provider) {
+      const { subs } = provider;
+
+      const callback = getConsumerCallback(currentComponent);
+
+      subs.push(callback);
+
+      return () => {
+        subs.splice(subs.indexOf(callback), 1);
+      };
+    }
+  }, []);
+
+  // store the context value in current component so we can check if value is changed on subscribed callback
+  currentComponent.context = value;
+
+  return value;
 }
 
 /**

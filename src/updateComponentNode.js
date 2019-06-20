@@ -8,12 +8,15 @@ import { addHandler } from './mountHandlerQueue';
 import updateNode from './updateNode';
 
 function getCurrentContext (Component, componentInstance, context) {
-  // component is not a provider return the same context
-  if (!Component.__isContextProvider) return context;
+  // if component has createContext index, we treat it as provider
+  const { __ccId } = Component;
+
+  // if component is not a provider return the same context
+  if (!__ccId) return context;
 
   // if it is provider create a new context extending the parent context
   const newContext = Object.create(context);
-  newContext[Component.id] = componentInstance;
+  newContext[__ccId] = componentInstance;
 }
 
 function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRender, handleError) {
@@ -103,7 +106,7 @@ export default function updateComponentNode (part, node, oldNode, context, force
     context = getCurrentContext(Component, componentInstance, context);
 
     // store context information on componentInstance
-    node.__context = context;
+    componentInstance.__context = context;
 
     // keep the reference of instance to the node.
     node.componentInstance = componentInstance;
@@ -160,9 +163,28 @@ export default function updateComponentNode (part, node, oldNode, context, force
       shouldUpdate = shouldComponentUpdate.call(componentInstance, props, state);
     }
 
-    // set the new state and props and reset uncommitted state
+    /**
+     * If it is a context consumer add provider on the props
+     */
+    const { contextType } = Component;
+    let context;
+    if (contextType) {
+      const { ccId, defaultValue } = contextType;
+      const provider = context[ccId];
+      let value = provider ? provider.props.value : defaultValue;
+
+      if (provider && isFirstRender) {
+        provider.sub(componentInstance);
+      }
+
+      // set value on the state;
+      context = value;
+    }
+
+    // set the new state, props, context and reset uncommitted state
     componentInstance.state = state;
     componentInstance.props = props;
+    componentInstance.context = context;
     componentInstance.__unCommittedState = undefined;
 
     // call getSnapshotBeforeUpdate life cycle method
