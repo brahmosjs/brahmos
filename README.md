@@ -106,7 +106,7 @@ Todo MVC with Brahmos
 - [x] Life cycle methods (Only non deprecated methods)
 - [x] PureComponent
 - [x] Hooks
-- [ ] Context API
+- [x] Context API
 - [ ] React Utilities and Methods
 - [ ] SVG Support
 - [ ] Handle server rendering
