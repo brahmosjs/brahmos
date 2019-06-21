@@ -10,13 +10,19 @@ import updateNode from './updateNode';
 function getCurrentContext (Component, componentInstance, context) {
   // if component has createContext index, we treat it as provider
   const { __ccId } = Component;
+  const { __context } = componentInstance;
 
   // if component is not a provider return the same context
   if (!__ccId) return context;
 
+  // if componentInstance has context return that
+  if (__context) return __context;
+
   // if it is provider create a new context extending the parent context
   const newContext = Object.create(context);
   newContext[__ccId] = componentInstance;
+
+  return newContext;
 }
 
 function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRender, handleError) {
@@ -102,24 +108,17 @@ export default function updateComponentNode (part, node, oldNode, context, force
      */
     componentInstance.__part = part;
 
-    // get current context
-    context = getCurrentContext(Component, componentInstance, context);
-
-    // store context information on componentInstance
-    componentInstance.__context = context;
-
     // keep the reference of instance to the node.
     node.componentInstance = componentInstance;
 
     isFirstRender = true;
   }
 
-  /**
-   * If it is a context consumer add provider on the props
-   */
-  if (Component.__isContextConsumer) {
-    props.provider = context[Component.ccId];
-  }
+  // get current context
+  context = getCurrentContext(Component, componentInstance, context);
+
+  // store context information on componentInstance
+  componentInstance.__context = context;
 
   /**
    * store the node information on componentInstance, so every component
@@ -167,24 +166,21 @@ export default function updateComponentNode (part, node, oldNode, context, force
      * If it is a context consumer add provider on the props
      */
     const { contextType } = Component;
-    let context;
+    let contextValue;
     if (contextType) {
-      const { ccId, defaultValue } = contextType;
-      const provider = context[ccId];
-      let value = provider ? provider.props.value : defaultValue;
+      const { id, defaultValue } = contextType;
+      const provider = context[id];
+      contextValue = provider ? provider.props.value : defaultValue;
 
       if (provider && isFirstRender) {
         provider.sub(componentInstance);
       }
-
-      // set value on the state;
-      context = value;
     }
 
     // set the new state, props, context and reset uncommitted state
     componentInstance.state = state;
     componentInstance.props = props;
-    componentInstance.context = context;
+    componentInstance.context = contextValue;
     componentInstance.__unCommittedState = undefined;
 
     // call getSnapshotBeforeUpdate life cycle method

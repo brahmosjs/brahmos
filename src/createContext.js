@@ -26,10 +26,11 @@ export default function createContext (defaultValue) {
       this.subs = [];
     }
     shouldComponentUpdate (nextProp) {
-      const { value, subs } = this.props;
+      const { value } = this.props;
       if (value !== nextProp.value) {
-        subs.forEach(cb => cb(nextProp.value));
+        this.subs.forEach(cb => cb(nextProp.value));
       }
+      return true;
     }
     sub (component) {
       const { subs } = this;
@@ -58,7 +59,7 @@ export default function createContext (defaultValue) {
    */
   class Consumer extends Component {
     render () {
-      this.props.children(this.context);
+      return this.props.children(this.context);
     }
   };
 
@@ -70,7 +71,7 @@ export default function createContext (defaultValue) {
   };
 
   // add contextType information on Consumer
-  Consumer.contextType = true;
+  Consumer.contextType = context;
 
   return context;
 }

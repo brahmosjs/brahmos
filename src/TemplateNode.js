@@ -1,5 +1,5 @@
 import { attrMarker, marker } from './TemplateTag';
-import { remove, toArray } from './utils';
+import { remove, toArray, createEmptyTextNode } from './utils';
 
 export default class TemplateNode {
   constructor (templateResult) {
@@ -39,8 +39,11 @@ export default class TemplateNode {
       false
     );
   }
+  isBrahmosCommentNode (node) {
+    return node && node.nodeType === 8 && node.textContent === marker;
+  }
   getParts () {
-    const { fragment, templateResult } = this;
+    const { fragment, templateResult, isBrahmosCommentNode } = this;
 
     const { partsMeta } = templateResult;
     const walker = this.createWalker(fragment);
@@ -59,17 +62,18 @@ export default class TemplateNode {
     /** walk on each filtered node and see if attribute marker or comment marker is there */
     while (walker.nextNode()) {
       const current = walker.currentNode;
-      const { nodeType, parentNode, previousSibling, nextSibling, textContent } = current;
+      const { nodeType, parentNode } = current;
       /**
-     * If its a element check and if it has attribute marker as attribute
-     * remove the marker and create a part with the node info to it so we
-     * know which attribute that node belongs to.
-     * Also look for the consecutive parts to
-     * see if they exist on same node, we make that assumption based on
-     * tagAttr list. Same tag parts will shared same tagAttr list
-     */
+       * If its a element check and if it has attribute marker as attribute
+       * remove the marker and create a part with the node info to it so we
+       * know which attribute that node belongs to.
+       * Also look for the consecutive parts to
+       * see if they exist on same node, we make that assumption based on
+       * tagAttr list. Same tag parts will shared same tagAttr list
+       */
+
       if (nodeType === 1 && current.hasAttribute(attrMarker)) {
-      // remove the attribute to keep the html clean
+        // remove the attribute to keep the html clean
         current.removeAttribute(attrMarker);
         const { tagAttrs } = partMeta;
         while (
@@ -82,11 +86,25 @@ export default class TemplateNode {
           });
           goToNextPart();
         }
-      } else if (nodeType === 8 && textContent === marker) {
-      /**
-       * If the node is a node marker add previous sibling and next sibling
-       * detail so later we can find the exact place where value has to come
-       */
+      } else if (isBrahmosCommentNode(current)) {
+        /**
+         * If the node is a node marker add previous sibling and next sibling
+         * detail so later we can find the exact place where value has to come
+         */
+
+        /**
+         * Wrap the element with a text node if previous or next sibling
+         * is Brahmos comment node. This makes locating dynamic part much
+         * easier.
+         */
+        let { previousSibling, nextSibling } = current;
+        if (isBrahmosCommentNode(previousSibling)) {
+          previousSibling = createEmptyTextNode(current);
+        }
+        if (isBrahmosCommentNode(nextSibling)) {
+          nextSibling = createEmptyTextNode(current);
+        }
+
         parts.push({
           ...partMeta,
           parentNode,
@@ -103,5 +121,22 @@ export default class TemplateNode {
     remove(markerNodes);
 
     return parts;
+  }
+  patchParts (nodePart) {
+    const { parts } = this;
+    const { parentNode, nextSibling, previousSibling } = nodePart;
+
+    if (this.patched) return;
+
+    for (let i = 0, ln = parts.length; i < ln; i++) {
+      const part = parts[i];
+      if (part.isNode && part.parentNode instanceof DocumentFragment) {
+        part.parentNode = parentNode;
+        part.nextSibling = part.nextSibling || nextSibling;
+        part.previousSibling = part.previousSibling || previousSibling;
+      }
+    }
+
+    this.patched = true;
   }
 }

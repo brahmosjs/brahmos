@@ -48,16 +48,6 @@ export function omit (obj, keys) {
 }
 
 /**
- * Return the spread props syntax
- */
-export function spreadProps (obj) {
-  return {
-    ...obj,
-    __$isBrahmosSpread$__: true,
-  };
-}
-
-/**
  * Remove nodes from parent
  */
 
@@ -250,4 +240,14 @@ export function callLifeCycle (object, method, args) {
   if (object[method]) {
     return object[method].apply(object, args);
   }
+}
+
+/**
+ * Create an empty text node before a given node
+ */
+export function createEmptyTextNode (element) {
+  const { parentNode } = element;
+  const textNode = document.createTextNode('');
+  parentNode.insertBefore(textNode, element);
+  return textNode;
 }

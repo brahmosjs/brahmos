@@ -201,9 +201,9 @@ export function useDebugValue () {
  * Create context hook
  */
 export function useContext (Context) {
-  const { ccId, defaultValue } = Context;
+  const { id, defaultValue } = Context;
   const { __context: context } = currentComponent;
-  const provider = context[ccId];
+  const provider = context[id];
 
   let value = provider ? provider.props.value : defaultValue;
 

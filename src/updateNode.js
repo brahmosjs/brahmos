@@ -111,6 +111,7 @@ function updateArrayNodes (part, nodes, oldNodes = [], context) {
       parentNode,
       previousSibling: lastChild,
       nextSibling: _nextSibling,
+      isNode: true,
     }, node, oldNode, context, forceUpdate);
   }
 
@@ -145,13 +146,18 @@ function updateTagNode (part, node, oldNode, context, forceRender) {
 
     // add templateNode to node so we can access it on next updates
     node.templateNode = templateNode;
+  } else {
+  /**
+   * if any of templateNode part does not have proper parent node and its not first render
+   * patch the part information using the current node's part
+   */
+    templateNode.patchParts(part);
   }
 
   /**
-     * update parts before attaching elements to dom,
-     * so most of the work happens on fragment
-     */
-
+   * update parts before attaching elements to dom,
+   * so most of the work happens on fragment
+   */
   updater(templateNode.parts, values, oldValues, context);
 
   if (freshRender) {
