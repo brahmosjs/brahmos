@@ -7,7 +7,25 @@ import { addHandler } from './mountHandlerQueue';
 
 import updateNode from './updateNode';
 
-function renderWithErrorBoundaries (part, node, forceRender, isFirstRender, handleError) {
+function getCurrentContext (Component, componentInstance, context) {
+  // if component has createContext index, we treat it as provider
+  const { __ccId } = Component;
+  const { __context } = componentInstance;
+
+  // if component is not a provider return the same context
+  if (!__ccId) return context;
+
+  // if componentInstance has context return that
+  if (__context) return __context;
+
+  // if it is provider create a new context extending the parent context
+  const newContext = Object.create(context);
+  newContext[__ccId] = componentInstance;
+
+  return newContext;
+}
+
+function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRender, handleError) {
   const {
     type: Component,
     componentInstance,
@@ -31,7 +49,7 @@ function renderWithErrorBoundaries (part, node, forceRender, isFirstRender, hand
      * store lastNode into the component instance so later
      * if the component does not have to update it should return the stored lastNode
      */
-    componentInstance.__lastNode = updateNode(part, renderNodes, null, forceRender);
+    componentInstance.__lastNode = updateNode(part, renderNodes, null, context, forceRender);
   } catch (err) {
     if (isClassComponent && handleError) {
       let { state, componentDidCatch } = componentInstance;
@@ -48,7 +66,7 @@ function renderWithErrorBoundaries (part, node, forceRender, isFirstRender, hand
       if (errorState) {
         state = mergeState(state, errorState);
         componentInstance.state = state;
-        renderWithErrorBoundaries(part, node, forceRender, isFirstRender, false);
+        renderWithErrorBoundaries(part, node, context, forceRender, isFirstRender, false);
       }
 
       // call componentDidCatch lifecycle with error
@@ -65,10 +83,10 @@ function renderWithErrorBoundaries (part, node, forceRender, isFirstRender, hand
 /**
  * Update component node
  */
-export default function updateComponentNode (part, node, oldNode, forceRender) {
+export default function updateComponentNode (part, node, oldNode, context, forceRender) {
   const {
     type: Component,
-    props,
+    props = {},
     __$isBrahmosClassComponent$__: isClassComponent,
   } = node;
 
@@ -95,6 +113,12 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
 
     isFirstRender = true;
   }
+
+  // get current context
+  context = getCurrentContext(Component, componentInstance, context);
+
+  // store context information on componentInstance
+  componentInstance.__context = context;
 
   /**
    * store the node information on componentInstance, so every component
@@ -138,9 +162,25 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
       shouldUpdate = shouldComponentUpdate.call(componentInstance, props, state);
     }
 
-    // set the new state and props and reset uncommitted state
+    /**
+     * If it is a context consumer add provider on the props
+     */
+    const { contextType } = Component;
+    let contextValue;
+    if (contextType) {
+      const { id, defaultValue } = contextType;
+      const provider = context[id];
+      contextValue = provider ? provider.props.value : defaultValue;
+
+      if (provider && isFirstRender) {
+        provider.sub(componentInstance);
+      }
+    }
+
+    // set the new state, props, context and reset uncommitted state
     componentInstance.state = state;
     componentInstance.props = props;
+    componentInstance.context = contextValue;
     componentInstance.__unCommittedState = undefined;
 
     // call getSnapshotBeforeUpdate life cycle method
@@ -149,7 +189,7 @@ export default function updateComponentNode (part, node, oldNode, forceRender) {
 
   // update a component update only if it can be updated based on shouldComponentUpdate
   if (shouldUpdate) {
-    renderWithErrorBoundaries(part, node, forceRender, isFirstRender, true);
+    renderWithErrorBoundaries(part, node, context, forceRender, isFirstRender, true);
   }
 
   // After the mount/update call the lifecycle method

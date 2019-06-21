@@ -3,7 +3,7 @@ import updateNode from './updateNode';
 
 import { applyHandlers } from './mountHandlerQueue';
 
-export default function updater (parts, values, oldValues = [], root) {
+export default function updater (parts, values, oldValues = [], context, root) {
   for (let i = 0, ln = parts.length; i < ln; i++) {
     const part = parts[i];
     const value = values[i];
@@ -19,7 +19,7 @@ export default function updater (parts, values, oldValues = [], root) {
         updateAttribute(part, attrName, attrValue, oldAttrValue);
       }
     } else if (isNode) {
-      updateNode(part, value, oldValue);
+      updateNode(part, value, oldValue, context);
     }
   }
 

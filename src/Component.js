@@ -1,11 +1,10 @@
 import associateInstance from './associateInstance';
-import updater from './updater';
+import { reRender } from './render';
 import { mergeState } from './utils';
 
 export class Component {
-  constructor (props, context) {
+  constructor (props) {
     this.props = props;
-    this.context = context;
   }
   setState (newState, callback) {
     let state = this.__unCommittedState || this.state || {};
@@ -18,7 +17,7 @@ export class Component {
 
     this.__batchStateChange().then((state) => {
       this.__updatesPromise = null;
-      this.__applyUpdates();
+      reRender(this);
       if (callback) callback(state);
     });
   }
@@ -28,10 +27,6 @@ export class Component {
       resolve(this.state);
     });
     return this.__updatesPromise;
-  }
-  __applyUpdates () {
-    const { __part: part, __componentNode: node } = this;
-    updater([part], [node], [], true);
   }
   __render () {
     // get the new rendered node

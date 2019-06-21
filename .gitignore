@@ -4,3 +4,6 @@ dist
 lib
 *.log
 reference
+
+# editor specific files
+.vscode

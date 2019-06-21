@@ -9,7 +9,19 @@ import { Component, PureComponent } from './Component';
 import { html } from './tags';
 
 /** Hooks */
-import { useState, useEffect, useRef, useReducer, useMemo, useCallback, useLayoutEffect } from './hooks';
+import {
+  useState,
+  useEffect,
+  useRef,
+  useReducer,
+  useMemo,
+  useCallback,
+  useLayoutEffect,
+  useContext,
+} from './hooks';
+
+/** createContext */
+import createContext from './createContext';
 
 const Brahmos = {
   createElement,
@@ -24,6 +36,8 @@ const Brahmos = {
   useMemo,
   useCallback,
   useLayoutEffect,
+  useContext,
+  createContext,
 };
 
 export {
@@ -39,6 +53,8 @@ export {
   useMemo,
   useCallback,
   useLayoutEffect,
+  useContext,
+  createContext,
 };
 
 export default Brahmos;
