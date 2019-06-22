@@ -4,6 +4,8 @@ import {
   RESERVED_ATTRIBUTES,
 } from './utils';
 
+import { setRef } from './refs';
+
 import {
   getEffectiveEventName,
   getInputStateType,
@@ -61,5 +63,8 @@ export default function updateAttribute (part, attrName, attrValue, oldAttrValue
       !RESERVED_ATTRIBUTES[attrName]
   ) {
     setAttribute(node, attrName, attrValue, oldAttrValue);
+  } else if (attrName === 'ref') {
+    // Note only functional refs are supported
+    setRef(attrValue, node);
   }
 }

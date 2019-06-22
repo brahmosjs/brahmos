@@ -3,6 +3,7 @@ import Brahmos from '../src';
 import TodoList from './TodoList';
 import UseStateExample from './UseStateExample';
 import ContextExample from './context';
+import RefsExample from './RefsExample';
 
 export default function App () {
   return (
@@ -18,6 +19,10 @@ export default function App () {
       <div className="wrapper">
         <h2>Context api example</h2>
         <ContextExample />
+      </div>
+      <div className="wrapper">
+        <h2>Refs example</h2>
+        <RefsExample />
       </div>
     </div>
   );

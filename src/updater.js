@@ -11,13 +11,10 @@ export default function updater (parts, values, oldValues = [], context, root) {
 
     const { isAttribute, isNode } = part;
     if (isAttribute) {
-      const keys = Object.keys(value);
-      for (let j = 0, keysLn = keys.length; j < keysLn; j++) {
-        const attrName = keys[j];
-        const attrValue = value[attrName];
+      Object.entries(value).forEach(([attrName, attrValue]) => {
         const oldAttrValue = oldValue && oldValue[attrName];
         updateAttribute(part, attrName, attrValue, oldAttrValue);
-      }
+      });
     } else if (isNode) {
       updateNode(part, value, oldValue, context);
     }

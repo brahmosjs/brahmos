@@ -1,6 +1,8 @@
 import functionalComponentInstance from './functionalComponentInstance';
 import { PureComponent } from './Component';
 import { mergeState, callLifeCycle } from './utils';
+import { setRef } from './refs';
+
 import { runEffects, cleanEffects } from './hooks';
 
 import { addHandler } from './mountHandlerQueue';
@@ -88,6 +90,7 @@ export default function updateComponentNode (part, node, oldNode, context, force
     type: Component,
     props = {},
     __$isBrahmosClassComponent$__: isClassComponent,
+    ref,
   } = node;
 
   let isFirstRender = false;
@@ -135,7 +138,11 @@ export default function updateComponentNode (part, node, oldNode, context, force
 
   let snapshot;
 
-  // call the life cycle methods for class component, which comes before rendering
+  /**
+   * If it is a class component,
+   * associate state, props, context and ref
+   * and call all the life cycle method which comes before rendering.
+   */
   if (isClassComponent) {
     let state = __unCommittedState || prevState;
 
@@ -182,6 +189,9 @@ export default function updateComponentNode (part, node, oldNode, context, force
     componentInstance.props = props;
     componentInstance.context = contextValue;
     componentInstance.__unCommittedState = undefined;
+
+    // provide the correct ref
+    setRef(ref, componentInstance);
 
     // call getSnapshotBeforeUpdate life cycle method
     snapshot = callLifeCycle(componentInstance, 'getSnapshotBeforeUpdate', [prevProps, prevState]);

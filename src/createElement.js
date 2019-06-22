@@ -27,7 +27,7 @@ export default function createElement (
    */
   if (typeof element === 'string') return createTagElement(element, configs, children);
 
-  const props = omit(configs, { key: 1, ref: 1 });
+  const props = omit(configs, { key: 1, ref: !element.__isForwardRef });
 
   // add children to props
   props.children = children;
