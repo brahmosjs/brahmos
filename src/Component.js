@@ -15,16 +15,21 @@ export class Component {
 
     this.__unCommittedState = state;
 
-    this.__batchStateChange().then((state) => {
-      this.__updatesPromise = null;
-      reRender(this);
-      if (callback) callback(state);
+    this.__batchStateChange().then(() => {
+      if (callback) callback(this.state);
     });
   }
   __batchStateChange () {
     if (this.__updatesPromise) return this.__updatesPromise;
-    this.__updatesPromise = new Promise((resolve) => {
-      resolve(this.state);
+
+    this.__updatesPromise = Promise.resolve().then(() => {
+      this.__updatesPromise = null;
+      /**
+       * reRender only if there are uncommitted state
+       * __unCommittedState state may have have been applied by
+       * force update or calling render method on parent node.
+       */
+      if (this.__unCommittedState) reRender(this);
     });
     return this.__updatesPromise;
   }
