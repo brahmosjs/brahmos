@@ -8,6 +8,8 @@
   "license": "MIT",
   "scripts": {
     "test": "jest",
+    "test:watch": "jest --watch",
+    "test:debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand --watch",
     "start": "webpack-dev-server --open",
     "build": "babel src --out-dir lib",
     "bundle": "cross-env NODE_ENV=production rollup -c rollup.config.js"
