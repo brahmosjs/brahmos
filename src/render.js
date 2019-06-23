@@ -11,6 +11,7 @@ export default function render (node, target) {
   };
   // pass the context as empty object
   updater([part], [node], [], {}, true);
+  return node.componentInstance;
 }
 
 /**

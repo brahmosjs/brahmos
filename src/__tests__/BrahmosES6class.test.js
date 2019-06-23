@@ -69,6 +69,7 @@ describe("BrahmosES6Class", () => {
         this.setState({bar: 'bar'});
       }
       render() {
+        console.log(this.state)
         if (this.state.bar === 'foo') {
           return <div className="foo" />;
         }
@@ -76,9 +77,8 @@ describe("BrahmosES6Class", () => {
       }
     }
     const instance = test(<Foo initialValue="foo" />, 'DIV', 'foo');
-    console.log(instance)  // <-- returns undefined should return the component instance instead
-    // instance.changeState()
-    // test(<Foo />, 'SPAN', 'bar');
+    instance.changeState()
+    test(<Foo />, 'SPAN', 'bar');
   });
 
   it('sets initial state with value returned by static getDerivedStateFromProps', () => {
