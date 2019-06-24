@@ -59,7 +59,8 @@ function getOldNodeNextSibling (oldNode) {
 }
 
 /**
- * This method removes all the unused brahmos node till the given index
+ * This method removes all the unused brahmos node till it finds a
+ * brahmos node on oldNodes at given index.
  * and returns the used/non brahmos node at that index
  */
 function spliceUnusedNodes (index, oldNodes, parentNode, previousSibling) {
@@ -95,6 +96,8 @@ function updateArrayNodes (part, nodes, oldNodes = [], context) {
 
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
+
+    //delete unused non brahmos node
     const oldNode = spliceUnusedNodes(i, oldNodes, parentNode, lastChild);
     /**
        * Pass forceUpdate as true, when newNodes and oldNodes keys are not same
