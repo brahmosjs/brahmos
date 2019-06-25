@@ -11,14 +11,16 @@ import {
   eventHandlerCache,
 } from './reactEvents';
 
-function setAttribute (node, attrName, attrValue, oldAttrValue) {
+const XLINK_NS = 'http://www.w3.org/1999/xlink';
+
+function setAttribute (node, attrName, attrValue, oldAttrValue, isSvgAttribute) {
   /*
       if node has property with attribute name, set the value directly as property
       otherwise set it as attribute
     */
 
   const isEventAttr = isEventAttribute(attrName);
-  if (attrName in node || isEventAttr) {
+  if ((attrName in node && !isSvgAttribute) || isEventAttr) {
     const inputStateType = getInputStateType(node);
     /*
        if it is a property check if it is a event callback
@@ -47,11 +49,20 @@ function setAttribute (node, attrName, attrValue, oldAttrValue) {
     }
   } else {
     attrName = attrName.toLowerCase();
+
     /**
+     * If attribute is prefixed with xlink then we have to set attribute with namespace
      * if attribute value is defined set the new attribute value and if
      * it is not defined and oldAttribute is present remove the oldAttribute;
      */
-    if (attrValue !== undefined) {
+    const attrNameWithoutNS = attrName.replace(/^xlink:?/, '');
+    if (attrName !== attrNameWithoutNS) {
+      if (attrValue !== undefined) {
+        node.setAttributeNS(XLINK_NS, attrName, attrValue);
+      } else if (oldAttrValue !== undefined) {
+        node.removeAttributeNS(XLINK_NS, attrName);
+      }
+    } else if (attrValue !== undefined) {
       node.setAttribute(attrName, attrValue);
     } else if (oldAttrValue !== undefined) {
       node.removeAttribute(attrName);
@@ -59,21 +70,21 @@ function setAttribute (node, attrName, attrValue, oldAttrValue) {
   }
 }
 
-export default function updateNodeAttributes (node, attributes, oldAttributes) {
+export default function updateNodeAttributes (node, attributes, oldAttributes, isSvgAttribute) {
   // add new attributes
   Object.entries(attributes).forEach(([attrName, attrValue]) => {
     const oldAttrValue = oldAttributes && oldAttributes[attrName];
     if (
       attrValue !== oldAttrValue
     ) {
-      setAttribute(node, attrName, attrValue, oldAttrValue);
+      setAttribute(node, attrName, attrValue, oldAttrValue, isSvgAttribute);
     }
   });
 
   // remove old attributes
   Object.entries(oldAttributes).forEach(([attrName, attrValue]) => {
     if (attributes[attrName] === undefined) {
-      setAttribute(node, attrName, null, attrValue);
+      setAttribute(node, attrName, null, attrValue, isSvgAttribute);
     }
   });
 }

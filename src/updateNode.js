@@ -92,7 +92,7 @@ function spliceUnusedNodes (index, oldNodes, parentNode, previousSibling) {
 /**
    * Updater to handle array of nodes
    */
-function updateArrayNodes (part, nodes, oldNodes = [], context) {
+function updateArrayNodes (part, nodes, oldNodes = [], context, isSvgPart) {
   const { parentNode, previousSibling, nextSibling } = part;
 
   const nodesLength = nodes.length;
@@ -129,7 +129,7 @@ function updateArrayNodes (part, nodes, oldNodes = [], context) {
       previousSibling: lastChild,
       nextSibling: _nextSibling,
       isNode: true,
-    }, node, oldNode, context, forceUpdate) || lastChild;
+    }, node, oldNode, context, forceUpdate, isSvgPart) || lastChild;
   }
 
   // teardown all extra pending old nodes
@@ -146,11 +146,14 @@ function updateArrayNodes (part, nodes, oldNodes = [], context) {
 /**
  * Update tagged template node
  */
-function updateTagNode (part, node, oldNode, context, forceUpdate) {
+function updateTagNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
   const { parentNode, previousSibling, nextSibling } = part;
 
-  let { templateNode, values, oldValues, __$isBrahmosTagElement$__: isTagElement } = node;
+  let { templateNode, values, oldValues, __$isBrahmosTagElement$__: isTagElement, element } = node;
   let freshRender;
+
+  // if the node is an svg element set the isSvgPart true
+  isSvgPart = isSvgPart || element === 'svg';
 
   /**
      * if you don't get the old template node it means you have to render the node first time
@@ -159,11 +162,11 @@ function updateTagNode (part, node, oldNode, context, forceUpdate) {
   if (!templateNode) {
     freshRender = true;
 
-    templateNode = isTagElement ? getTagNode(node) : new TemplateNode(node.template);
+    templateNode = isTagElement ? getTagNode(node, isSvgPart) : new TemplateNode(node.template, isSvgPart);
 
     // add templateNode to node so we can access it on next updates
     node.templateNode = templateNode;
-  } else {
+  } else if (!isTagElement) {
   /**
    * if any of templateNode part does not have proper parent node and its not first render
    * patch the part information using the current node's part
@@ -178,7 +181,7 @@ function updateTagNode (part, node, oldNode, context, forceUpdate) {
    * This will only happen when we are just doing position change
    */
   if (node !== oldNode) {
-    updater(templateNode.parts, values, oldValues, context);
+    updater(templateNode.parts, values, oldValues, context, false, isSvgPart);
   }
 
   if (freshRender) {
@@ -212,7 +215,7 @@ function updateTagNode (part, node, oldNode, context, forceUpdate) {
 /**
    * Updater to handle any type of node
    */
-export default function updateNode (part, node, oldNode, context, forceUpdate) {
+export default function updateNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
   if (!isRenderableNode(node)) {
     /**
        * If the new node is falsy value and
@@ -223,11 +226,11 @@ export default function updateNode (part, node, oldNode, context, forceUpdate) {
       tearDown(oldNode, part);
     }
   } else if (Array.isArray(node)) {
-    return updateArrayNodes(part, node, oldNode, context);
+    return updateArrayNodes(part, node, oldNode, context, isSvgPart);
   } else if (node.__$isBrahmosComponent$__) {
-    return updateComponentNode(part, node, oldNode, context, forceUpdate);
+    return updateComponentNode(part, node, oldNode, context, forceUpdate, isSvgPart);
   } else if (node.__$isBrahmosTag$__) {
-    return updateTagNode(part, node, oldNode, context, forceUpdate);
+    return updateTagNode(part, node, oldNode, context, forceUpdate, isSvgPart);
   } else if (isPrimitiveNode(node) && (node !== oldNode || forceUpdate)) {
     return updateTextNode(part, node, oldNode);
   }

@@ -146,24 +146,25 @@ export function lastItem (list) {
   return list[list.length - 1];
 }
 
-/** Function to remove a list of childs from parent */
-export function removeNodes (parent, childNodes) {
-  for (let i = 0, ln = childNodes.length; i < ln; i++) {
-    parent.removeChild(childNodes[i]);
-  }
-}
-
 /**
  * Given a object/string crate a node which can be appended.
  */
-function changeToNode (value) {
+export function changeToNode (value) {
+  const isNodeList = value instanceof NodeList;
+
   if (value instanceof Node) {
     return value;
   // if it is a array of Nodes or NodList return a fragment
-  } else if (Array.isArray(value) || value instanceof NodeList) {
+  } else if (Array.isArray(value) || isNodeList) {
     const fragment = document.createDocumentFragment();
-    for (let i = 0, ln = value.length; i < ln; i++) {
+
+    let i = 0;
+
+    while(value[i]) {
       fragment.appendChild(value[i]);
+
+      //no need to increment on nodeList as nodeList is spliced when elements are moved
+      if (!isNodeList) i += 1;
     }
     return fragment;
   }

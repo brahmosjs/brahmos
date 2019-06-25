@@ -31,5 +31,5 @@ export default function render (node, target) {
  */
 export function reRender (component, forceUpdate) {
   const { __part: part, __componentNode: node, __context: context } = component;
-  updater([part], [node], [], context, forceUpdate, true);
+  updater([part], [node], [], context, forceUpdate, false, true);
 }

@@ -41,7 +41,7 @@ function findNonComponentNode (node) {
   return { node, context };
 }
 
-function renderWithErrorBoundaries (part, node, context, shouldUpdate, forceUpdate, isFirstRender, handleError) {
+function renderWithErrorBoundaries (part, node, context, shouldUpdate, forceUpdate, isSvgPart, isFirstRender, handleError) {
   const {
     type: Component,
     componentInstance,
@@ -84,7 +84,7 @@ function renderWithErrorBoundaries (part, node, context, shouldUpdate, forceUpda
     /**
      * forward forceUpdate to component child only when forceUpdate is set to all.
      */
-    componentInstance.__lastNode = updateNode(part, newNodes, oldNodes, context, forceUpdateAll);
+    componentInstance.__lastNode = updateNode(part, newNodes, oldNodes, context, forceUpdateAll, isSvgPart);
   } catch (err) {
     if (isClassComponent && handleError) {
       let { state, componentDidCatch } = componentInstance;
@@ -101,7 +101,7 @@ function renderWithErrorBoundaries (part, node, context, shouldUpdate, forceUpda
       if (errorState) {
         state = mergeState(state, errorState);
         componentInstance.state = state;
-        renderWithErrorBoundaries(part, node, context, shouldUpdate, forceUpdate, isFirstRender, false);
+        renderWithErrorBoundaries(part, node, context, shouldUpdate, forceUpdate, isSvgPart, isFirstRender, false);
       }
 
       // call componentDidCatch lifecycle with error
@@ -118,7 +118,7 @@ function renderWithErrorBoundaries (part, node, context, shouldUpdate, forceUpda
 /**
  * Update component node
  */
-export default function updateComponentNode (part, node, oldNode, context, forceUpdate) {
+export default function updateComponentNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
   const {
     type: Component,
     props = {},
@@ -237,7 +237,7 @@ export default function updateComponentNode (part, node, oldNode, context, force
    * Or if the child component has to render based on forceUpdate
    */
   if (shouldUpdate || forceUpdate === 'all') {
-    renderWithErrorBoundaries(part, node, context, shouldUpdate, forceUpdate, isFirstRender, true);
+    renderWithErrorBoundaries(part, node, context, shouldUpdate, forceUpdate, isSvgPart, isFirstRender, true);
   }
 
   // After the mount/update call the lifecycle method

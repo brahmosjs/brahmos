@@ -11,7 +11,7 @@ export function isAttrOverridden (tagAttrs, attrName, attrIndex) {
   return attrIndex <= lastIndex;
 }
 
-export default function updater (parts, values, oldValues = [], context, forceUpdate, root) {
+export default function updater (parts, values, oldValues = [], context, forceUpdate, isSvgPart, root) {
   for (let i = 0, ln = parts.length; i < ln; i++) {
     let part = parts[i];
     const value = values[i];
@@ -45,9 +45,9 @@ export default function updater (parts, values, oldValues = [], context, forceUp
       // store the dynamic attribute reference on node so it can be used on next render
       node.__dynamicAttributes = dynamicAttributes;
 
-      updateNodeAttributes(node, dynamicAttributes, oldDynamicAttributes);
+      updateNodeAttributes(node, dynamicAttributes, oldDynamicAttributes, isSvgPart);
     } else if (isNode) {
-      updateNode(part, value, oldValue, context, forceUpdate);
+      updateNode(part, value, oldValue, context, forceUpdate, isSvgPart);
     }
   }
 

@@ -32,12 +32,14 @@ export default class TemplateTag {
     this.strings = strings;
   }
 
-  create () {
+  create (isSvgPart) {
+    if (isSvgPart && this.svgTemplate) return;
+
     if (this.template) return;
 
     this.partsMeta = this.getPartsMeta();
 
-    this.createTemplate();
+    this.createTemplate(isSvgPart);
   }
 
   getPartsMeta () {
@@ -132,7 +134,7 @@ export default class TemplateTag {
     return partsMeta;
   }
 
-  createTemplate () {
+  createTemplate (isSvgPart) {
     const { partsMeta, strings } = this;
     const template = document.createElement('template');
 
@@ -153,7 +155,15 @@ export default class TemplateTag {
     // add the last string
     htmlStr = htmlStr + strings[strings.length - 1];
 
+    // if its svg child wrap it inside svg
+    if (isSvgPart) {
+      htmlStr = `<svg>${htmlStr}</svg>`;
+    }
+
     template.innerHTML = htmlStr;
-    this.template = template;
+
+    const templateKey = isSvgPart ? 'svgTemplate' : 'template';
+
+    this[templateKey] = template;
   }
 }

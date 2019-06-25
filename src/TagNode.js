@@ -7,9 +7,12 @@
  * And this parts will be pointing to two values [attributes, children];
  */
 
-export default function getTagNode (node) {
+export default function getTagNode (node, isSvgPart) {
   const { element, values } = node;
-  const domElement = document.createElement(element);
+
+  const domElement = isSvgPart ?
+    document.createElementNS('http://www.w3.org/2000/svg', element) :
+    document.createElement(element);
 
   const attributePart = {
     isAttribute: true,
