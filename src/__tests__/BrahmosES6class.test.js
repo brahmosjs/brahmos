@@ -4,11 +4,17 @@ import Brahmos, { render } from "..";
 
 describe("BrahmosES6Class", () => {
   let container;
+  const freeze = function(expectation) {
+    Object.freeze(expectation);
+    return expectation;
+  };
   let Inner;
   let attachedListener = null;
+  let attachedListenerWithCallback = null;
   let renderedName = null;
   beforeEach(() => {
     attachedListener = null;
+    attachedListenerWithCallback = null;
     renderedName = null;
     container = document.createElement("div");
     Inner = class extends Brahmos.Component {
@@ -16,6 +22,7 @@ describe("BrahmosES6Class", () => {
         return this.props.name;
       }
       render() {
+        attachedListenerWithCallback = (callback)=>this.props.onClick(callback);
         attachedListener = this.props.onClick;
         renderedName = this.props.name;
         return <div className={this.props.name} />;
@@ -69,7 +76,6 @@ describe("BrahmosES6Class", () => {
         this.setState({bar: 'bar'});
       }
       render() {
-        console.log(this.state)
         if (this.state.bar === 'foo') {
           return <div className="foo" />;
         }
@@ -155,8 +161,8 @@ describe("BrahmosES6Class", () => {
         super(props);
         this.state = {bar: props.initialValue};
       }
-      handleClick() {
-        this.setState({bar: 'bar'});
+      handleClick(callback) {
+        this.setState({bar: 'bar'},()=>callback());
       }
       render() {
         return (
@@ -165,12 +171,167 @@ describe("BrahmosES6Class", () => {
       }
     }
     test(<Foo initialValue="foo" />, 'DIV', 'foo');
-    attachedListener();
-    //expect(renderedName).toBe('bar');  <-- The state is getting updated and the component is getting re-rendered but the name is still foo
-                                       // I guess that's because expect is being called before the component is being re-rendered, I don't
-                                       // understand how this test is working in React
+    attachedListenerWithCallback(()=>expect(renderedName).toBe('bar'));
+    // Passed the test as a callback
   });
 
+  it('should not implicitly bind event handlers', () => {
+    class Foo extends Brahmos.Component {
+      constructor(props) {
+        super(props);
+        this.state = {bar: props.initialValue};
+      }
+      handleClick() {
+        this.setState({bar: 'bar'});
+      }
+      render() {
+        return <Inner name={this.state.bar} onClick={this.handleClick} />;
+      }
+    }
+    test(<Foo initialValue="foo" />, 'DIV', 'foo');
+    expect(attachedListener).toThrow();
+  });
 
+  it('will call all the normal life cycle methods', () => {
+    let lifeCycles = [];
+    class Foo extends Brahmos.Component {
+      constructor() {
+        super();
+        this.state = {};
+      }
+      // UNSAFE_componentWillMount() {
+      //   lifeCycles.push('will-mount');
+      // }
+      componentDidMount() {
+        lifeCycles.push('did-mount');
+      }
+      // UNSAFE_componentWillReceiveProps(nextProps) {
+      //   lifeCycles.push('receive-props', nextProps);
+      // }
+      shouldComponentUpdate(nextProps, nextState) {
+        lifeCycles.push('should-update', nextProps, nextState);
+        return true;
+      }
+      // UNSAFE_componentWillUpdate(nextProps, nextState) {
+      //   lifeCycles.push('will-update', nextProps, nextState);
+      // }
+      componentDidUpdate(prevProps, prevState) {
+        lifeCycles.push('did-update', prevProps, prevState);
+      }
+      componentWillUnmount() {
+        lifeCycles.push('will-unmount');
+      }
+      render() {
+        return <span className={this.props.value} />;
+      }
+    }
+    test(<Foo value="foo" />, 'SPAN', 'foo');
+    expect(lifeCycles).toEqual(['did-mount']);
+    lifeCycles = []; // reset
+    test(<Foo value="bar" />, 'SPAN', 'bar');
+    // prettier-ignore
+    expect(lifeCycles).toEqual([
+      'should-update', freeze({value: 'bar'}), {},
+      'did-update', freeze({value: 'foo'}), {},
+    ]);
+    lifeCycles = []; // reset
+    // ReactDOM.unmountComponentAtNode(container); <-- how to unmount the compoenent here?
+    // expect(lifeCycles).toEqual(['will-unmount']);
+  });
 
 });
+
+
+/** Currently unsupported tests */
+
+// Brahmos hasn't installed prop-types
+
+// it('renders based on context in the constructor', () => {
+//   class Foo extends Brahmos.Component {
+//     constructor(props, context) {
+//       super(props, context);
+//       this.state = {tag: context.tag, className: this.context.className};
+//     }
+//     render() {
+//       const Tag = this.state.tag;
+//       return <Tag className={this.state.className} />;
+//     }
+//   }
+//   Foo.contextTypes = {
+//     tag: PropTypes.string,
+//     className: PropTypes.string,
+//   };
+
+//   class Outer extends Brahmos.Component {
+//     getChildContext() {
+//       return {tag: 'span', className: 'foo'};
+//     }
+//     render() {
+//       return <Foo />;
+//     }
+//   }
+//   Outer.childContextTypes = {
+//     tag: PropTypes.string,
+//     className: PropTypes.string,
+//   };
+//   test(<Outer />, 'SPAN', 'foo');
+// });
+
+
+// Don't have componentWillMount lifecycle method
+
+// it('renders only once when setting state in componentWillMount', () => {
+//   let renderCount = 0;
+//   class Foo extends Brahmos.Component {
+//     constructor(props) {
+//       super(props);
+//       this.state = {bar: props.initialValue};
+//     }
+//     componentWillMount() {
+//       this.setState({bar: 'bar'});
+//     }
+//     render() {
+//       renderCount++;
+//       return <span className={this.state.bar} />;
+//     }
+//   }
+//   test(<Foo initialValue="foo" />, 'SPAN', 'bar');
+//   expect(renderCount).toBe(1);
+// });
+
+// Doesn't have forsceUpdate
+
+// it('renders using forceUpdate even when there is no state', () => {
+//   class Foo extends Brahmos.Component {
+//     constructor(props) {
+//       super(props);
+//       this.mutativeValue = props.initialValue;
+//     }
+//     handleClick(callback) {
+//       this.mutativeValue = 'bar';
+//       this.forceUpdate(()=>callback());
+//     }
+//     render() {
+//       return (
+//         <Inner
+//           name={this.mutativeValue}
+//           onClick={this.handleClick.bind(this)}
+//         />
+//       );
+//     }
+//   }
+//   test(<Foo initialValue="foo" />, 'DIV', 'foo');
+//   attachedListenerWithCallback(()=>expect(renderedName).toBe('bar'));
+// });
+
+// Doesn't support refs
+
+// it('supports classic refs', () => {
+//   class Foo extends Brahmos.Component {
+//     render() {
+//       return <Inner name="foo" ref="inner" />;
+//     }
+//   }
+//   const instance = test(<Foo />, 'DIV', 'foo');
+//   expect(instance.refs.inner.getName()).toBe('foo');
+// });
