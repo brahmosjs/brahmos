@@ -225,18 +225,35 @@ describe("BrahmosES6Class", () => {
         return <span className={this.props.value} />;
       }
     }
-    test(<Foo value="foo" />, 'SPAN', 'foo');
+    class Outer extends Brahmos.Component{
+      constructor(props){
+        super(props);
+        this.state={
+          isFooVisible: this.props.visible
+        }
+      }
+      unmountFoo(callback){
+        this.setState({
+          isFooVisible: false
+        },()=>callback)
+      }
+      render(){
+        if(this.state.isFooVisible){
+          return <Foo value={this.props.value}/>;
+        }
+        return <div/>;
+      }
+    }
+    test(<Outer visible value="foo" />, 'SPAN', 'foo');
     expect(lifeCycles).toEqual(['did-mount']);
     lifeCycles = []; // reset
-    test(<Foo value="bar" />, 'SPAN', 'bar');
-    // prettier-ignore
+    const instance = test(<Outer visible value="bar" />, 'SPAN', 'bar');
     expect(lifeCycles).toEqual([
       'should-update', freeze({value: 'bar'}), {},
       'did-update', freeze({value: 'foo'}), {},
     ]);
     lifeCycles = []; // reset
-    // ReactDOM.unmountComponentAtNode(container); <-- how to unmount the compoenent here?
-    // expect(lifeCycles).toEqual(['will-unmount']);
+    instance.unmountFoo(()=>expect(lifeCycles).toEqual(['will-unmount']));
   });
 
 });
@@ -299,7 +316,7 @@ describe("BrahmosES6Class", () => {
 //   expect(renderCount).toBe(1);
 // });
 
-// Doesn't have forsceUpdate
+// Doesn't have forceUpdate
 
 // it('renders using forceUpdate even when there is no state', () => {
 //   class Foo extends Brahmos.Component {
