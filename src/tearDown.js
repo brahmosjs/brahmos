@@ -4,19 +4,25 @@ import {
   callLifeCycle,
 } from './utils';
 
+import { setRef } from './refs';
+
 import { cleanEffects } from './hooks';
 
 function handleUnmount (node) {
   if (!isRenderableNode(node)) return;
 
+  const { componentInstance, ref } = node;
   /**
    * if node is classComponent We may have to call componentWillUnmount lifecycle method
    * In case of functional component we have to clean all the effects for that component
    */
   if (node.__$isBrahmosClassComponent$__) {
-    callLifeCycle(node.componentInstance, 'componentWillUnmount');
+    callLifeCycle(componentInstance, 'componentWillUnmount');
+
+    // set the ref as null of a class component
+    setRef(ref, null);
   } else if (node.__$isBrahmosFunctionalComponent$__) {
-    cleanEffects(node.componentInstance, true);
+    cleanEffects(componentInstance, true);
   }
 
   /**
@@ -28,11 +34,28 @@ function handleUnmount (node) {
       tearDown(node[i]);
     }
   } else if (node.__$isBrahmosTag$__) {
-    for (let i = 0, ln = node.values.length; i < ln; i++) {
-      tearDown(node.values[i]);
+    const { values, parts } = node;
+    for (let i = 0, ln = parts.length; i < ln; i++) {
+      const part = part[i];
+      const value = values[i];
+
+      // if part is node than tear down the node value
+      if (part.isNode) {
+        tearDown(value);
+      }
+
+      // if part is attribute type look for ref attribute and set the ref as null
+      if (part.isAttribute) {
+        Object.entries(value).forEach(([attrName, attrValue]) => {
+          if (attrName === 'ref') {
+            setRef(attrValue, null);
+          }
+        });
+      }
     }
+    // call the ref methods of attribute parts
   } else if (node.__$isBrahmosComponent$__) {
-    tearDown(node.componentInstance.__nodes);
+    tearDown(componentInstance.__nodes);
   }
 }
 

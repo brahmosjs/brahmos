@@ -23,6 +23,9 @@ import {
 /** createContext */
 import createContext from './createContext';
 
+/** ForwardRef and createRef */
+import { forwardRef, createRef } from './refs';
+
 const Brahmos = {
   createElement,
   render,
@@ -38,6 +41,8 @@ const Brahmos = {
   useLayoutEffect,
   useContext,
   createContext,
+  forwardRef,
+  createRef,
 };
 
 export {
@@ -55,6 +60,8 @@ export {
   useLayoutEffect,
   useContext,
   createContext,
+  forwardRef,
+  createRef,
 };
 
 export default Brahmos;

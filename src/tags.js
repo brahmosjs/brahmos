@@ -9,12 +9,10 @@ export function html (strings, ...values) {
     templateTagCache.set(strings, template);
   }
 
-  return function (key, ref) {
+  return function () {
     return {
       template,
       values,
-      key,
-      ref,
       __$isBrahmosTag$__: true,
     };
   };
