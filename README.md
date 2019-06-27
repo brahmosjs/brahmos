@@ -107,7 +107,7 @@ Todo MVC with Brahmos
 - [x] PureComponent
 - [x] Hooks
 - [x] Context API
-- [x] Ref Api, createRef, ref as callback, forwardRef
+- [x] Refs Api, createRef, ref as callback, forwardRef
 - [ ] React Utilities and Methods
 - [ ] SVG Support
 - [ ] Handle server rendering
