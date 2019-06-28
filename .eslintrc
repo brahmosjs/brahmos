@@ -1,13 +1,15 @@
 
-    
+
 {
   "env": {
-    "browser": true
+    "browser": true,
+    "jest/globals": true
   },
   "parser": "babel-eslint",
   "extends": "standard",
+  "plugins": ["jest"],
   "rules": {
     "comma-dangle": ["error", "always-multiline"],
     "semi": ["error", "always"]
-  } 
+  }
 }

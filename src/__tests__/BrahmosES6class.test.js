@@ -1,10 +1,8 @@
-"use strict";
+import Brahmos, { render } from '..';
 
-import Brahmos, { render } from "..";
-
-describe("BrahmosES6Class", () => {
+describe('BrahmosES6Class', () => {
   let container;
-  const freeze = function(expectation) {
+  const freeze = function (expectation) {
     Object.freeze(expectation);
     return expectation;
   };
@@ -16,13 +14,13 @@ describe("BrahmosES6Class", () => {
     attachedListener = null;
     attachedListenerWithCallback = null;
     renderedName = null;
-    container = document.createElement("div");
+    container = document.createElement('div');
     Inner = class extends Brahmos.Component {
-      getName() {
+      getName () {
         return this.props.name;
       }
-      render() {
-        attachedListenerWithCallback = (callback)=>this.props.onClick(callback);
+      render () {
+        attachedListenerWithCallback = (callback) => this.props.onClick(callback);
         attachedListener = this.props.onClick;
         renderedName = this.props.name;
         return <div className={this.props.name} />;
@@ -30,7 +28,7 @@ describe("BrahmosES6Class", () => {
     };
   });
 
-  function test(element, expectedTag, expectedClassName) {
+  function test (element, expectedTag, expectedClassName) {
     const instance = render(element, container);
     expect(container.firstChild).not.toBeNull();
     expect(container.firstChild.tagName).toBe(expectedTag);
@@ -38,28 +36,28 @@ describe("BrahmosES6Class", () => {
     return instance;
   }
 
-  it("preserves the name of the class for use in error messages", () => {
+  it('preserves the name of the class for use in error messages', () => {
     class Foo extends Brahmos.Component {}
-    expect(Foo.name).toBe("Foo");
+    expect(Foo.name).toBe('Foo');
   });
 
-  it("renders a simple stateless component with prop", () => {
+  it('renders a simple stateless component with prop', () => {
     class Foo extends Brahmos.Component {
-      render() {
+      render () {
         return <Inner name={this.props.bar} />;
       }
     }
-    test(<Foo bar="foo" />, "DIV", "foo");
-    test(<Foo bar="bar" />, "DIV", "bar");
+    test(<Foo bar="foo" />, 'DIV', 'foo');
+    test(<Foo bar="bar" />, 'DIV', 'bar');
   });
 
   it('renders based on state using initial values in this.props', () => {
     class Foo extends Brahmos.Component {
-      constructor(props) {
+      constructor (props) {
         super(props);
-        this.state = {bar: this.props.initialValue};
+        this.state = { bar: this.props.initialValue };
       }
-      render() {
+      render () {
         return <span className={this.state.bar} />;
       }
     }
@@ -68,14 +66,14 @@ describe("BrahmosES6Class", () => {
 
   it('renders based on state using props in the constructor', () => {
     class Foo extends Brahmos.Component {
-      constructor(props) {
+      constructor (props) {
         super(props);
-        this.state = {bar: props.initialValue};
+        this.state = { bar: props.initialValue };
       }
-      changeState() {
-        this.setState({bar: 'bar'});
+      changeState () {
+        this.setState({ bar: 'bar' });
       }
-      render() {
+      render () {
         if (this.state.bar === 'foo') {
           return <div className="foo" />;
         }
@@ -83,20 +81,20 @@ describe("BrahmosES6Class", () => {
       }
     }
     const instance = test(<Foo initialValue="foo" />, 'DIV', 'foo');
-    instance.changeState()
+    instance.changeState();
     test(<Foo />, 'SPAN', 'bar');
   });
 
   it('sets initial state with value returned by static getDerivedStateFromProps', () => {
     class Foo extends Brahmos.Component {
       state = {};
-      static getDerivedStateFromProps(nextProps, prevState) {
+      static getDerivedStateFromProps (nextProps, prevState) {
         return {
           foo: nextProps.foo,
           bar: 'bar',
         };
       }
-      render() {
+      render () {
         return <div className={`${this.state.foo} ${this.state.bar}`} />;
       }
     }
@@ -109,12 +107,12 @@ describe("BrahmosES6Class", () => {
         foo: 'foo',
         bar: 'bar',
       };
-      static getDerivedStateFromProps(nextProps, prevState) {
+      static getDerivedStateFromProps (nextProps, prevState) {
         return {
           foo: `not-${prevState.foo}`,
         };
       }
-      render() {
+      render () {
         return <div className={`${this.state.foo} ${this.state.bar}`} />;
       }
     }
@@ -126,7 +124,7 @@ describe("BrahmosES6Class", () => {
       state = {
         value: 'initial',
       };
-      static getDerivedStateFromProps(nextProps, prevState) {
+      static getDerivedStateFromProps (nextProps, prevState) {
         if (nextProps.update) {
           return {
             value: 'updated',
@@ -134,7 +132,7 @@ describe("BrahmosES6Class", () => {
         }
         return null;
       }
-      render() {
+      render () {
         return <div className={this.state.value} />;
       }
     }
@@ -144,11 +142,11 @@ describe("BrahmosES6Class", () => {
 
   it('should render with null in the initial state property', () => {
     class Foo extends Brahmos.Component {
-      constructor() {
+      constructor () {
         super();
         this.state = null;
       }
-      render() {
+      render () {
         return <span />;
       }
     }
@@ -157,34 +155,34 @@ describe("BrahmosES6Class", () => {
 
   it('setState through an event handler', () => {
     class Foo extends Brahmos.Component {
-      constructor(props) {
+      constructor (props) {
         super(props);
-        this.state = {bar: props.initialValue};
+        this.state = { bar: props.initialValue };
       }
-      handleClick(callback) {
-        this.setState({bar: 'bar'},()=>callback());
+      handleClick (callback) {
+        this.setState({ bar: 'bar' }, () => callback());
       }
-      render() {
+      render () {
         return (
           <Inner name={this.state.bar} onClick={this.handleClick.bind(this)} />
         );
       }
     }
     test(<Foo initialValue="foo" />, 'DIV', 'foo');
-    attachedListenerWithCallback(()=>expect(renderedName).toBe('bar'));
+    attachedListenerWithCallback(() => expect(renderedName).toBe('bar'));
     // Passed the test as a callback
   });
 
   it('should not implicitly bind event handlers', () => {
     class Foo extends Brahmos.Component {
-      constructor(props) {
+      constructor (props) {
         super(props);
-        this.state = {bar: props.initialValue};
+        this.state = { bar: props.initialValue };
       }
-      handleClick() {
-        this.setState({bar: 'bar'});
+      handleClick () {
+        this.setState({ bar: 'bar' });
       }
-      render() {
+      render () {
         return <Inner name={this.state.bar} onClick={this.handleClick} />;
       }
     }
@@ -195,50 +193,41 @@ describe("BrahmosES6Class", () => {
   it('will call all the normal life cycle methods', () => {
     let lifeCycles = [];
     class Foo extends Brahmos.Component {
-      constructor() {
+      constructor () {
         super();
         this.state = {};
       }
-      // UNSAFE_componentWillMount() {
-      //   lifeCycles.push('will-mount');
-      // }
-      componentDidMount() {
+      componentDidMount () {
         lifeCycles.push('did-mount');
       }
-      // UNSAFE_componentWillReceiveProps(nextProps) {
-      //   lifeCycles.push('receive-props', nextProps);
-      // }
-      shouldComponentUpdate(nextProps, nextState) {
+      shouldComponentUpdate (nextProps, nextState) {
         lifeCycles.push('should-update', nextProps, nextState);
         return true;
       }
-      // UNSAFE_componentWillUpdate(nextProps, nextState) {
-      //   lifeCycles.push('will-update', nextProps, nextState);
-      // }
-      componentDidUpdate(prevProps, prevState) {
+      componentDidUpdate (prevProps, prevState) {
         lifeCycles.push('did-update', prevProps, prevState);
       }
-      componentWillUnmount() {
+      componentWillUnmount () {
         lifeCycles.push('will-unmount');
       }
-      render() {
+      render () {
         return <span className={this.props.value} />;
       }
     }
-    class Outer extends Brahmos.Component{
-      constructor(props){
+    class Outer extends Brahmos.Component {
+      constructor (props) {
         super(props);
-        this.state={
-          isFooVisible: this.props.visible
-        }
+        this.state = {
+          isFooVisible: this.props.visible,
+        };
       }
-      unmountFoo(callback){
+      unmountFoo (callback) {
         this.setState({
-          isFooVisible: false
-        },()=>callback)
+          isFooVisible: false,
+        }, () => callback);
       }
-      render(){
-        if(this.state.isFooVisible){
+      render () {
+        if (this.state.isFooVisible) {
           return <Foo value={this.props.value}/>;
         }
         return <div/>;
@@ -249,72 +238,15 @@ describe("BrahmosES6Class", () => {
     lifeCycles = []; // reset
     const instance = test(<Outer visible value="bar" />, 'SPAN', 'bar');
     expect(lifeCycles).toEqual([
-      'should-update', freeze({value: 'bar'}), {},
-      'did-update', freeze({value: 'foo'}), {},
+      'should-update', freeze({ value: 'bar' }), {},
+      'did-update', freeze({ value: 'foo' }), {},
     ]);
     lifeCycles = []; // reset
-    instance.unmountFoo(()=>expect(lifeCycles).toEqual(['will-unmount']));
+    instance.unmountFoo(() => expect(lifeCycles).toEqual(['will-unmount']));
   });
-
 });
 
-
 /** Currently unsupported tests */
-
-// Brahmos hasn't installed prop-types
-
-// it('renders based on context in the constructor', () => {
-//   class Foo extends Brahmos.Component {
-//     constructor(props, context) {
-//       super(props, context);
-//       this.state = {tag: context.tag, className: this.context.className};
-//     }
-//     render() {
-//       const Tag = this.state.tag;
-//       return <Tag className={this.state.className} />;
-//     }
-//   }
-//   Foo.contextTypes = {
-//     tag: PropTypes.string,
-//     className: PropTypes.string,
-//   };
-
-//   class Outer extends Brahmos.Component {
-//     getChildContext() {
-//       return {tag: 'span', className: 'foo'};
-//     }
-//     render() {
-//       return <Foo />;
-//     }
-//   }
-//   Outer.childContextTypes = {
-//     tag: PropTypes.string,
-//     className: PropTypes.string,
-//   };
-//   test(<Outer />, 'SPAN', 'foo');
-// });
-
-
-// Don't have componentWillMount lifecycle method
-
-// it('renders only once when setting state in componentWillMount', () => {
-//   let renderCount = 0;
-//   class Foo extends Brahmos.Component {
-//     constructor(props) {
-//       super(props);
-//       this.state = {bar: props.initialValue};
-//     }
-//     componentWillMount() {
-//       this.setState({bar: 'bar'});
-//     }
-//     render() {
-//       renderCount++;
-//       return <span className={this.state.bar} />;
-//     }
-//   }
-//   test(<Foo initialValue="foo" />, 'SPAN', 'bar');
-//   expect(renderCount).toBe(1);
-// });
 
 // Doesn't have forceUpdate
 
@@ -339,16 +271,4 @@ describe("BrahmosES6Class", () => {
 //   }
 //   test(<Foo initialValue="foo" />, 'DIV', 'foo');
 //   attachedListenerWithCallback(()=>expect(renderedName).toBe('bar'));
-// });
-
-// Doesn't support refs
-
-// it('supports classic refs', () => {
-//   class Foo extends Brahmos.Component {
-//     render() {
-//       return <Inner name="foo" ref="inner" />;
-//     }
-//   }
-//   const instance = test(<Foo />, 'DIV', 'foo');
-//   expect(instance.refs.inner.getName()).toBe('foo');
 // });
