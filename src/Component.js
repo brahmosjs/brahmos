@@ -35,6 +35,7 @@ export class Component {
   }
   __render () {
     // get the new rendered node
+    console.log(this.props)
     const nodes = this.render();
 
     // associate instance from the old node to the new rendered node
