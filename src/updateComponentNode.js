@@ -9,6 +9,8 @@ import { addHandler } from './mountHandlerQueue';
 
 import updateNode from './updateNode';
 
+import shallowEqual from './helpers/shallowEqual';
+
 function getCurrentContext (Component, componentInstance, context) {
   // if component has createContext index, we treat it as provider
   const { __ccId } = Component;
@@ -34,7 +36,6 @@ function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRen
     props,
     __$isBrahmosClassComponent$__: isClassComponent,
   } = node;
-
   // render nodes
   const renderNodes = componentInstance.__render(props);
 
@@ -157,7 +158,7 @@ export default function updateComponentNode (part, node, oldNode, context, force
        */
 
     if (componentInstance instanceof PureComponent) {
-      shouldUpdate = state !== componentInstance.state || props !== componentInstance.props;
+      shouldUpdate = !shallowEqual(state, prevState) || !shallowEqual(props, prevProps);
     }
 
     /**
