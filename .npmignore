@@ -7,3 +7,6 @@ reference
 .eslintrc
 .gitignore
 webpack.config.js
+
+# Ignore doc files
+docs

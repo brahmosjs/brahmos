@@ -7,6 +7,14 @@ export class Component {
     this.props = props;
   }
   setState (newState, callback) {
+    /**
+     * When setState is called batch all the state changes
+     * and call rerender asynchronously as next microTask.
+     *
+     * If the the newState is function pass the current
+     * uncommitted state to it and then merge the new state
+     * with uncommitted state.
+     */
     let state = this.__unCommittedState || this.state || {};
     const _newState = typeof newState === 'function'
       ? newState(state) : newState;
@@ -15,6 +23,7 @@ export class Component {
 
     this.__unCommittedState = state;
 
+    // when the rerender is done call the callback if provided
     this.__batchStateChange().then(() => {
       if (callback) callback(this.state);
     });
