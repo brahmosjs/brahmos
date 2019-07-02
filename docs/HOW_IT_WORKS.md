@@ -28,6 +28,7 @@ This doc tries to be as much as descriptive so that you can understand the inter
   - [Node updater](#Node-updater)
     - [Non renderable node](#Non-renderable-node)
     - [Component node](#Component-node)
+    - [Tag node & Element node](#Tag-node--Element-node)
     - [Array nodes](#Array-nodes)
     - [Text nodes](#Text-nodes)
 - [Tear down](#Tear-down)
@@ -507,7 +508,7 @@ remove the existing old node if present on that location.
 
 #### Component node
 Source: https://github.com/s-yadav/brahmos/blob/master/src/updateComponentNode.js
-`updateComponentNode` handles updating a component node.
+`updateComponentNode` handles updating a component node. It creates a component instance and associates the instance to the component node if it's not already created.
 
 For class components
 - it calls all the applicable life cycle methods if provided and renders with the error boundaries.
@@ -518,11 +519,22 @@ For class components
 For functional component
 - It takes care of calling effects after the render and clean the effects before the next render.
 
+#### Tag node & Element node
+Source: https://github.com/s-yadav/brahmos/blob/master/src/updateNode.js#L135
+
+- It creates a TemplateNode instance and associates it with Brahmos tag node if it's not already created.
+- For the element node, it creates an object similar to templateNode (if not created already) and associates it to the node. https://github.com/s-yadav/brahmos/blob/master/src/TagNode.js
+- For the first render, it adds everything on a document fragment and adds it to DOM at the end to avoid multiple reflows.
+
+
 #### Array nodes
+Source: https://github.com/s-yadav/brahmos/blob/master/src/updateNode.js#L91
 - Array's are optimally updated based on provided keys. It reuses the same DOM element even if the order changes (if proper keys are provided).
 - It takes care of optimally removing unused old nodes, reordering of nodes and adding new nodes.
 
 #### Text nodes
+Source: https://github.com/s-yadav/brahmos/blob/master/src/updateNode.js#L23
+
 - For text nodes, it finds the existing text node at the DOM tree path and only updates the text value avoiding creating new text node.
 
 
