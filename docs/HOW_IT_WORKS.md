@@ -200,7 +200,7 @@ Brahmos Component Node
 Similar to React children are passed as a prop. key and ref are reserved props and are not passed to the component.
 
 ## Brahmos Nodes
-Brahmos has different types of nodes which are handled and updated differently while first render or updates.
+Brahmos has different types of nodes which are handled and updated differently on first render or updates.
 
 #### Brahmos Tag Node
 This is returned by tagged template, which looks like
