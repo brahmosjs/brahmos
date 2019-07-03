@@ -11,7 +11,7 @@ Supercharged UI library with modern React API and native templates.
 - Fast alternative to Virtual DOM. (JSX without VDOM).
 - Smaller transpiled footprint of your source code, than traditional JSX.
 
-## How it works?
+## Idea
 It is inspired by the rendering patterns used on hyperHTML and lit-html.
 
 It has the same declarative API like React, but instead of working with VDOM, it uses tagged template literals and HTML's template tag for faster rendering and updates.
