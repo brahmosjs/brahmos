@@ -1,3 +1,7 @@
+/*
+Inspired by -
+https://github.com/facebook/react/blob/master/packages/react/src/__tests__/ReactPureComponent-test.js
+*/
 import Brahmos, { render } from "..";
 
 describe("BrahmosPureComponent", () => {
