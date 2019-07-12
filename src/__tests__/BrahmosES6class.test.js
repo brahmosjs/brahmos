@@ -1,5 +1,5 @@
 /*
-Inspired by -
+Forked from -
 https://github.com/facebook/react/blob/master/packages/react/src/__tests__/ReactES6Class-test.js
 */
 import Brahmos, { render } from '..';

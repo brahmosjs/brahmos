@@ -1,11 +1,11 @@
 /*
-Inspired by -
+Forked from -
 https://github.com/facebook/react/blob/master/packages/react/src/__tests__/ReactPureComponent-test.js
 */
 import Brahmos, { render } from "..";
 
 describe("BrahmosPureComponent", () => {
-  it("should render", () => {
+  it("should re-render only when old props and new props are not shallow equal", () => {
     let renders = 0;
     class Component extends Brahmos.PureComponent {
       constructor() {
@@ -50,21 +50,23 @@ describe("BrahmosPureComponent", () => {
     });
   });
 
-  it('extends Brahmos.Component', () => {
+  it("extends Brahmos.Component", () => {
     let renders = 0;
     class Component extends Brahmos.PureComponent {
-      constructor() {                // Doesn't render if constructor is removed
-        super();
+      constructor() {
+        super(); // Doesn't render if constructor is removed
       }
       render() {
         renders++;
-        expect(this instanceof Brahmos.Component).toBe(true);
-        expect(this instanceof Brahmos.PureComponent).toBe(true);
-        return <div/>;
+        return <div />;
       }
     }
-    render(<Component />, document.createElement("div"));
+    const pureComponentInstance = render(
+      <Component />,
+      document.createElement("div")
+    );
+    expect(pureComponentInstance instanceof Brahmos.Component).toBe(true);
+    expect(pureComponentInstance instanceof Brahmos.PureComponent).toBe(true);
     expect(renders).toBe(1);
   });
-
 });
