@@ -37,7 +37,7 @@ function handleUnmount (node) {
   } else if (node.__$isBrahmosTag$__) {
     const { values, templateNode: { parts } } = node;
     for (let i = 0, ln = parts.length; i < ln; i++) {
-      const part = part[i];
+      const part = parts[i];
       const value = values[i];
 
       // if part is node than tear down the node value
