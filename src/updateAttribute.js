@@ -49,6 +49,29 @@ function setAttribute (node, attrName, attrValue, oldAttrValue) {
     } else {
       // if attribute is value property
       node[attrName] = attrValue;
+
+      //Remove property from new Attribute
+      if ( typeof oldAttrValue != "undefined" ) {
+           var old_keys = Object.keys( oldAttrValue );
+           let old_iterval = old_keys.length;
+           while( old_iterval-- ) {
+                let old_property = old_keys[old_iterval];
+                node.style[ old_property ] = undefined;
+           }
+      }
+
+      if(attrName === 'style' && typeof attrValue === 'object'){
+
+      //set property to new attribute
+      var keys = Object.keys( attrValue );
+      let iterval = keys.length;
+      while( iterval-- ) {
+           let property = keys[iterval];
+           let value = attrValue[ keys[iterval] ];
+           node.style[ property ] = value;
+
+         }
+      }
     }
   } else {
     node.setAttribute(attrName.toLowerCase(), attrValue);
