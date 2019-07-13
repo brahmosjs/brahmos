@@ -1,5 +1,6 @@
 import {
   isRenderableNode,
+  isBrahmosComponent,
   deleteNodesBetween,
   callLifeCycle,
 } from './utils';
@@ -61,8 +62,9 @@ function handleUnmount (node) {
 
 export default function tearDown (node, part) {
   // bail out if node is reused. It might be on different index
-  if (node && node.isReused) return;
+  if (!isRenderableNode(node) || node.isReused) return;
 
+  part = isBrahmosComponent(node) ? node.componentInstance.__part : part;
   // call componentWillUnmount Lifecycle
   handleUnmount(node);
 

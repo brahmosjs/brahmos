@@ -113,6 +113,13 @@ export function isBrahmosNode (node) {
 }
 
 /**
+ * Check if a given object is a BrahmosComponent
+ */
+export function isBrahmosComponent (node) {
+  return node && node.__$isBrahmosComponent$__;
+}
+
+/**
  * Function to check if a node should be rendered as string
  */
 export function isPrimitiveNode (node) {
