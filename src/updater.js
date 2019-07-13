@@ -1,9 +1,16 @@
-import updateAttribute from './updateAttribute';
-import updateNode from './updateNode';
+import updateAttribute from "./updateAttribute";
+import updateNode from "./updateNode";
 
-import { applyHandlers } from './mountHandlerQueue';
+import { applyHandlers } from "./mountHandlerQueue";
 
-export default function updater (parts, values, oldValues = [], context, root) {
+export default function updater(
+  parts,
+  values,
+  oldValues = [],
+  context,
+  root,
+  forceUpdate
+) {
   for (let i = 0, ln = parts.length; i < ln; i++) {
     const part = parts[i];
     const value = values[i];
@@ -16,7 +23,7 @@ export default function updater (parts, values, oldValues = [], context, root) {
         updateAttribute(part, attrName, attrValue, oldAttrValue);
       });
     } else if (isNode) {
-      updateNode(part, value, oldValue, context);
+      updateNode(part, value, oldValue, context, forceUpdate);
     }
   }
 

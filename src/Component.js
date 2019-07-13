@@ -3,11 +3,11 @@ import { reRender } from './render';
 import { mergeState } from './utils';
 
 export class Component {
-  constructor (props) {
+  constructor(props) {
     this.props = props;
   }
 
-  setState (newState, callback) {
+  setState(newState, callback) {
     /**
      * When setState is called batch all the state changes
      * and call rerender asynchronously as next microTask.
@@ -17,8 +17,7 @@ export class Component {
      * with uncommitted state.
      */
     let state = this.__unCommittedState || this.state || {};
-    const _newState = typeof newState === 'function'
-      ? newState(state) : newState;
+    const _newState = typeof newState === 'function' ? newState(state) : newState;
 
     state = mergeState(state, _newState);
 
@@ -30,7 +29,7 @@ export class Component {
     });
   }
 
-  __batchStateChange () {
+  __batchStateChange() {
     if (this.__updatesPromise) return this.__updatesPromise;
 
     this.__updatesPromise = Promise.resolve().then(() => {
@@ -44,8 +43,7 @@ export class Component {
     });
     return this.__updatesPromise;
   }
-
-  __render () {
+  __render() {
     // get the new rendered node
     const nodes = this.render();
 
@@ -58,4 +56,4 @@ export class Component {
   }
 }
 
-export class PureComponent extends Component {};
+export class PureComponent extends Component {}
