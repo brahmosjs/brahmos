@@ -97,7 +97,7 @@ function updateArrayNodes (part, nodes, oldNodes = [], context) {
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
 
-    //delete unused non brahmos node
+    // delete unused non brahmos node
     const oldNode = spliceUnusedNodes(i, oldNodes, parentNode, lastChild);
     /**
        * Pass forceUpdate as true, when newNodes and oldNodes keys are not same
