@@ -5,7 +5,7 @@ https://github.com/facebook/react/blob/master/packages/react/src/__tests__/React
 import Brahmos, { render } from "..";
 
 describe("BrahmosPureComponent", () => {
-  it("should re-render only when old props and new props are not shallow equal", () => {
+  it("should re-render only when old and new props or state are not shallow equal", () => {
     let renders = 0;
     class Component extends Brahmos.PureComponent {
       constructor() {
