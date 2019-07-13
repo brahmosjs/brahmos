@@ -6,7 +6,8 @@ import render from './render';
  */
 function createPortal (child, container) {
   render(child, container);
-  // Dosn't need anything to return as  just rendering child to another root element
+  // We need to return Node so that it will have lifecycle
+  return container.__brahmosNode;
 }
 
 export default createPortal;
