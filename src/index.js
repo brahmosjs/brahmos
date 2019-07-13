@@ -1,4 +1,5 @@
 import createElement from './createElement';
+import createPortal from './createPortal';
 
 import render from './render';
 
@@ -43,6 +44,7 @@ const Brahmos = {
   createContext,
   forwardRef,
   createRef,
+  createPortal,
 };
 
 export {
@@ -62,6 +64,7 @@ export {
   createContext,
   forwardRef,
   createRef,
+  createPortal,
 };
 
 export default Brahmos;
