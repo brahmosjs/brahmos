@@ -4,6 +4,7 @@ import TodoList from './TodoList';
 import UseStateExample from './UseStateExample';
 import ContextExample from './context';
 import RefsExample from './RefsExample';
+import CreatePortalExample from './createPortalExample';
 
 export default function App () {
   return (
@@ -23,6 +24,10 @@ export default function App () {
       <div className="wrapper">
         <h2>Refs example</h2>
         <RefsExample />
+      </div>
+      <div className="wrapper">
+        <h2>CreatePortal Example</h2>
+        <CreatePortalExample/>
       </div>
     </div>
   );

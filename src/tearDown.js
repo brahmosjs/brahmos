@@ -1,5 +1,6 @@
 import {
   isRenderableNode,
+  isBrahmosComponent,
   deleteNodesBetween,
   callLifeCycle,
 } from './utils';
@@ -34,9 +35,9 @@ function handleUnmount (node) {
       tearDown(node[i]);
     }
   } else if (node.__$isBrahmosTag$__) {
-    const { values, parts } = node;
+    const { values, templateNode: { parts } } = node;
     for (let i = 0, ln = parts.length; i < ln; i++) {
-      const part = part[i];
+      const part = parts[i];
       const value = values[i];
 
       // if part is node than tear down the node value
@@ -60,9 +61,10 @@ function handleUnmount (node) {
 }
 
 export default function tearDown (node, part) {
-  // bail out if node is reused. It might be on different index
-  if (node && node.isReused) return;
+  // bail out if node is non-renderable node or if the node is reused (It might be on different index )
+  if (!isRenderableNode(node) || node.isReused) return;
 
+  part = isBrahmosComponent(node) ? node.componentInstance.__part : part;
   // call componentWillUnmount Lifecycle
   handleUnmount(node);
 
