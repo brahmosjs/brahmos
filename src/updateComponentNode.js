@@ -30,12 +30,7 @@ function getCurrentContext(Component, componentInstance, context) {
 }
 
 function renderWithErrorBoundaries(part, node, context, forceRender, isFirstRender, handleError) {
-  const {
-    type: Component,
-    componentInstance,
-    props,
-    __$isBrahmosClassComponent$__: isClassComponent,
-  } = node;
+  const { type: Component, componentInstance, props, __$isBrahmosClassComponent$__: isClassComponent } = node;
   // render nodes
   const renderNodes = componentInstance.__render(props);
 
@@ -87,12 +82,7 @@ function renderWithErrorBoundaries(part, node, context, forceRender, isFirstRend
  * Update component node
  */
 export default function updateComponentNode(part, node, oldNode, context, forceRender) {
-  const {
-    type: Component,
-    props = {},
-    __$isBrahmosClassComponent$__: isClassComponent,
-    ref,
-  } = node;
+  const { type: Component, props = {}, __$isBrahmosClassComponent$__: isClassComponent, ref } = node;
 
   let isFirstRender = false;
   let shouldUpdate = true;
@@ -102,9 +92,7 @@ export default function updateComponentNode(part, node, oldNode, context, forceR
 
   if (!componentInstance) {
     // create an instance of the component
-    componentInstance = isClassComponent
-      ? new Component(props)
-      : functionalComponentInstance(Component);
+    componentInstance = isClassComponent ? new Component(props) : functionalComponentInstance(Component);
 
     /**
      * store the part on the component instance,
@@ -130,12 +118,7 @@ export default function updateComponentNode(part, node, oldNode, context, forceR
    */
   componentInstance.__componentNode = node;
 
-  const {
-    __unCommittedState,
-    shouldComponentUpdate,
-    props: prevProps,
-    state: prevState,
-  } = componentInstance;
+  const { __unCommittedState, shouldComponentUpdate, props: prevProps, state: prevState } = componentInstance;
 
   let snapshot;
 
@@ -148,14 +131,11 @@ export default function updateComponentNode(part, node, oldNode, context, forceR
     let state = __unCommittedState || prevState;
 
     // call getDerivedStateFromProps hook with the unCommitted state
-    state = mergeState(
-      state,
-      callLifeCycle(Component, 'getDerivedStateFromProps', [props, state])
-    );
+    state = mergeState(state, callLifeCycle(Component, 'getDerivedStateFromProps', [props, state]));
     /**
-       * check if component is instance of PureComponent, if yes then,
-       * do shallow check for props and states
-       */
+     * check if component is instance of PureComponent, if yes then,
+     * do shallow check for props and states
+     */
 
     if (componentInstance instanceof PureComponent && !forceRender) {
       shouldUpdate = !shallowEqual(state, prevState) || !shallowEqual(props, prevProps);

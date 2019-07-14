@@ -3,14 +3,7 @@ import updateNode from './updateNode';
 
 import { applyHandlers } from './mountHandlerQueue';
 
-export default function updater(
-  parts,
-  values,
-  oldValues = [],
-  context,
-  forceUpdate,
-  root
-) {
+export default function updater(parts, values, oldValues = [], context, forceUpdate, root) {
   for (let i = 0, ln = parts.length; i < ln; i++) {
     const part = parts[i];
     const value = values[i];
