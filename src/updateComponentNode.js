@@ -11,7 +11,7 @@ import updateNode from './updateNode';
 
 import shallowEqual from './helpers/shallowEqual';
 
-function getCurrentContext (Component, componentInstance, context) {
+function getCurrentContext(Component, componentInstance, context) {
   // if component has createContext index, we treat it as provider
   const { __ccId } = Component;
   const { __context } = componentInstance;
@@ -29,7 +29,7 @@ function getCurrentContext (Component, componentInstance, context) {
   return newContext;
 }
 
-function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRender, handleError) {
+function renderWithErrorBoundaries(part, node, context, forceRender, isFirstRender, handleError) {
   const {
     type: Component,
     componentInstance,
@@ -86,7 +86,7 @@ function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRen
 /**
  * Update component node
  */
-export default function updateComponentNode (part, node, oldNode, context, forceRender) {
+export default function updateComponentNode(part, node, oldNode, context, forceRender) {
   const {
     type: Component,
     props = {},
@@ -157,8 +157,8 @@ export default function updateComponentNode (part, node, oldNode, context, force
        * do shallow check for props and states
        */
 
-    if (componentInstance instanceof PureComponent) {
-      shouldUpdate = !shallowEqual(state, prevState) || !shallowEqual(props, prevProps) || forceRender;
+    if (componentInstance instanceof PureComponent && !forceRender) {
+      shouldUpdate = !shallowEqual(state, prevState) || !shallowEqual(props, prevProps);
     }
 
     /**

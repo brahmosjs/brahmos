@@ -6,7 +6,6 @@ export class Component {
   constructor(props) {
     this.props = props;
   }
-
   setState(newState, callback) {
     /**
      * When setState is called batch all the state changes
