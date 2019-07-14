@@ -10,8 +10,6 @@ import { setRef } from './refs';
 import { cleanEffects } from './hooks';
 
 function handleUnmount (node) {
-  if (!isRenderableNode(node)) return;
-
   const { componentInstance, ref } = node;
   /**
    * if node is classComponent We may have to call componentWillUnmount lifecycle method
@@ -65,6 +63,7 @@ export default function tearDown (node, part) {
   if (!isRenderableNode(node) || node.isReused) return;
 
   part = isBrahmosComponent(node) ? node.componentInstance.__part : part;
+
   // call componentWillUnmount Lifecycle
   handleUnmount(node);
 
