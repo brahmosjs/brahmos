@@ -12,7 +12,10 @@ export default function render (node, target) {
   };
 
   // associate instance on node using last rendered node
-  associateInstance(node, target.__brahmosNode);
+  const renderedNode = target.__brahmosNode;
+  if (renderedNode) {
+    associateInstance(node, renderedNode);
+  }
 
   // pass the context as empty object
   updater([part], [node], [], {}, false, true);

@@ -36,8 +36,11 @@ function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRen
     props,
     __$isBrahmosClassComponent$__: isClassComponent,
   } = node;
+
+  const oldNodes = componentInstance.__nodes;
+
   // render nodes
-  const renderNodes = componentInstance.__render(props);
+  const newNodes = componentInstance.__render(props);
 
   /**
    * clean effects for functional component,
@@ -52,7 +55,7 @@ function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRen
      * store lastNode into the component instance so later
      * if the component does not have to update it should return the stored lastNode
      */
-    componentInstance.__lastNode = updateNode(part, renderNodes, null, context, false);
+    componentInstance.__lastNode = updateNode(part, newNodes, oldNodes, context, false);
   } catch (err) {
     if (isClassComponent && handleError) {
       let { state, componentDidCatch } = componentInstance;
