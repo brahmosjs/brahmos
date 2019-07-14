@@ -30,6 +30,11 @@ export class Component {
     });
   }
 
+  forceUpdate (callback) {
+    reRender(this, true);
+    callback(this.state);
+  }
+
   __batchStateChange () {
     if (this.__updatesPromise) return this.__updatesPromise;
 

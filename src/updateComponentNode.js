@@ -52,7 +52,7 @@ function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRen
      * store lastNode into the component instance so later
      * if the component does not have to update it should return the stored lastNode
      */
-    componentInstance.__lastNode = updateNode(part, renderNodes, null, context, forceRender);
+    componentInstance.__lastNode = updateNode(part, renderNodes, null, context, false);
   } catch (err) {
     if (isClassComponent && handleError) {
       let { state, componentDidCatch } = componentInstance;
@@ -157,7 +157,7 @@ export default function updateComponentNode (part, node, oldNode, context, force
        * do shallow check for props and states
        */
 
-    if (componentInstance instanceof PureComponent) {
+    if (componentInstance instanceof PureComponent && !forceRender) {
       shouldUpdate = !shallowEqual(state, prevState) || !shallowEqual(props, prevProps);
     }
 
@@ -166,7 +166,7 @@ export default function updateComponentNode (part, node, oldNode, context, force
      * marked component to not update then we don't have to call shouldComponentUpdate
      * Also we shouldn't call shouldComponentUpdate on first render
      */
-    if (shouldComponentUpdate && shouldUpdate && !isFirstRender) {
+    if (shouldComponentUpdate && shouldUpdate && !isFirstRender && !forceRender) {
       shouldUpdate = shouldComponentUpdate.call(componentInstance, props, state);
     }
 
