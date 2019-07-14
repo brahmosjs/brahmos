@@ -61,7 +61,7 @@ function handleUnmount (node) {
 }
 
 export default function tearDown (node, part) {
-  // bail out if node is reused. It might be on different index
+  // bail out if node is non-renderable node or if the node is reused (It might be on different index )
   if (!isRenderableNode(node) || node.isReused) return;
 
   part = isBrahmosComponent(node) ? node.componentInstance.__part : part;

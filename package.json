@@ -13,7 +13,7 @@
     "start": "webpack-dev-server --open",
     "build": "babel src --out-dir lib",
     "bundle": "cross-env NODE_ENV=production rollup -c rollup.config.js",
-    "lint": "eslint ./ --fix"
+    "lint": "eslint ./src ./example --fix"
   },
   "repository": {
     "type": "git",
