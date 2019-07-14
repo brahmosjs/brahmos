@@ -13,7 +13,7 @@ function CreatePortalExample () {
   const [display, setDisplay] = useState(true);
   return (<div>
     {display && createPortal(<Child/>, document.querySelector('#another-root'))}
-    <button onClick={() => { console.log(display); setDisplay(false); }}>Hide</button>
+    <button onClick={() => { setDisplay(false); }}>Hide</button>
   </div>);
 }
 
