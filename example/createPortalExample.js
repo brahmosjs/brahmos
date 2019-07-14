@@ -4,6 +4,7 @@ class Child extends Component {
   componentWillUnmount () {
     console.log('unmounted');
   }
+
   render () {
     return (<div>Hello New Root!</div>);
   }

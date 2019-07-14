@@ -4,6 +4,7 @@ class Child extends Component {
   logSomething () {
     console.log('something');
   }
+
   render () {
     return (<div>Hello World!!</div>);
   }
@@ -20,6 +21,7 @@ export default class RefsExample extends Component {
     this.domCreateRef = createRef();
     this.forwardedRef = createRef();
   }
+
   logRefs = () => {
     console.log(this.childCreateRef);
     console.log(this.childCallbackRef);
@@ -27,6 +29,7 @@ export default class RefsExample extends Component {
     console.log(this.domCbRef);
     console.log(this.forwardedRef);
   }
+
   render () {
     return (
       <div>
