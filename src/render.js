@@ -4,10 +4,10 @@ import associateInstance from './associateInstance';
 /**
  * Method to render a node
  */
-export default function render(node, target) {
+export default function render (node, target) {
   const part = {
     parentNode: target,
-    isNode: true
+    isNode: true,
   };
 
   // associate instance on node using last rendered node
@@ -25,7 +25,7 @@ export default function render(node, target) {
 /**
  * Method to rerender a given component
  */
-export function reRender(component, forceUpdate = false) {
+export function reRender (component, forceUpdate = false) {
   const { __part: part, __componentNode: node, __context: context } = component;
   updater([part], [node], [], context, forceUpdate, true);
 }

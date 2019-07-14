@@ -273,15 +273,17 @@ describe('BrahmosES6Class', () => {
 
   it('renders using forceUpdate even when there is no state', () => {
     class Foo extends Brahmos.Component {
-      constructor(props) {
+      constructor (props) {
         super(props);
         this.mutativeValue = props.initialValue;
       }
-      handleClick(callback) {
+
+      handleClick (callback) {
         this.mutativeValue = 'bar';
-        this.forceUpdate(()=>callback());
+        this.forceUpdate(() => callback());
       }
-      render() {
+
+      render () {
         return (
           <Inner
             name={this.mutativeValue}
@@ -291,6 +293,6 @@ describe('BrahmosES6Class', () => {
       }
     }
     test(<Foo initialValue="foo" />, 'DIV', 'foo');
-    attachedListenerWithCallback(()=>expect(renderedName).toBe('bar'));
+    attachedListenerWithCallback(() => expect(renderedName).toBe('bar'));
   });
 });
