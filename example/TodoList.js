@@ -2,10 +2,11 @@ import Brahmos, { Component } from '../src';
 
 export default class TodoList extends Component {
   static defaultProps = {
-    maxCount: 5
+    maxCount: 5,
   };
 
-  state = { todos: [], text: "" };
+  state = { todos: [], text: '' };
+
   setText = e => {
     this.setState({ text: e.target.value });
   };
@@ -17,10 +18,10 @@ export default class TodoList extends Component {
       return;
     }
     todos = todos.concat(text);
-    this.setState({ todos, text: "" });
+    this.setState({ todos, text: '' });
   };
 
-  render() {
+  render () {
     const { todos, text } = this.state;
     const { maxCount } = this.props;
     return (

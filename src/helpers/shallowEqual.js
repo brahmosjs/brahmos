@@ -2,15 +2,15 @@
  * Source :  https://github.com/facebook/react/blob/master/packages/shared/shallowEqual.js
  */
 
-function shallowEqual(objA, objB) {
+function shallowEqual (objA, objB) {
   if (Object.is(objA, objB)) {
     return true;
   }
 
   if (
-    typeof objA !== "object" ||
+    typeof objA !== 'object' ||
     objA === null ||
-    typeof objB !== "object" ||
+    typeof objB !== 'object' ||
     objB === null
   ) {
     return false;

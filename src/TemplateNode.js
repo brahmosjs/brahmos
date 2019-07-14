@@ -17,10 +17,12 @@ export default class TemplateNode {
     // TODO: Check if you want to use Array.from instead
     this.nodes = toArray(this.fragment.childNodes);
   }
+
   createNode () {
     const { template } = this.templateResult;
     return document.importNode(template.content, true);
   }
+
   createWalker (node) {
     /**
      * Only walk through elements and comment node,
@@ -39,9 +41,11 @@ export default class TemplateNode {
       false
     );
   }
+
   isBrahmosCommentNode (node) {
     return node && node.nodeType === 8 && node.textContent === marker;
   }
+
   getParts () {
     const { fragment, templateResult, isBrahmosCommentNode } = this;
 
@@ -122,6 +126,7 @@ export default class TemplateNode {
 
     return parts;
   }
+
   patchParts (nodePart) {
     const { parts } = this;
     const { parentNode, nextSibling, previousSibling } = nodePart;

@@ -23,6 +23,7 @@ describe('BrahmosES6Class', () => {
       getName () {
         return this.props.name;
       }
+
       render () {
         attachedListenerWithCallback = (callback) => this.props.onClick(callback);
         attachedListener = this.props.onClick;
@@ -61,6 +62,7 @@ describe('BrahmosES6Class', () => {
         super(props);
         this.state = { bar: this.props.initialValue };
       }
+
       render () {
         return <span className={this.state.bar} />;
       }
@@ -74,9 +76,11 @@ describe('BrahmosES6Class', () => {
         super(props);
         this.state = { bar: props.initialValue };
       }
+
       changeState () {
         this.setState({ bar: 'bar' });
       }
+
       render () {
         if (this.state.bar === 'foo') {
           return <div className="foo" />;
@@ -92,12 +96,14 @@ describe('BrahmosES6Class', () => {
   it('sets initial state with value returned by static getDerivedStateFromProps', () => {
     class Foo extends Brahmos.Component {
       state = {};
+
       static getDerivedStateFromProps (nextProps, prevState) {
         return {
           foo: nextProps.foo,
           bar: 'bar',
         };
       }
+
       render () {
         return <div className={`${this.state.foo} ${this.state.bar}`} />;
       }
@@ -111,11 +117,13 @@ describe('BrahmosES6Class', () => {
         foo: 'foo',
         bar: 'bar',
       };
+
       static getDerivedStateFromProps (nextProps, prevState) {
         return {
           foo: `not-${prevState.foo}`,
         };
       }
+
       render () {
         return <div className={`${this.state.foo} ${this.state.bar}`} />;
       }
@@ -128,6 +136,7 @@ describe('BrahmosES6Class', () => {
       state = {
         value: 'initial',
       };
+
       static getDerivedStateFromProps (nextProps, prevState) {
         if (nextProps.update) {
           return {
@@ -136,6 +145,7 @@ describe('BrahmosES6Class', () => {
         }
         return null;
       }
+
       render () {
         return <div className={this.state.value} />;
       }
@@ -150,6 +160,7 @@ describe('BrahmosES6Class', () => {
         super();
         this.state = null;
       }
+
       render () {
         return <span />;
       }
@@ -163,9 +174,11 @@ describe('BrahmosES6Class', () => {
         super(props);
         this.state = { bar: props.initialValue };
       }
+
       handleClick (callback) {
         this.setState({ bar: 'bar' }, () => callback());
       }
+
       render () {
         return (
           <Inner name={this.state.bar} onClick={this.handleClick.bind(this)} />
@@ -183,9 +196,11 @@ describe('BrahmosES6Class', () => {
         super(props);
         this.state = { bar: props.initialValue };
       }
+
       handleClick () {
         this.setState({ bar: 'bar' });
       }
+
       render () {
         return <Inner name={this.state.bar} onClick={this.handleClick} />;
       }
@@ -201,19 +216,24 @@ describe('BrahmosES6Class', () => {
         super();
         this.state = {};
       }
+
       componentDidMount () {
         lifeCycles.push('did-mount');
       }
+
       shouldComponentUpdate (nextProps, nextState) {
         lifeCycles.push('should-update', nextProps, nextState);
         return true;
       }
+
       componentDidUpdate (prevProps, prevState) {
         lifeCycles.push('did-update', prevProps, prevState);
       }
+
       componentWillUnmount () {
         lifeCycles.push('will-unmount');
       }
+
       render () {
         return <span className={this.props.value} />;
       }
@@ -225,11 +245,13 @@ describe('BrahmosES6Class', () => {
           isFooVisible: this.props.visible,
         };
       }
+
       unmountFoo (callback) {
         this.setState({
           isFooVisible: false,
         }, () => callback);
       }
+
       render () {
         if (this.state.isFooVisible) {
           return <Foo value={this.props.value}/>;

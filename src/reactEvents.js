@@ -1,7 +1,7 @@
 import { getNodeName } from './utils';
 
 const RENAMED_EVENTS = {
-  'doubleclick': 'dblclick',
+  doubleclick: 'dblclick',
 };
 
 export const eventHandlerCache = new WeakMap();

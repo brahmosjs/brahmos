@@ -31,6 +31,7 @@ export default class TemplateTag {
   constructor (strings) {
     this.strings = strings;
   }
+
   create () {
     if (this.template) return;
 
@@ -38,6 +39,7 @@ export default class TemplateTag {
 
     this.createTemplate();
   }
+
   getPartsMeta () {
     const { strings } = this;
     let tagStarted, quoteStart;
@@ -110,6 +112,7 @@ export default class TemplateTag {
 
     return partsMeta;
   }
+
   createTemplate () {
     const { partsMeta, strings } = this;
     const template = document.createElement('template');
@@ -117,7 +120,7 @@ export default class TemplateTag {
     let htmlStr = '';
 
     for (let i = 0, l = strings.length - 1; i < l; i++) {
-      let str = strings[i];
+      const str = strings[i];
       const part = partsMeta[i];
       const { isNode } = part;
 
