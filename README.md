@@ -3,7 +3,7 @@
 </p>
 
 # Brahmos
-Supercharged UI library with modern React API and native templates.
+Supercharged JavaScript library to build user interfaces with modern React API and native templates.
 
 ## Features
 - Lightweight and Fast.
