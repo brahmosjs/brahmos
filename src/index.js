@@ -27,6 +27,9 @@ import createContext from './createContext';
 /** ForwardRef and createRef */
 import { forwardRef, createRef } from './refs';
 
+/** unmountComponentAtNode */
+import unmountComponentAtNode from './unmountComponentAtNode';
+
 const Brahmos = {
   createElement,
   render,
@@ -45,6 +48,7 @@ const Brahmos = {
   forwardRef,
   createRef,
   createPortal,
+  unmountComponentAtNode,
 };
 
 export {
@@ -65,6 +69,7 @@ export {
   forwardRef,
   createRef,
   createPortal,
+  unmountComponentAtNode,
 };
 
 export default Brahmos;
