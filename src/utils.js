@@ -5,6 +5,11 @@ export const RESERVED_ATTRIBUTES = {
   ref: 1,
 };
 
+export const MODIFIED_ATTRIBUTES = {
+  className: 'class',
+  htmFor: 'for',
+};
+
 /**
  * Method to identify if a jsx element is a html element or custom component
  * Taken from https://github.com/babel/babel/blob/master/packages/babel-types/src/validators/react/isCompatTag.js

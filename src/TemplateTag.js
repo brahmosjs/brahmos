@@ -58,6 +58,12 @@ export default class TemplateTag {
 
       let result, isAttribute, isNode, subStrIndex, subEndIndex;
 
+      const pushToTagAttr = () => {
+        const subStr = str.substring(subStrIndex || 0, subEndIndex || str.length);
+
+        tagAttrs.push.apply(tagAttrs, extractAttributeName(subStr));
+      };
+
       while ((result = TAG_QUOTE_REGEX.exec(str)) !== null) {
         /**
          * Once we find < we assume tag is started and we will keep the tagStarted until we find >.
@@ -76,14 +82,27 @@ export default class TemplateTag {
           tagStarted = false;
           // store index of place where tag is ending
           subEndIndex = result.index;
+
+          /**
+           * if there no subStrIndex it means the current tag has dynamic part
+           * Ex: for string: {dynamicPart}class="some-class" >
+           */
+          if (subStrIndex === undefined) {
+            pushToTagAttr();
+          }
         }
       }
 
+      /**
+       * If a tag has started but not end it means
+       * the string is part of a tag which has dynamic attribute
+       * ex:
+       * 1. {dynamicPart} class="some-class" {dynamicPart}
+       * 2. <class="some-class" {dynamicPart}
+       */
       // if it has a tag part extract all the attribute names from the string
       if (tagStarted) {
-        const subStr = str.substring(subStrIndex || 0, subEndIndex || str.length);
-
-        tagAttrs.push.apply(tagAttrs, extractAttributeName(subStr));
+        pushToTagAttr();
       }
 
       /**

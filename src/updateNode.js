@@ -110,12 +110,18 @@ function updateArrayNodes (part, nodes, oldNodes = [], context) {
      */
     const _nextSibling = lastChild ? lastChild.nextSibling : parentNode.firstChild;
 
+    /**
+     * Create a part information for array item and call the updateNode.
+     * updateNode will not return last rendered child only in case where,
+     * the node is non  renderable node, so in such case
+     * keep lastChild as old lastChild
+     */
     lastChild = updateNode({
       parentNode,
       previousSibling: lastChild,
       nextSibling: _nextSibling,
       isNode: true,
-    }, node, oldNode, context, forceUpdate);
+    }, node, oldNode, context, forceUpdate) || lastChild;
   }
 
   // teardown all extra pending old nodes
@@ -124,7 +130,7 @@ function updateArrayNodes (part, nodes, oldNodes = [], context) {
   }
 
   // remove all extra nodes between lastChild and nextSibling
-  if (lastChild) deleteNodesBetween(parentNode, lastChild, nextSibling);
+  deleteNodesBetween(parentNode, lastChild, nextSibling);
 
   return lastChild;
 }

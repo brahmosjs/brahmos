@@ -487,11 +487,14 @@ There are different types of updates with two categories.
 - Attribute updater
 - Node updater
 
+Apart from calling proper updater it takes care of two more thing
+- Merge all dynamic attribute for a dom node, so it can be effectively updated.
+- Set proper ref if ref prop is passed to an element.
+
 ### Attribute updater
 Source: https://github.com/s-yadav/brahmos/blob/master/src/updateAttribute.js
 
 - Attribute updater takes care of updating the attribute of a given node based on the index of that attribute. This information comes from the part object.
-- It also takes care of setting proper ref if ref prop is passed to an element.
 - It handles dom node property and attributes differently.
 - For event properties, it takes care of removing old event listeners (if the eventListener is changed) and add new event listeners.
 - To be React compatible it has synthetic events only for inputs. It has the same onChange API as react. https://github.com/s-yadav/brahmos/blob/master/src/reactEvents.js
