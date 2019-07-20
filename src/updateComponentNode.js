@@ -9,6 +9,8 @@ import { addHandler } from './mountHandlerQueue';
 
 import updateNode from './updateNode';
 
+import shallowEqual from './helpers/shallowEqual';
+
 function getCurrentContext (Component, componentInstance, context) {
   // if component has createContext index, we treat it as provider
   const { __ccId } = Component;
@@ -35,8 +37,10 @@ function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRen
     __$isBrahmosClassComponent$__: isClassComponent,
   } = node;
 
+  const oldNodes = componentInstance.__nodes;
+
   // render nodes
-  const renderNodes = componentInstance.__render(props);
+  const newNodes = componentInstance.__render(props);
 
   /**
    * clean effects for functional component,
@@ -51,7 +55,7 @@ function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRen
      * store lastNode into the component instance so later
      * if the component does not have to update it should return the stored lastNode
      */
-    componentInstance.__lastNode = updateNode(part, renderNodes, null, context, forceRender);
+    componentInstance.__lastNode = updateNode(part, newNodes, oldNodes, context, false);
   } catch (err) {
     if (isClassComponent && handleError) {
       let { state, componentDidCatch } = componentInstance;
@@ -156,8 +160,8 @@ export default function updateComponentNode (part, node, oldNode, context, force
        * do shallow check for props and states
        */
 
-    if (componentInstance instanceof PureComponent) {
-      shouldUpdate = state !== componentInstance.state || props !== componentInstance.props;
+    if (componentInstance instanceof PureComponent && !forceRender) {
+      shouldUpdate = !shallowEqual(state, prevState) || !shallowEqual(props, prevProps);
     }
 
     /**
@@ -165,7 +169,7 @@ export default function updateComponentNode (part, node, oldNode, context, force
      * marked component to not update then we don't have to call shouldComponentUpdate
      * Also we shouldn't call shouldComponentUpdate on first render
      */
-    if (shouldComponentUpdate && shouldUpdate && !isFirstRender) {
+    if (shouldComponentUpdate && shouldUpdate && !isFirstRender && !forceRender) {
       shouldUpdate = shouldComponentUpdate.call(componentInstance, props, state);
     }
 

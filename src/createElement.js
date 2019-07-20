@@ -26,9 +26,7 @@ export default function createElement (
    * but a simple tag instead. In that case return a tagElement instance.
    */
   if (typeof element === 'string') return createTagElement(element, configs, children);
-
-  const props = omit(configs, { key: 1, ref: !element.__isForwardRef });
-
+  const props = { ...element.defaultProps, ...omit(configs, { key: 1, ref: !element.__isForwardRef }) };
   // add children to props
   props.children = children;
 

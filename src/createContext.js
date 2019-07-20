@@ -25,6 +25,7 @@ export default function createContext (defaultValue) {
       super(props);
       this.subs = [];
     }
+
     shouldComponentUpdate (nextProp) {
       const { value } = this.props;
       if (value !== nextProp.value) {
@@ -32,6 +33,7 @@ export default function createContext (defaultValue) {
       }
       return true;
     }
+
     sub (component) {
       const { subs } = this;
       const callback = getConsumerCallback(component);
@@ -45,6 +47,7 @@ export default function createContext (defaultValue) {
         if (componentWillUnmount) componentWillUnmount();
       };
     }
+
     render () {
       return this.props.children;
     }

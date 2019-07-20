@@ -6,6 +6,7 @@ export class Component {
   constructor (props) {
     this.props = props;
   }
+
   setState (newState, callback) {
     /**
      * When setState is called batch all the state changes
@@ -28,6 +29,12 @@ export class Component {
       if (callback) callback(this.state);
     });
   }
+
+  forceUpdate (callback) {
+    reRender(this, true);
+    callback(this.state);
+  }
+
   __batchStateChange () {
     if (this.__updatesPromise) return this.__updatesPromise;
 
@@ -42,6 +49,7 @@ export class Component {
     });
     return this.__updatesPromise;
   }
+
   __render () {
     // get the new rendered node
     const nodes = this.render();

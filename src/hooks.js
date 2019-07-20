@@ -205,7 +205,7 @@ export function useContext (Context) {
   const { __context: context } = currentComponent;
   const provider = context[id];
 
-  let value = provider ? provider.props.value : defaultValue;
+  const value = provider ? provider.props.value : defaultValue;
 
   useLayoutEffect(() => {
     // subscribe to provider for the context value change

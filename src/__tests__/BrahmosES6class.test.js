@@ -1,3 +1,7 @@
+/*
+Forked from -
+https://github.com/facebook/react/blob/master/packages/react/src/__tests__/ReactES6Class-test.js
+*/
 import Brahmos, { render } from '..';
 
 describe('BrahmosES6Class', () => {
@@ -70,9 +74,11 @@ describe('BrahmosES6Class', () => {
         super(props);
         this.state = { bar: props.initialValue };
       }
+
       changeState () {
         this.setState({ bar: 'bar' });
       }
+
       render () {
         if (this.state.bar === 'foo') {
           return <div className="foo" />;
@@ -159,9 +165,11 @@ describe('BrahmosES6Class', () => {
         super(props);
         this.state = { bar: props.initialValue };
       }
+
       handleClick (callback) {
         this.setState({ bar: 'bar' }, () => callback());
       }
+
       render () {
         return (
           <Inner name={this.state.bar} onClick={this.handleClick.bind(this)} />
@@ -179,9 +187,11 @@ describe('BrahmosES6Class', () => {
         super(props);
         this.state = { bar: props.initialValue };
       }
+
       handleClick () {
         this.setState({ bar: 'bar' });
       }
+
       render () {
         return <Inner name={this.state.bar} onClick={this.handleClick} />;
       }
@@ -197,19 +207,24 @@ describe('BrahmosES6Class', () => {
         super();
         this.state = {};
       }
+
       componentDidMount () {
         lifeCycles.push('did-mount');
       }
+
       shouldComponentUpdate (nextProps, nextState) {
         lifeCycles.push('should-update', nextProps, nextState);
         return true;
       }
+
       componentDidUpdate (prevProps, prevState) {
         lifeCycles.push('did-update', prevProps, prevState);
       }
+
       componentWillUnmount () {
         lifeCycles.push('will-unmount');
       }
+
       render () {
         return <span className={this.props.value} />;
       }
@@ -244,31 +259,29 @@ describe('BrahmosES6Class', () => {
     lifeCycles = []; // reset
     instance.unmountFoo(() => expect(lifeCycles).toEqual(['will-unmount']));
   });
+
+  it('renders using forceUpdate even when there is no state', () => {
+    class Foo extends Brahmos.Component {
+      constructor (props) {
+        super(props);
+        this.mutativeValue = props.initialValue;
+      }
+
+      handleClick (callback) {
+        this.mutativeValue = 'bar';
+        this.forceUpdate(() => callback());
+      }
+
+      render () {
+        return (
+          <Inner
+            name={this.mutativeValue}
+            onClick={this.handleClick.bind(this)}
+          />
+        );
+      }
+    }
+    test(<Foo initialValue="foo" />, 'DIV', 'foo');
+    attachedListenerWithCallback(() => expect(renderedName).toBe('bar'));
+  });
 });
-
-/** Currently unsupported tests */
-
-// Doesn't have forceUpdate
-
-// it('renders using forceUpdate even when there is no state', () => {
-//   class Foo extends Brahmos.Component {
-//     constructor(props) {
-//       super(props);
-//       this.mutativeValue = props.initialValue;
-//     }
-//     handleClick(callback) {
-//       this.mutativeValue = 'bar';
-//       this.forceUpdate(()=>callback());
-//     }
-//     render() {
-//       return (
-//         <Inner
-//           name={this.mutativeValue}
-//           onClick={this.handleClick.bind(this)}
-//         />
-//       );
-//     }
-//   }
-//   test(<Foo initialValue="foo" />, 'DIV', 'foo');
-//   attachedListenerWithCallback(()=>expect(renderedName).toBe('bar'));
-// });
