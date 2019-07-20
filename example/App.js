@@ -5,6 +5,7 @@ import UseStateExample from './UseStateExample';
 import ContextExample from './context';
 import RefsExample from './RefsExample';
 import CreatePortalExample from './createPortalExample';
+import CloneElement from "./cloneElement";
 
 export default function App () {
   return (
@@ -28,6 +29,10 @@ export default function App () {
       <div className="wrapper">
         <h2>CreatePortal Example</h2>
         <CreatePortalExample/>
+      </div>
+      <div className="wrapper">
+        <h2>Clone Element</h2>
+        <CloneElement/>
       </div>
     </div>
   );
