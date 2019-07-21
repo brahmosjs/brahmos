@@ -29,7 +29,19 @@ function getCurrentContext (Component, componentInstance, context) {
   return newContext;
 }
 
-function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRender, handleError) {
+// given a component node return its underlying non component node, which has associated DOM node
+function findNonComponentNode (node) {
+  let componentInstance, context;
+
+  while (node && (componentInstance = node.componentInstance) && componentInstance.__nodes) {
+    node = componentInstance.__nodes;
+    context = componentInstance.__context;
+  }
+
+  return { node, context };
+}
+
+function renderWithErrorBoundaries (part, node, context, shouldUpdate, forceUpdate, isFirstRender, handleError) {
   const {
     type: Component,
     componentInstance,
@@ -37,16 +49,29 @@ function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRen
     __$isBrahmosClassComponent$__: isClassComponent,
   } = node;
 
-  const oldNodes = componentInstance.__nodes;
+  const forceUpdateAll = forceUpdate === 'all';
+  let oldNodes = componentInstance.__nodes;
 
-  // render nodes
-  const newNodes = componentInstance.__render(props);
+  /**
+   * if it is a rendered component and we are just updating the dom positions
+   * We look for non component node from a component node and try to render that
+   * Else we do a new render
+   */
+  let newNodes;
+  if (forceUpdateAll && !shouldUpdate) {
+    ({ node: newNodes, context } = findNonComponentNode(node));
+
+    // if it is just an position update keep the oldNode same as new node
+    oldNodes = newNodes;
+  } else {
+    newNodes = componentInstance.__render(props);
+  }
 
   /**
    * clean effects for functional component,
    * no need to clean anything on the first render
    */
-  if (!isFirstRender && !isClassComponent) {
+  if (!isFirstRender && !isClassComponent && shouldUpdate) {
     cleanEffects(componentInstance);
   }
 
@@ -55,7 +80,11 @@ function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRen
      * store lastNode into the component instance so later
      * if the component does not have to update it should return the stored lastNode
      */
-    componentInstance.__lastNode = updateNode(part, newNodes, oldNodes, context, false);
+
+    /**
+     * forward forceUpdate to component child only when forceUpdate is set to all.
+     */
+    componentInstance.__lastNode = updateNode(part, newNodes, oldNodes, context, forceUpdateAll);
   } catch (err) {
     if (isClassComponent && handleError) {
       let { state, componentDidCatch } = componentInstance;
@@ -72,7 +101,7 @@ function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRen
       if (errorState) {
         state = mergeState(state, errorState);
         componentInstance.state = state;
-        renderWithErrorBoundaries(part, node, context, forceRender, isFirstRender, false);
+        renderWithErrorBoundaries(part, node, context, shouldUpdate, forceUpdate, isFirstRender, false);
       }
 
       // call componentDidCatch lifecycle with error
@@ -89,7 +118,7 @@ function renderWithErrorBoundaries (part, node, context, forceRender, isFirstRen
 /**
  * Update component node
  */
-export default function updateComponentNode (part, node, oldNode, context, forceRender) {
+export default function updateComponentNode (part, node, oldNode, context, forceUpdate) {
   const {
     type: Component,
     props = {},
@@ -150,6 +179,8 @@ export default function updateComponentNode (part, node, oldNode, context, force
   if (isClassComponent) {
     let state = __unCommittedState || prevState;
 
+    const checkShouldUpdate = !isFirstRender && forceUpdate !== 'current';
+
     // call getDerivedStateFromProps hook with the unCommitted state
     state = mergeState(
       state,
@@ -160,7 +191,7 @@ export default function updateComponentNode (part, node, oldNode, context, force
        * do shallow check for props and states
        */
 
-    if (componentInstance instanceof PureComponent && !forceRender) {
+    if (componentInstance instanceof PureComponent && checkShouldUpdate) {
       shouldUpdate = !shallowEqual(state, prevState) || !shallowEqual(props, prevProps);
     }
 
@@ -169,7 +200,7 @@ export default function updateComponentNode (part, node, oldNode, context, force
      * marked component to not update then we don't have to call shouldComponentUpdate
      * Also we shouldn't call shouldComponentUpdate on first render
      */
-    if (shouldComponentUpdate && shouldUpdate && !isFirstRender && !forceRender) {
+    if (shouldComponentUpdate && shouldUpdate && checkShouldUpdate) {
       shouldUpdate = shouldComponentUpdate.call(componentInstance, props, state);
     }
 
@@ -201,21 +232,24 @@ export default function updateComponentNode (part, node, oldNode, context, force
     snapshot = callLifeCycle(componentInstance, 'getSnapshotBeforeUpdate', [prevProps, prevState]);
   }
 
-  // update a component update only if it can be updated based on shouldComponentUpdate
-  if (shouldUpdate) {
-    renderWithErrorBoundaries(part, node, context, forceRender, isFirstRender, true);
+  /**
+   * update a component update only if it can be updated based on shouldComponentUpdate
+   * Or if the child component has to render based on forceUpdate
+   */
+  if (shouldUpdate || forceUpdate === 'all') {
+    renderWithErrorBoundaries(part, node, context, shouldUpdate, forceUpdate, isFirstRender, true);
   }
 
   // After the mount/update call the lifecycle method
   if (isClassComponent) {
     /**
-     * if it is a first render then schedule the componentDidMount otherwise call componentDidUpdate
+     * if it is a first render then schedule the componentDidMount otherwise call componentDidUpdate if it is updated
      * We schedule componentDidMount as the component may mount in fragment, but we want to
      * call componentDidMount only after it is attached to the DOM
      */
     if (isFirstRender) {
       addHandler(componentInstance, 'componentDidMount');
-    } else {
+    } else if (shouldUpdate) {
       callLifeCycle(componentInstance, 'componentDidUpdate', [prevProps, prevState, snapshot]);
     }
   } else {

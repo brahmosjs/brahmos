@@ -31,8 +31,8 @@ export class Component {
   }
 
   forceUpdate (callback) {
-    reRender(this, true);
-    callback(this.state);
+    reRender(this, 'current');
+    if (callback) callback(this.state);
   }
 
   __batchStateChange () {

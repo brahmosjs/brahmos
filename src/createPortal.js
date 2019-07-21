@@ -5,9 +5,13 @@ import render from './render';
  *  the parent component without losing the context
  */
 function createPortal (child, container) {
+  // mark the childe node as ported node
+  child.portalContainer = container;
+
   render(child, container);
-  // We need to return the rendered Brahmos node so that life cycles are handled properly on render flow
-  return container.__brahmosNode;
+
+  // We need to return the rendered child node so that life cycles are handled properly on render flow
+  return child;
 }
 
 export default createPortal;

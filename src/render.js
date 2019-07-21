@@ -29,7 +29,7 @@ export default function render (node, target) {
 /**
  * Method to rerender a given component
  */
-export function reRender (component, forceUpdate = false) {
+export function reRender (component, forceUpdate) {
   const { __part: part, __componentNode: node, __context: context } = component;
   updater([part], [node], [], context, forceUpdate, true);
 }

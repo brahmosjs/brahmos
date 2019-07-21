@@ -22,14 +22,20 @@ import updater from './updater';
  */
 function updateTextNode (part, node, oldNode) {
   const { parentNode, previousSibling, nextSibling } = part;
-  // get the last text node
-  let textNode = getCurrentNode(parentNode, previousSibling, nextSibling);
+  /**
+   * get the last text node
+   * As we always override the text node and don't change the position of
+   * text node, Always send nextSibling as null to getCurrentNode
+   * So we always pick the text node based on previousSibling
+   * or parentNode (if prevSibling is null).
+   */
+  let textNode = getCurrentNode(parentNode, previousSibling, null);
 
   /**
-     * In case of old node is not a text node, or not present
+     * In case of old node is not a text node or undefined, or textNode is not present
      * delete old node and add new node
      */
-  if (!isPrimitiveNode(oldNode)) {
+  if (!isPrimitiveNode(oldNode) || !textNode) {
     if (oldNode !== undefined) {
       // delete the existing elements
       tearDown(oldNode, part);
@@ -38,8 +44,6 @@ function updateTextNode (part, node, oldNode) {
     // add nodes at the right location
     textNode = insertBefore(parentNode, nextSibling, node);
   } else {
-    // just update the content of the textNode
-    const textNode = getCurrentNode(parentNode, previousSibling, nextSibling);
     textNode.textContent = node;
   }
 
@@ -100,9 +104,13 @@ function updateArrayNodes (part, nodes, oldNodes = [], context) {
     // delete unused non brahmos node
     const oldNode = spliceUnusedNodes(i, oldNodes, parentNode, lastChild);
     /**
-       * Pass forceUpdate as true, when newNodes and oldNodes keys are not same
+       * Pass forceUpdate as all when
+       * - node is primitive type as they don't have any key
+       * - when newNodes and oldNodes keys are not same
        */
-    const forceUpdate = !(node && oldNode && node.key === oldNode.key);
+
+    const forceUpdate = (isPrimitiveNode(node) ||
+    (node && oldNode && node.key !== oldNode.key)) && 'all';
 
     /**
      * if lasChild is not present it means the node has to be added before the firstChild
@@ -138,7 +146,7 @@ function updateArrayNodes (part, nodes, oldNodes = [], context) {
 /**
  * Update tagged template node
  */
-function updateTagNode (part, node, oldNode, context, forceRender) {
+function updateTagNode (part, node, oldNode, context, forceUpdate) {
   const { parentNode, previousSibling, nextSibling } = part;
 
   let { templateNode, values, oldValues, __$isBrahmosTagElement$__: isTagElement } = node;
@@ -166,8 +174,12 @@ function updateTagNode (part, node, oldNode, context, forceRender) {
   /**
    * update parts before attaching elements to dom,
    * so most of the work happens on fragment
+   * No need to traverse down if node and oldNode is same.
+   * This will only happen when we are just doing position change
    */
-  updater(templateNode.parts, values, oldValues, context);
+  if (node !== oldNode) {
+    updater(templateNode.parts, values, oldValues, context);
+  }
 
   if (freshRender) {
     // delete the existing elements
@@ -184,12 +196,12 @@ function updateTagNode (part, node, oldNode, context, forceRender) {
   }
 
   /**
-     * Rearrange node if forceRender is set and the element is not on correct position
+     * Rearrange node if forceUpdate is set and the element is not on correct position
      */
   const firstChild = templateNode.nodes[0];
   const onCorrectPos = firstChild && firstChild.previousSibling === previousSibling;
 
-  if (firstChild && forceRender && !onCorrectPos) {
+  if (firstChild && forceUpdate && !onCorrectPos) {
     // add nodes at the right position
     insertBefore(parentNode, nextSibling, templateNode.nodes);
   }
@@ -200,7 +212,7 @@ function updateTagNode (part, node, oldNode, context, forceRender) {
 /**
    * Updater to handle any type of node
    */
-export default function updateNode (part, node, oldNode, context, forceRender) {
+export default function updateNode (part, node, oldNode, context, forceUpdate) {
   if (!isRenderableNode(node)) {
     /**
        * If the new node is falsy value and
@@ -213,10 +225,10 @@ export default function updateNode (part, node, oldNode, context, forceRender) {
   } else if (Array.isArray(node)) {
     return updateArrayNodes(part, node, oldNode, context);
   } else if (node.__$isBrahmosComponent$__) {
-    return updateComponentNode(part, node, oldNode, context, forceRender);
+    return updateComponentNode(part, node, oldNode, context, forceUpdate);
   } else if (node.__$isBrahmosTag$__) {
-    return updateTagNode(part, node, oldNode, context, forceRender);
-  } else if (isPrimitiveNode(node) && node !== oldNode) {
+    return updateTagNode(part, node, oldNode, context, forceUpdate);
+  } else if (isPrimitiveNode(node) && (node !== oldNode || forceUpdate)) {
     return updateTextNode(part, node, oldNode);
   }
 }

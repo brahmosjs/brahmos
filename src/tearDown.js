@@ -1,6 +1,5 @@
 import {
   isRenderableNode,
-  isBrahmosComponent,
   deleteNodesBetween,
   callLifeCycle,
 } from './utils';
@@ -62,7 +61,20 @@ export default function tearDown (node, part) {
   // bail out if node is non-renderable node or if the node is reused (It might be on different index )
   if (!isRenderableNode(node) || node.isReused) return;
 
-  part = isBrahmosComponent(node) ? node.componentInstance.__part : part;
+  /**
+   * in case of portal nodes the passed part information will be incorrect
+   * as the node is ported to a different dom node.
+   * In such case take create part information based on portalContainer
+   */
+
+  const { portalContainer } = node;
+
+  if (portalContainer) {
+    part = {
+      parentNode: portalContainer,
+      isNode: true,
+    };
+  }
 
   // call componentWillUnmount Lifecycle
   handleUnmount(node);
