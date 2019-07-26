@@ -48,19 +48,18 @@ function setAttribute (node, attrName, attrValue, oldAttrValue, isSvgAttribute) 
       node[attrName] = attrValue;
     }
   } else {
-    attrName = attrName.toLowerCase();
-
     /**
      * If attribute is prefixed with xlink then we have to set attribute with namespace
      * if attribute value is defined set the new attribute value and if
      * it is not defined and oldAttribute is present remove the oldAttribute;
      */
-    const attrNameWithoutNS = attrName.replace(/^xlink:?/, '');
+    let attrNameWithoutNS = attrName.replace(/^xlink:?/, '');
     if (attrName !== attrNameWithoutNS) {
+      attrNameWithoutNS = attrNameWithoutNS.toLowerCase();
       if (attrValue !== undefined) {
-        node.setAttributeNS(XLINK_NS, attrName, attrValue);
+        node.setAttributeNS(XLINK_NS, attrNameWithoutNS, attrValue);
       } else if (oldAttrValue !== undefined) {
-        node.removeAttributeNS(XLINK_NS, attrName);
+        node.removeAttributeNS(XLINK_NS, attrNameWithoutNS);
       }
     } else if (attrValue !== undefined) {
       node.setAttribute(attrName, attrValue);

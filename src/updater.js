@@ -34,7 +34,7 @@ export default function updater (parts, values, oldValues = [], context, forceUp
             setRef(attrValue, node);
           }
         });
-        part = part[++i];
+        part = parts[++i];
       }
 
       // reduce the counter to correct the loop index. As it is extra incremented in while loop

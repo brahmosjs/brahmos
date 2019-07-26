@@ -26,14 +26,7 @@ export default class TemplateNode {
   createNode (isSvgPart) {
     const { template, svgTemplate } = this.templateResult;
     const templateElement = isSvgPart ? svgTemplate : template;
-    const clone = document.importNode(templateElement.content, true);
-
-    /**
-     * if it the clone element is an svg that will mean that its a part of
-     * some parent svg, which is being added using TagNode.
-     * In such cases create a document fragment from the children of svg.
-     */
-    return isSvgPart ? changeToNode(clone.childNodes[0].childNodes) : clone;
+    return document.importNode(templateElement.content, true);
   }
 
   createWalker (node) {

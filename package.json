@@ -1,6 +1,6 @@
 {
   "name": "brahmos",
-  "version": "0.7.3",
+  "version": "0.8.0",
   "description": "Super charged UI library with modern React API and native templates.",
   "main": "dist/brahmos.js",
   "module": "dist/brahmos.mjs",
@@ -34,7 +34,7 @@
     "babel-eslint": "^9.0.0",
     "babel-jest": "^24.8.0",
     "babel-loader": "^8.0.6",
-    "babel-plugin-brahmos": "^0.3.0",
+    "babel-plugin-brahmos": "^0.4.0",
     "cross-env": "^5.2.0",
     "eslint": "^6.0.1",
     "eslint-config-standard": "^13.0.1",

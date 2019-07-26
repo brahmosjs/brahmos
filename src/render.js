@@ -18,7 +18,7 @@ export default function render (node, target) {
   }
 
   // pass the context as empty object
-  updater([part], [node], [], {}, false, true);
+  updater([part], [node], [], {}, false, false, true);
 
   // store the node reference on target
   target.__brahmosNode = node;

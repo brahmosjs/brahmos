@@ -7,7 +7,9 @@ export const RESERVED_ATTRIBUTES = {
 
 export const MODIFIED_ATTRIBUTES = {
   className: 'class',
-  htmFor: 'for',
+  htmlFor: 'for',
+  acceptCharset: 'accept-charset',
+  httpEquiv: 'http-equiv',
 };
 
 /**
@@ -160,10 +162,10 @@ export function changeToNode (value) {
 
     let i = 0;
 
-    while(value[i]) {
+    while (value[i]) {
       fragment.appendChild(value[i]);
 
-      //no need to increment on nodeList as nodeList is spliced when elements are moved
+      // no need to increment on nodeList as nodeList is spliced when elements are moved
       if (!isNodeList) i += 1;
     }
     return fragment;
@@ -216,6 +218,20 @@ export function insertBefore (parent, end = null, value) {
   parent.insertBefore(node, end);
 
   return persistentNode;
+}
+
+/**
+ * Function to unwrap children from its parent
+ */
+export function unwrap (el) {
+  // get the element's parent node
+  var parent = el.parentNode;
+
+  // move all children out of the element
+  while (el.firstChild) parent.insertBefore(el.firstChild, el);
+
+  // remove the empty element
+  parent.removeChild(el);
 }
 
 /**

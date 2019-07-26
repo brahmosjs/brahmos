@@ -10,9 +10,9 @@
 export default function getTagNode (node, isSvgPart) {
   const { element, values } = node;
 
-  const domElement = isSvgPart ?
-    document.createElementNS('http://www.w3.org/2000/svg', element) :
-    document.createElement(element);
+  const domElement = isSvgPart
+    ? document.createElementNS('http://www.w3.org/2000/svg', element)
+    : document.createElement(element);
 
   const attributePart = {
     isAttribute: true,

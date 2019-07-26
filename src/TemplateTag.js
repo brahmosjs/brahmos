@@ -1,3 +1,5 @@
+import { unwrap } from './utils';
+
 const TAG_QUOTE_REGEX = /[<>"]/g;
 
 /**
@@ -155,12 +157,19 @@ export default class TemplateTag {
     // add the last string
     htmlStr = htmlStr + strings[strings.length - 1];
 
-    // if its svg child wrap it inside svg
-    if (isSvgPart) {
-      htmlStr = `<svg>${htmlStr}</svg>`;
-    }
+    /**
+     * if its svg child wrap it inside svg
+     * so that inner elements are parsed in svg context
+     * Or else add the htmlStr directly
+     */
+    template.innerHTML = isSvgPart ? `<svg>${htmlStr}</svg>` : htmlStr;
 
-    template.innerHTML = htmlStr;
+    /**
+     * Once added to template unwrap the element from svg wrap
+     */
+    if (isSvgPart) {
+      unwrap(template.content.firstChild);
+    }
 
     const templateKey = isSvgPart ? 'svgTemplate' : 'template';
 

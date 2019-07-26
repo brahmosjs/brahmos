@@ -189,13 +189,11 @@ function updateTagNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
     tearDown(oldNode, part);
 
     /**
-     * if we are rendering fragment it means the fragment might have childNodes
+     * add nodes first time
+     * if we are rendering as fragment it means the fragment might have childNodes
      * which templateNode does not have, so for such cases we should reset nodeList on templateNode;
      */
-    templateNode.nodes = toArray(templateNode.fragment.children);
-
-    // add nodes first time
-    insertBefore(parentNode, nextSibling, templateNode.fragment);
+    templateNode.nodes = insertBefore(parentNode, nextSibling, templateNode.fragment);
   }
 
   /**

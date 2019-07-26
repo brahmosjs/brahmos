@@ -1,4 +1,4 @@
-import Brahmos from '../src';
+import Brahmos, { Component } from '../src';
 
 function Path () {
   return (
@@ -10,12 +10,13 @@ function Path () {
   );
 }
 
-function Icon () {
+function Image () {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
       x="0"
       y="0"
+      width="100"
+      height="100"
       version="1.1"
       viewBox="0 0 123.61 125.76"
       xmlSpace="preserve"
@@ -82,4 +83,51 @@ function Icon () {
   );
 }
 
-export default Icon;
+function Chart ({ data }) {
+  return (
+    <svg width="420" height="120">
+      {data.map((item, i) =>
+        <rect
+          width="40"
+          y={120 - item}
+          x="50"
+          height={item}
+          style="transition: all ease .3s;"
+          transform={`translate(${43 * i},0)`}
+        />
+      )}
+    </svg>
+  );
+}
+
+class SVGExample extends Component {
+  state = {
+    data: [99, 44, 11, 55, 33, 115, 4],
+  }
+
+  _shuffuleArray (array) {
+    var j, temp, i;
+    for (i = array.length; i; i--) {
+      j = Math.floor(Math.random() * i);
+      temp = array[i - 1];
+      array[i - 1] = array[j];
+      array[j] = temp;
+    }
+    return array;
+  }
+
+  shuffule = () => this.setState({ data: this._shuffuleArray(this.state.data) })
+
+  render () {
+    const { data } = this.state;
+    return (
+      <div>
+        <Image />
+        <Chart data={data}/>
+        <button onClick={this.shuffule}>Suffule</button>
+      </div>
+    );
+  }
+}
+
+export default SVGExample;
