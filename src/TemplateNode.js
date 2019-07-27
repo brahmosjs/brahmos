@@ -3,7 +3,6 @@ import {
   remove,
   toArray,
   createEmptyTextNode,
-  changeToNode,
 } from './utils';
 
 export default class TemplateNode {
