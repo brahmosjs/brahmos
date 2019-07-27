@@ -7,6 +7,8 @@ script:
   - yarn
   - echo 'Testing!'
   - yarn test
+  - echo 'Checking Bundle Size!'
+  - yarn test:bundlesize
 deploy:
   on:
     tags: true

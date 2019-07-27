@@ -1,0 +1,12 @@
+{
+    "files": [
+      {
+        "path": "./dist/brahmos.js",
+        "maxSize": "18 kB"
+      },
+      {
+        "path": "./dist/brahmos.min.js",
+        "maxSize": "6.5 kB"
+      }
+    ]
+  }
