@@ -1,15 +1,19 @@
 import { attrMarker, marker } from './TemplateTag';
-import { remove, toArray, createEmptyTextNode } from './utils';
+import {
+  remove,
+  toArray,
+  createEmptyTextNode,
+} from './utils';
 
 export default class TemplateNode {
-  constructor (templateResult) {
+  constructor (templateResult, isSvgPart) {
     this.templateResult = templateResult;
 
     // create the template first time the element is used
-    templateResult.create();
+    templateResult.create(isSvgPart);
 
     // create dom fragment out of template
-    this.fragment = this.createNode();
+    this.fragment = this.createNode(isSvgPart);
 
     this.parts = this.getParts();
 
@@ -18,9 +22,10 @@ export default class TemplateNode {
     this.nodes = toArray(this.fragment.childNodes);
   }
 
-  createNode () {
-    const { template } = this.templateResult;
-    return document.importNode(template.content, true);
+  createNode (isSvgPart) {
+    const { template, svgTemplate } = this.templateResult;
+    const templateElement = isSvgPart ? svgTemplate : template;
+    return document.importNode(templateElement.content, true);
   }
 
   createWalker (node) {
