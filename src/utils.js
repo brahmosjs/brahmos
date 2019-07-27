@@ -280,3 +280,8 @@ export function createEmptyTextNode (element) {
   parentNode.insertBefore(textNode, element);
   return textNode;
 }
+
+const PROMISE_IDENTITY = "[object Promise]";
+export function isPromiseBasedComponent(p) {
+  return p && Object.prototype.toString.call(p) === PROMISE_IDENTITY;
+}

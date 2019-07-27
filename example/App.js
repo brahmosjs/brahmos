@@ -1,4 +1,4 @@
-import Brahmos from '../src';
+import Brahmos, {lazy, Suspense} from '../src';
 
 import TodoList from './TodoList';
 import UseStateExample from './UseStateExample';
@@ -6,6 +6,10 @@ import ContextExample from './context';
 import RefsExample from './RefsExample';
 import CreatePortalExample from './createPortalExample';
 import SVGExample from './SVGExample';
+
+const LazyToDo = lazy(import('./TodoList'));
+const MistakeLazyToDo = lazy(TodoList);
+const LazyUseStateExample = lazy(import('./UseStateExample'));
 
 export default function App () {
   return (
@@ -34,6 +38,11 @@ export default function App () {
         <h2>CreatePortal Example</h2>
         <CreatePortalExample/>
       </div>
+       <Suspense fallback = {<h2>LOADING !!!</h2>}>
+        <LazyToDo />
+        <MistakeLazyToDo />
+        <LazyUseStateExample />
+       </Suspense>
     </div>
   );
 }

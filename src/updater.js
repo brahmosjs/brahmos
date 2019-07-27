@@ -18,6 +18,7 @@ export default function updater (parts, values, oldValues = [], context, forceUp
     const oldValue = oldValues[i];
 
     const { isAttribute, isNode } = part;
+    const {__$isBrahmosLazyComponent$__ = false} = value;
     if (isAttribute) {
       const { node } = part;
 
@@ -46,6 +47,9 @@ export default function updater (parts, values, oldValues = [], context, forceUp
       node.__dynamicAttributes = dynamicAttributes;
 
       updateNodeAttributes(node, dynamicAttributes, oldDynamicAttributes, isSvgPart);
+    } else if(isNode && __$isBrahmosLazyComponent$__){
+      value = "Add a <Suspense fallback=...> component  higher in tree to wrap the lazy components."
+      updateNode(part, value, oldValue, context, forceUpdate);
     } else if (isNode) {
       updateNode(part, value, oldValue, context, forceUpdate, isSvgPart);
     }

@@ -1,4 +1,4 @@
-import { omit, isClassComponent } from './utils';
+import { omit, isClassComponent, isPromiseBasedComponent } from './utils';
 
 /**
  * Convert create element with native tags to BrahmosTagElement.
@@ -16,6 +16,14 @@ function createTagElement (element, configs, children) {
   };
 }
 
+function createPromiseElement(element, configs, children){
+  return {
+    element,
+    values: [configs, children],
+    __$isBrahmosComponent$__: true,
+    __$isBrahmosLazyComponent$__: true,
+  };
+}
 export default function createElement (
   element,
   configs,
@@ -26,6 +34,7 @@ export default function createElement (
    * but a simple tag instead. In that case return a tagElement instance.
    */
   if (typeof element === 'string') return createTagElement(element, configs, children);
+  else if(isPromiseBasedComponent(element)) return createPromiseElement(element, configs, children);
   const props = { ...element.defaultProps, ...omit(configs, { key: 1, ref: !element.__isForwardRef }) };
   // add children to props
   props.children = children;
