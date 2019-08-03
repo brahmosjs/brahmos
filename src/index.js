@@ -1,6 +1,6 @@
 import createElement from './createElement';
 import createPortal from './createPortal';
-
+import {Suspense, lazy} from './Suspense';
 import render from './render';
 
 /** Component classes */
@@ -49,6 +49,8 @@ const Brahmos = {
   createRef,
   createPortal,
   unmountComponentAtNode,
+  Suspense,
+  lazy
 };
 
 export {
@@ -70,6 +72,8 @@ export {
   createRef,
   createPortal,
   unmountComponentAtNode,
+  Suspense,
+  lazy
 };
 
 export default Brahmos;

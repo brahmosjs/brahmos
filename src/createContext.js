@@ -1,8 +1,8 @@
-import { Component } from './Component';
+ import { Component } from './Component';
 import { reRender } from './render';
 
 let ctxId = 1;
-
+console.log(Component);
 export function getConsumerCallback (component) {
   return function (value) {
     /**

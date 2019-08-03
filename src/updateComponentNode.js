@@ -1,5 +1,6 @@
 import functionalComponentInstance from './functionalComponentInstance';
 import { PureComponent } from './Component';
+import { Suspense } from './index';
 import { mergeState, callLifeCycle } from './utils';
 import { setRef } from './refs';
 
@@ -85,6 +86,14 @@ function renderWithErrorBoundaries (part, node, context, shouldUpdate, forceUpda
      * forward forceUpdate to component child only when forceUpdate is set to all.
      */
     componentInstance.__lastNode = updateNode(part, newNodes, oldNodes, context, forceUpdateAll, isSvgPart);
+    if (
+      componentInstance instanceof Suspense
+      && componentInstance.lazyElements.length > 0
+      && componentInstance.state.resolved
+    ) {
+      componentInstance.state.resolved = false;
+      renderWithErrorBoundaries(part, node, context, shouldUpdate, forceUpdate, isSvgPart, isFirstRender, false);
+    } 
   } catch (err) {
     if (isClassComponent && handleError) {
       let { state, componentDidCatch } = componentInstance;
