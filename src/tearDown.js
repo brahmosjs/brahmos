@@ -51,9 +51,17 @@ function handleUnmount (node) {
         });
       }
     }
+    // remove the template node
+    node.templateNode = null;
+
     // call the ref methods of attribute parts
   } else if (node.__$isBrahmosComponent$__) {
     tearDown(componentInstance.__nodes);
+    // mark componentInstance as unmounted
+    componentInstance.__unMounted = true;
+
+    // remove the componentInstance from node;
+    node.componentInstance = null;
   }
 }
 

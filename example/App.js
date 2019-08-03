@@ -1,4 +1,4 @@
-import Brahmos, {Suspense, lazy} from '../src';
+import Brahmos, { Suspense, lazy } from '../src';
 
 import TodoList from './TodoList';
 import UseStateExample from './UseStateExample';
@@ -7,7 +7,13 @@ import RefsExample from './RefsExample';
 import CreatePortalExample from './createPortalExample';
 import SVGExample from './SVGExample';
 
-const LazyToDo = lazy(() => import('./TodoList'));
+const LazyToDo = lazy(() => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(import('./TodoList'));
+    }, 1000);
+  });
+});
 // const MistakeLazyToDo = lazy(TodoList);
 // const LazyUseStateExample = lazy(import('./UseStateExample'));
 
@@ -16,7 +22,7 @@ const LazyToDo = lazy(() => import('./TodoList'));
 // }
 
 export default function App () {
-  let message = "Hello world";
+  const message = 'Hello world';
   return (
     <div>
       {/* <div className="wrapper">
@@ -43,15 +49,16 @@ export default function App () {
         <h2>CreatePortal Example</h2>
         <CreatePortalExample/>
       </div> */}
-       <Suspense fallback = {<h2>LOADING !!!</h2>}>
-         <section className = "">
-           <h2> Hurray !! </h2>
-           <p>{message}</p>
-           <LazyToDo />
+      <Suspense fallback = {<h2>LOADING !!!</h2>}>
+        <section className = "">
+          <h2> Hurray !! </h2>
+          <p>{message}</p>
+          <LazyToDo />
           <h2> hey !! </h2>
-         </section>
-         <LazyToDo />
-       </Suspense>
+        </section>
+        <LazyToDo />
+        <h1>Something</h1>
+      </Suspense>
     </div>
   );
 }
