@@ -8,7 +8,7 @@ export function getConsumerCallback (component) {
      * NOTE: This might have to be changed when async rendering is in place
      */
     setTimeout(() => {
-      if (component.context !== value && !component.__unMounted) {
+      if (component.context !== value && component.__mounted) {
         component.context = value;
         reRender(component);
       }

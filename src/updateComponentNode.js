@@ -6,7 +6,7 @@ import { setRef } from './refs';
 
 import { runEffects, cleanEffects } from './hooks';
 
-import { addHandler } from './mountHandlerQueue';
+import { addHandler } from './mountAndEffectQueue';
 
 import updateNode from './updateNode';
 
@@ -249,21 +249,34 @@ export default function updateComponentNode (part, node, oldNode, context, force
     renderWithErrorBoundaries(part, node, context, shouldUpdate, forceUpdate, isSvgPart, isFirstRender, true);
   }
 
-  // After the mount/update call the lifecycle method
-  if (isClassComponent) {
-    /**
-     * if it is a first render then schedule the componentDidMount otherwise call componentDidUpdate if it is updated
-     * We schedule componentDidMount as the component may mount in fragment, but we want to
-     * call componentDidMount only after it is attached to the DOM
-     */
-    if (isFirstRender) {
-      addHandler(componentInstance, 'componentDidMount');
-    } else if (shouldUpdate) {
-      callLifeCycle(componentInstance, 'componentDidUpdate', [prevProps, prevState, snapshot]);
-    }
+  /**
+   * if it is a first render then schedule the componentDidMount/runEffects
+   * We schedule componentDidMount/runEffects as the component may mount in fragment, but we want to
+   * call componentDidMount/runEffects only after it is attached to the DOM
+   */
+
+  if (isFirstRender) {
+    node.mountHandler = () => {
+      if (isClassComponent) {
+        // call componentDidMount for class components
+        callLifeCycle(componentInstance, 'componentDidMount');
+      } else {
+        // call effects of functional component
+        runEffects(componentInstance);
+      }
+      componentInstance.__mounted = true;
+    };
+
+    addHandler(node.mountHandler);
   } else {
-    // call effects of functional component
-    runEffects(componentInstance);
+    // on updates call componentDidUpdate/runEffects directly
+    if (isClassComponent) {
+      // call componentDidUpdate for class components
+      callLifeCycle(componentInstance, 'componentDidUpdate', [prevProps, prevState, snapshot]);
+    } else {
+      // call effects of functional component
+      runEffects(componentInstance);
+    }
   }
 
   // return the component's lastNode

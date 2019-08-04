@@ -21,6 +21,10 @@ export default class TodoList extends Component {
     this.setState({ todos, text: '' });
   };
 
+  componentDidMount () {
+    console.log('TODO List mounted');
+  }
+
   render () {
     const { todos, text } = this.state;
     const { maxCount } = this.props;

@@ -4,23 +4,33 @@ import {
   callLifeCycle,
 } from './utils';
 
+import { removeHandler } from './mountAndEffectQueue';
+
 import { setRef } from './refs';
 
 import { cleanEffects } from './hooks';
 
 function handleUnmount (node) {
-  const { componentInstance, ref } = node;
+  const { componentInstance, ref, mountHandler } = node;
   /**
+   * If node is mounted and
    * if node is classComponent We may have to call componentWillUnmount lifecycle method
    * In case of functional component we have to clean all the effects for that component
    */
-  if (node.__$isBrahmosClassComponent$__) {
-    callLifeCycle(componentInstance, 'componentWillUnmount');
+  if (componentInstance && componentInstance.__mounted) {
+    if (node.__$isBrahmosClassComponent$__) {
+      callLifeCycle(componentInstance, 'componentWillUnmount');
 
-    // set the ref as null of a class component
-    setRef(ref, null);
-  } else if (node.__$isBrahmosFunctionalComponent$__) {
-    cleanEffects(componentInstance, true);
+      // set the ref as null of a class component
+      setRef(ref, null);
+    } else if (node.__$isBrahmosFunctionalComponent$__) {
+      cleanEffects(componentInstance, true);
+    }
+  } else if (mountHandler) {
+    /**
+     * If node is not mounted remove the mount handlers from the mount queue
+     */
+    removeHandler(node.mountHandler);
   }
 
   /**
@@ -58,7 +68,7 @@ function handleUnmount (node) {
   } else if (node.__$isBrahmosComponent$__) {
     tearDown(componentInstance.__nodes);
     // mark componentInstance as unmounted
-    componentInstance.__unMounted = true;
+    componentInstance.__mounted = false;
 
     // remove the componentInstance from node;
     node.componentInstance = null;
