@@ -6,19 +6,9 @@ import ContextExample from './context';
 import RefsExample from './RefsExample';
 import CreatePortalExample from './createPortalExample';
 import SVGExample from './SVGExample';
-
-const LazyToDo = lazy(() => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(import('./TodoList'));
-    }, 1000);
-  });
-});
-const LazyUseStateExample = lazy(() => import('./UseStateExample'));
-
+import LazySuspenseExample from './lazySuspenseExample';
 
 export default function App () {
-  const message = 'Hello world';
   return (
     <div>
       <div className="wrapper">
@@ -42,20 +32,14 @@ export default function App () {
         <SVGExample/>
       </div>
       <div className="wrapper">
+        <h2>Lazy and Suspense Example</h2>
+        <LazySuspenseExample/>
+      </div>
+      {/** Keep the portal example on last */}
+      <div className="wrapper">
         <h2>CreatePortal Example</h2>
         <CreatePortalExample/>
       </div>
-      <Suspense fallback = {<h2>LOADING !!!</h2>}>
-        <section className = "">
-          <h2> Hurray !! </h2>
-          <p>{message}</p>
-          <LazyToDo />
-          <h2> hey !! </h2>
-        </section>
-        <LazyToDo />
-        <h1>Something</h1>
-        <LazyUseStateExample />
-      </Suspense>
     </div>
   );
 }

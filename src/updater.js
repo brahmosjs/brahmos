@@ -3,7 +3,7 @@ import { RESERVED_ATTRIBUTES, MODIFIED_ATTRIBUTES } from './utils';
 import updateNode from './updateNode';
 import { setRef } from './refs';
 
-import { applyHandlers } from './mountHandlerQueue';
+import { applyHandlers } from './mountAndEffectQueue';
 
 export function isAttrOverridden (tagAttrs, attrName, attrIndex) {
   const lastIndex = tagAttrs.lastIndexOf(attrName);
