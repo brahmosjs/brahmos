@@ -1,5 +1,5 @@
 import updateNodeAttributes from './updateAttribute';
-import { RESERVED_ATTRIBUTES, MODIFIED_ATTRIBUTES } from './utils';
+import { RESERVED_ATTRIBUTES, MODIFIED_ATTRIBUTES } from './configs';
 import updateNode from './updateNode';
 import { setRef } from './refs';
 

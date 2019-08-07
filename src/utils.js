@@ -1,17 +1,5 @@
 import { Component } from './Component';
 
-export const RESERVED_ATTRIBUTES = {
-  key: 1,
-  ref: 1,
-};
-
-export const MODIFIED_ATTRIBUTES = {
-  className: 'class',
-  htmlFor: 'for',
-  acceptCharset: 'accept-charset',
-  httpEquiv: 'http-equiv',
-};
-
 /**
  * Method to identify if a jsx element is a html element or custom component
  * Taken from https://github.com/babel/babel/blob/master/packages/babel-types/src/validators/react/isCompatTag.js
