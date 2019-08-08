@@ -6,11 +6,13 @@ import createContext from './createContext';
 const { Provider, Consumer } = createContext();
 
 export class Suspense extends Component {
-    state = {
-      resolved: true,
-    };
-
-    lazyElements = []
+    constructor(props){
+      super(props);
+      this.state = {
+        resolved: true
+      }
+      this.lazyElements = [];
+    }
 
     componentDidMount () {
       this.handlePromise();
