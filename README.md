@@ -113,8 +113,8 @@ https://brahmoscommunity.slack.com/join/shared_invite/enQtNjYxODIzMzA3NTg3LWY5ZW
 - [x] Hooks
 - [x] Context API
 - [x] Refs Api, createRef, ref as callback, forwardRef
+- [x] SVG Support
 - [ ] React Utilities and Methods
-- [ ] SVG Support
 - [ ] Handle server rendering
 - [ ] Performance improvement
 - [ ] Bug fixes
