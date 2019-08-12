@@ -23,7 +23,9 @@ function handleUnmount (node) {
 
       // set the ref as null of a class component
       setRef(ref, null);
-    } else if (node.__$isBrahmosFunctionalComponent$__) {
+
+      // and for functional component remove effects
+    } else {
       cleanEffects(componentInstance, true);
     }
   } else if (mountHandler) {

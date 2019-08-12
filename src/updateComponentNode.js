@@ -86,6 +86,15 @@ function renderWithErrorBoundaries (part, node, context, shouldUpdate, forceUpda
      * forward forceUpdate to component child only when forceUpdate is set to all.
      */
     componentInstance.__lastNode = updateNode(part, newNodes, oldNodes, context, forceUpdateAll, isSvgPart);
+
+    /**
+     * For Suspense component if there are lazy elements which are not loaded yet
+     * If the status is resolved it means it means the suspended node are still attached
+     * as a new render or from last render. In such cases we have to retry rendering
+     * with marking resolved as false, so we can render fallback.
+     * We don't do this on component because we have to let the suspended node render
+     * and then render the fallback.
+     */
     if (
       componentInstance instanceof Suspense &&
       componentInstance.lazyElements.length > 0 &&
