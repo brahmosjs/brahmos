@@ -1,4 +1,4 @@
-import Brahmos from '../src';
+import Brahmos, { Suspense, lazy } from '../src';
 
 import TodoList from './TodoList';
 import UseStateExample from './UseStateExample';
@@ -6,6 +6,7 @@ import ContextExample from './context';
 import RefsExample from './RefsExample';
 import CreatePortalExample from './createPortalExample';
 import SVGExample from './SVGExample';
+import LazySuspenseExample from './lazySuspenseExample';
 
 export default function App () {
   return (
@@ -30,6 +31,11 @@ export default function App () {
         <h2>SVG Example</h2>
         <SVGExample/>
       </div>
+      <div className="wrapper">
+        <h2>Lazy and Suspense Example</h2>
+        <LazySuspenseExample/>
+      </div>
+      {/** Keep the portal example on last */}
       <div className="wrapper">
         <h2>CreatePortal Example</h2>
         <CreatePortalExample/>

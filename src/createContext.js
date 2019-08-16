@@ -2,14 +2,13 @@ import { Component } from './Component';
 import { reRender } from './render';
 
 let ctxId = 1;
-
 export function getConsumerCallback (component) {
   return function (value) {
     /**
      * NOTE: This might have to be changed when async rendering is in place
      */
     setTimeout(() => {
-      if (component.context !== value) {
+      if (component.context !== value && component.__mounted) {
         component.context = value;
         reRender(component);
       }
