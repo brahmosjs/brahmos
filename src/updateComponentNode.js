@@ -245,46 +245,48 @@ export default function updateComponentNode (part, node, oldNode, context, force
 
     // provide the correct ref
     setRef(ref, componentInstance);
-
-    // call getSnapshotBeforeUpdate life cycle method
-    snapshot = callLifeCycle(componentInstance, 'getSnapshotBeforeUpdate', [prevProps, prevState]);
   }
 
   /**
-   * update a component update only if it can be updated based on shouldComponentUpdate
+   * update a component update only if it can be updated based on shouldComponentUpdate, Pure Component, firstRender
+   * shouldUpdate will hold correct value for it
    * Or if the child component has to render based on forceUpdate
    */
   if (shouldUpdate || forceUpdate === 'all') {
+    // call getSnapshotBeforeUpdate life cycle method
+    snapshot = callLifeCycle(componentInstance, 'getSnapshotBeforeUpdate', [prevProps, prevState]);
+
+    // render component with error boundaries
     renderWithErrorBoundaries(part, node, context, shouldUpdate, forceUpdate, isSvgPart, isFirstRender, true);
-  }
 
-  /**
-   * if it is a first render then schedule the componentDidMount/runEffects
-   * We schedule componentDidMount/runEffects as the component may mount in fragment, but we want to
-   * call componentDidMount/runEffects only after it is attached to the DOM
-   */
+    /**
+     * if it is a first render then schedule the componentDidMount/runEffects
+     * We schedule componentDidMount/runEffects as the component may mount in fragment, but we want to
+     * call componentDidMount/runEffects only after it is attached to the DOM
+     */
 
-  if (isFirstRender) {
-    node.mountHandler = () => {
-      if (isClassComponent) {
+    if (isFirstRender) {
+      node.mountHandler = () => {
+        if (isClassComponent) {
         // call componentDidMount for class components
-        callLifeCycle(componentInstance, 'componentDidMount');
-      } else {
+          callLifeCycle(componentInstance, 'componentDidMount');
+        } else {
         // call effects of functional component
+          runEffects(componentInstance);
+        }
+        componentInstance.__mounted = true;
+      };
+
+      addHandler(node.mountHandler);
+    } else {
+    // on updates call componentDidUpdate/runEffects directly
+      if (isClassComponent) {
+      // call componentDidUpdate for class components
+        callLifeCycle(componentInstance, 'componentDidUpdate', [prevProps, prevState, snapshot]);
+      } else {
+      // call effects of functional component
         runEffects(componentInstance);
       }
-      componentInstance.__mounted = true;
-    };
-
-    addHandler(node.mountHandler);
-  } else {
-    // on updates call componentDidUpdate/runEffects directly
-    if (isClassComponent) {
-      // call componentDidUpdate for class components
-      callLifeCycle(componentInstance, 'componentDidUpdate', [prevProps, prevState, snapshot]);
-    } else {
-      // call effects of functional component
-      runEffects(componentInstance);
     }
   }
 
