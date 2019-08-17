@@ -8,7 +8,6 @@ import {
   insertBefore,
   getCurrentNode,
   lastItem,
-  toArray,
   isRenderableNode,
 } from './utils';
 
@@ -149,7 +148,7 @@ function updateArrayNodes (part, nodes, oldNodes = [], context, isSvgPart) {
 function updateTagNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
   const { parentNode, previousSibling, nextSibling } = part;
 
-  let { templateNode, values, oldValues, __$isBrahmosTagElement$__: isTagElement, element } = node;
+  let { templateNode, values, oldValues = [], __$isBrahmosTagElement$__: isTagElement, element } = node;
   let freshRender;
 
   // if the node is an svg element set the isSvgPart true

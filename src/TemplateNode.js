@@ -35,14 +35,8 @@ export default class TemplateNode {
      */
     return document.createTreeWalker(
       node,
-      NodeFilter.SHOW_ALL,
-      function (node) {
-        const { nodeType } = node;
-        if (nodeType === 1 || nodeType === 8) {
-          return NodeFilter.FILTER_ACCEPT;
-        }
-        return NodeFilter.FILTER_SKIP;
-      },
+      129, // NodeFilter.SHOW_ELEMENT + NodeFilter.COMMENT
+      null, // Don't use tree walker filter function. Its painfully slow, try to find better filter code instead. You can add multiple filter type to form a number
       false
     );
   }
@@ -90,7 +84,7 @@ export default class TemplateNode {
           partMeta && partMeta.isAttribute && partMeta.tagAttrs === tagAttrs
         ) {
           parts.push({
-            ...partMeta,
+            ...partMeta, // Spread object is slow, but bublejs compiles it to Object.assign which is optimized
             node: current,
           });
           goToNextPart();
@@ -115,7 +109,7 @@ export default class TemplateNode {
         }
 
         parts.push({
-          ...partMeta,
+          ...partMeta, // Spread object is slow, but bublejs compiles it to Object.assign which is optimized
           parentNode,
           previousSibling,
           nextSibling,

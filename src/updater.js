@@ -11,7 +11,7 @@ export function isAttrOverridden (tagAttrs, attrName, attrIndex) {
   return attrIndex <= lastIndex;
 }
 
-export default function updater (parts, values, oldValues = [], context, forceUpdate, isSvgPart, root) {
+export default function updater (parts, values, oldValues, context, forceUpdate, isSvgPart, root) {
   for (let i = 0, ln = parts.length; i < ln; i++) {
     let part = parts[i];
     const value = values[i];
