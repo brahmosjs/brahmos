@@ -146,9 +146,16 @@ export default function updateComponentNode (part, node, oldNode, context, force
     ref,
   } = node;
 
+  oldNode = oldNode || {};
+
   let isFirstRender = false;
   let shouldUpdate = true;
   const isClassComponent = nodeType === CLASS_COMPONENT_NODE;
+
+  if (oldNode && oldNode.type === node.type) {
+    node.componentInstance = oldNode.componentInstance;
+    oldNode.isReused = true;
+  }
 
   /** If Component instance is not present on node create a new instance */
   let { componentInstance } = node;
