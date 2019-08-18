@@ -1,4 +1,3 @@
-import associateInstance from './associateInstance';
 import { reRender } from './render';
 import { mergeState } from './utils';
 
@@ -66,9 +65,6 @@ export class Component {
   __render () {
     // get the new rendered node
     const nodes = this.render();
-
-    // associate instance from the old node to the new rendered node
-    associateInstance(nodes, this.__nodes);
 
     // store the current reference of nodes so we can use this this on next render cycle
     this.__nodes = nodes;

@@ -1,6 +1,5 @@
 
 import updater from './updater';
-import associateInstance from './associateInstance';
 
 /**
  * Method to render a node
@@ -13,12 +12,9 @@ export default function render (node, target) {
 
   // associate instance on node using last rendered node
   const renderedNode = target.__brahmosNode;
-  if (renderedNode) {
-    associateInstance(node, renderedNode);
-  }
 
   // pass the context as empty object
-  updater([part], [node], [], {}, false, false, true);
+  updater([part], [node], [renderedNode], {}, false, false, true);
 
   // store the node reference on target
   target.__brahmosNode = node;

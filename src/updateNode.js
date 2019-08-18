@@ -8,6 +8,7 @@ import {
   getCurrentNode,
   lastItem,
   isRenderableNode,
+  getKey,
 } from './utils';
 
 import { isBrahmosNode, isTagNode, isComponentNode, TAG_ELEMENT_NODE } from './brahmosNode';
@@ -89,6 +90,18 @@ function spliceUnusedNodes (index, oldNodes, parentNode, previousSibling) {
   return oldNode;
 }
 
+function formNodeMap (nodes) {
+  const maps = {};
+
+  for (let i = 0, ln = nodes.length; i < ln; i++) {
+    const node = nodes[i];
+    const key = getKey(node, i);
+    maps[key] = node;
+  }
+
+  return maps;
+}
+
 /**
    * Updater to handle array of nodes
    */
@@ -98,11 +111,25 @@ function updateArrayNodes (part, nodes, oldNodes = [], context, isSvgPart) {
   const nodesLength = nodes.length;
   let lastChild = previousSibling;
 
-  for (let i = 0; i < nodesLength; i++) {
+  const oldNodesMap = formNodeMap(oldNodes);
+
+  // mark oldNodes reused if it is used on new node
+  for (let i = 0, ln = nodes.length; i < ln; i++) {
     const node = nodes[i];
+    const key = getKey(node, i);
+    const oldNode = oldNodesMap[key];
+    if (oldNode && isBrahmosNode(oldNode)) {
+      oldNode.isReused = true;
+    }
+  }
+
+  for (let i = 0, j = 0; i < nodesLength; i++, j++) {
+    const node = nodes[i];
+    const key = getKey(node, i);
+    const oldNode = oldNodesMap[key];
 
     // delete unused non brahmos node
-    const oldNode = spliceUnusedNodes(i, oldNodes, parentNode, lastChild);
+    const currentOldNode = spliceUnusedNodes(i, oldNodes, parentNode, lastChild);
     /**
        * Pass forceUpdate as all when
        * - node is primitive type as they don't have any key
@@ -110,7 +137,7 @@ function updateArrayNodes (part, nodes, oldNodes = [], context, isSvgPart) {
        */
 
     const forceUpdate = (isPrimitiveNode(node) ||
-    (node && oldNode && node.key !== oldNode.key)) && 'all';
+    (node && currentOldNode && node.key !== currentOldNode.key)) && 'all';
 
     /**
      * if lasChild is not present it means the node has to be added before the firstChild
@@ -149,13 +176,23 @@ function updateArrayNodes (part, nodes, oldNodes = [], context, isSvgPart) {
 function updateTagNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
   const { parentNode, previousSibling, nextSibling } = part;
 
-  let { templateNode, values, oldValues, nodeType, element } = node;
-  let freshRender;
+  const { values, nodeType, element } = node;
 
   const isTagElement = nodeType === TAG_ELEMENT_NODE;
 
   // if the node is an svg element set the isSvgPart true
   isSvgPart = isSvgPart || element === 'svg';
+
+  if (oldNode && oldNode.template === node.template) {
+    node.templateNode = oldNode.templateNode;
+    oldNode.isReused = true;
+  }
+
+  const oldValues = oldNode && oldNode.values ? oldNode.values : [];
+
+  let freshRender;
+
+  let { templateNode } = node;
 
   /**
      * if you don't get the old template node it means you have to render the node first time
