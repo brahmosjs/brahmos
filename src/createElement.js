@@ -10,7 +10,12 @@ import { omit, isClassComponent } from './utils';
 export function createTagElement (element, configs, children) {
   return {
     element,
+    templateNode: null,
     values: [configs, children],
+    oldValues: [],
+    isReused: false,
+    added: false,
+    key: '',
     __$isBrahmosTag$__: true,
     __$isBrahmosTagElement$__: true,
   };
@@ -30,14 +35,19 @@ export default function createElement (
   // add children to props
   props.children = children;
 
-  const { key, ref } = configs;
+  const { key = '', ref } = configs;
   const _isClassComponent = isClassComponent(element);
 
   return {
     type: element,
     props,
-    key,
+    key: key.toString(),
     ref: _isClassComponent ? ref : null,
+    componentInstance: null,
+    portalContainer: null,
+    mountHandler: null,
+    isReused: false,
+    added: false,
     children,
     configs, // keeping the original config for reference
     __$isBrahmosComponent$__: true,

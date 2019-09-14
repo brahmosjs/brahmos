@@ -63,7 +63,7 @@ export function getKey (node, index) {
    * found search key on the values
    */
   let key = node && node.key;
-  if (key === undefined && node && node.__$isBrahmosTag$__) {
+  if (key === '' && node && node.__$isBrahmosTag$__) {
     /**
        * TODO: This might be buggy, it can give key from any node,
        * not necessarily key from the root node.
@@ -78,14 +78,14 @@ export function getKey (node, index) {
     }
 
     // store the calculated key on node so we don't have to search next time on same node
-    node.key = key;
+    node.key = key === undefined ? '' : key.toString();
   }
 
   /**
    * if key is defined use key or else use index as key.
    * Also key should always be a string
    */
-  return (key !== undefined ? key : index).toString();
+  return key === '' ? index.toString() : key;
 }
 
 export function isClassComponent (element) {

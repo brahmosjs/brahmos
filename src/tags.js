@@ -11,7 +11,12 @@ export function html (strings, ...values) {
 
   return {
     template,
+    templateNode: null,
     values,
+    oldValues: [],
+    isReused: false,
+    added: false,
+    key: '',
     __$isBrahmosTag$__: true,
   };
 }
