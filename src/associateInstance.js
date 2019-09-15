@@ -1,4 +1,5 @@
-import { getKey, isBrahmosNode } from './utils';
+import { getKey } from './utils';
+import { isBrahmosNode, isComponentNode, isTagNode } from './brahmosNode';
 
 function formNodeMap (nodes) {
   const maps = {};
@@ -39,7 +40,7 @@ export default function associateInstance (renderTree, lastRenderedTree) {
         associateInstance(node, oldNode);
       }
     }
-  } else if (node.__$isBrahmosTag$__) {
+  } else if (isTagNode(node)) {
     if (node.template !== oldNode.template || node.element !== oldNode.element) {
       return;
     }
@@ -61,7 +62,7 @@ export default function associateInstance (renderTree, lastRenderedTree) {
       const oldValues = oldNode.values || [];
       associateInstance(node.values[i], oldValues[i]);
     }
-  } else if (node.__$isBrahmosComponent$__) {
+  } else if (isComponentNode(node)) {
     if (node.type !== oldNode.type) {
       return;
     }

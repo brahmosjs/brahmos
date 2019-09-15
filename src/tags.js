@@ -1,5 +1,16 @@
 import TemplateTag from './TemplateTag';
+import { brahmosNode, TAG_NODE } from './brahmosNode';
+
 const templateTagCache = new WeakMap();
+
+export function createTagNode (template, values) {
+  const node = brahmosNode(null, values, '');
+
+  node.nodeType = TAG_NODE;
+  node.template = template;
+
+  return node;
+}
 
 export function html (strings, ...values) {
   let template = templateTagCache.get(strings);
@@ -9,14 +20,5 @@ export function html (strings, ...values) {
     templateTagCache.set(strings, template);
   }
 
-  return {
-    template,
-    templateNode: null,
-    values,
-    oldValues: [],
-    isReused: false,
-    added: false,
-    key: '',
-    __$isBrahmosTag$__: true,
-  };
+  return createTagNode(template, values);
 }

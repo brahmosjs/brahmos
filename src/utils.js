@@ -1,4 +1,5 @@
 import { Component } from './Component';
+import { isBrahmosNode, isTagNode } from './brahmosNode';
 
 /**
  * Method to identify if a jsx element is a html element or custom component
@@ -63,7 +64,7 @@ export function getKey (node, index) {
    * found search key on the values
    */
   let key = node && node.key;
-  if (key === '' && node && node.__$isBrahmosTag$__) {
+  if (key === '' && node && isTagNode(node)) {
     /**
        * TODO: This might be buggy, it can give key from any node,
        * not necessarily key from the root node.
@@ -98,20 +99,6 @@ export function isClassComponent (element) {
 
 export function toArray (list) {
   return Array.prototype.slice.call(list);
-}
-
-/**
- * Check if a given object is a react lit node
- */
-export function isBrahmosNode (node) {
-  return node && (node.__$isBrahmosComponent$__ || node.__$isBrahmosTag$__);
-}
-
-/**
- * Check if a given object is a BrahmosComponent
- */
-export function isBrahmosComponent (node) {
-  return node && node.__$isBrahmosComponent$__;
 }
 
 /**

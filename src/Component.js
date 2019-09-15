@@ -5,6 +5,19 @@ import { mergeState } from './utils';
 export class Component {
   constructor (props) {
     this.props = props;
+
+    this.state = undefined;
+    this.__unCommittedState = undefined;
+
+    this.__context = undefined;
+    this.context = undefined;
+
+    this.__part = null;
+    this.__componentNode = null;
+    this.__nodes = null;
+    this.__lastNode = null;
+
+    this.__mounted = false;
   }
 
   setState (newState, callback) {

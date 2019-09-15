@@ -4,6 +4,8 @@ import {
   callLifeCycle,
 } from './utils';
 
+import { isComponentNode, isTagNode, CLASS_COMPONENT_NODE } from './brahmosNode';
+
 import { removeHandler } from './mountAndEffectQueue';
 
 import { setRef } from './refs';
@@ -18,7 +20,7 @@ function handleUnmount (node) {
    * In case of functional component we have to clean all the effects for that component
    */
   if (componentInstance && componentInstance.__mounted) {
-    if (node.__$isBrahmosClassComponent$__) {
+    if (node.nodeType === CLASS_COMPONENT_NODE) {
       callLifeCycle(componentInstance, 'componentWillUnmount');
 
       // set the ref as null of a class component
@@ -43,7 +45,7 @@ function handleUnmount (node) {
     for (let i = 0, ln = node.length; i < ln; i++) {
       tearDown(node[i]);
     }
-  } else if (node.__$isBrahmosTag$__) {
+  } else if (isTagNode(node)) {
     const { values, templateNode: { parts } } = node;
     for (let i = 0, ln = parts.length; i < ln; i++) {
       const part = parts[i];
@@ -67,7 +69,7 @@ function handleUnmount (node) {
     node.templateNode = null;
 
     // call the ref methods of attribute parts
-  } else if (node.__$isBrahmosComponent$__) {
+  } else if (isComponentNode(node)) {
     tearDown(componentInstance.__nodes);
     // mark componentInstance as unmounted
     componentInstance.__mounted = false;

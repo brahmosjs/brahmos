@@ -20,6 +20,8 @@ export default class TemplateNode {
     // keep the reference of child nodes
     // TODO: Check if you want to use Array.from instead
     this.nodes = toArray(this.fragment.childNodes);
+
+    this.patched = false;
   }
 
   createNode (isSvgPart) {

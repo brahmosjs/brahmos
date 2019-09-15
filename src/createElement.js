@@ -1,4 +1,5 @@
 import { omit, isClassComponent } from './utils';
+import { brahmosNode, TAG_ELEMENT_NODE, CLASS_COMPONENT_NODE, FUNCTIONAL_COMPONENT_NODE } from './brahmosNode';
 
 /**
  * Convert create element with native tags to BrahmosTagElement.
@@ -8,17 +9,10 @@ import { omit, isClassComponent } from './utils';
  * createElement('div', props, children);
  */
 export function createTagElement (element, configs, children) {
-  return {
-    element,
-    templateNode: null,
-    values: [configs, children],
-    oldValues: [],
-    isReused: false,
-    added: false,
-    key: '',
-    __$isBrahmosTag$__: true,
-    __$isBrahmosTagElement$__: true,
-  };
+  const node = brahmosNode(null, [configs, children], '');
+  node.element = element;
+  node.nodeType = TAG_ELEMENT_NODE;
+  return node;
 }
 
 export default function createElement (
@@ -31,27 +25,20 @@ export default function createElement (
    * but a simple tag instead. In that case return a tagElement instance.
    */
   if (typeof element === 'string') return createTagElement(element, configs, children);
+
   const props = { ...element.defaultProps, ...omit(configs, { key: 1, ref: !element.__isForwardRef }) };
+
   // add children to props
   props.children = children;
 
   const { key = '', ref } = configs;
   const _isClassComponent = isClassComponent(element);
 
-  return {
-    type: element,
-    props,
-    key: key.toString(),
-    ref: _isClassComponent ? ref : null,
-    componentInstance: null,
-    portalContainer: null,
-    mountHandler: null,
-    isReused: false,
-    added: false,
-    children,
-    configs, // keeping the original config for reference
-    __$isBrahmosComponent$__: true,
-    __$isBrahmosClassComponent$__: _isClassComponent,
-    __$isBrahmosFunctionalComponent$__: !_isClassComponent,
-  };
+  const node = brahmosNode(props, null, key.toString());
+
+  node.nodeType = _isClassComponent ? CLASS_COMPONENT_NODE : FUNCTIONAL_COMPONENT_NODE;
+  node.type = element;
+  node.ref = _isClassComponent ? ref : null;
+
+  return node;
 }

@@ -3,6 +3,7 @@ import { PureComponent } from './Component';
 import { Suspense } from './index';
 import { mergeState, callLifeCycle } from './utils';
 import { setRef } from './refs';
+import { CLASS_COMPONENT_NODE } from './brahmosNode';
 
 import { runEffects, cleanEffects } from './hooks';
 
@@ -45,11 +46,12 @@ function findNonComponentNode (node) {
 function renderWithErrorBoundaries (part, node, context, shouldUpdate, forceUpdate, isSvgPart, isFirstRender, handleError) {
   const {
     type: Component,
+    nodeType,
     componentInstance,
     props,
-    __$isBrahmosClassComponent$__: isClassComponent,
   } = node;
 
+  const isClassComponent = nodeType === CLASS_COMPONENT_NODE;
   const forceUpdateAll = forceUpdate === 'all';
   let oldNodes = componentInstance.__nodes;
 
@@ -139,13 +141,14 @@ function renderWithErrorBoundaries (part, node, context, shouldUpdate, forceUpda
 export default function updateComponentNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
   const {
     type: Component,
+    nodeType,
     props = {},
-    __$isBrahmosClassComponent$__: isClassComponent,
     ref,
   } = node;
 
   let isFirstRender = false;
   let shouldUpdate = true;
+  const isClassComponent = nodeType === CLASS_COMPONENT_NODE;
 
   /** If Component instance is not present on node create a new instance */
   let { componentInstance } = node;

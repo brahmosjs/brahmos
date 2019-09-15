@@ -2,7 +2,6 @@ import TemplateNode from './TemplateNode';
 import updateComponentNode from './updateComponentNode';
 
 import {
-  isBrahmosNode,
   isPrimitiveNode,
   deleteNodesBetween,
   insertBefore,
@@ -10,6 +9,8 @@ import {
   lastItem,
   isRenderableNode,
 } from './utils';
+
+import { isBrahmosNode, isTagNode, isComponentNode, TAG_ELEMENT_NODE } from './brahmosNode';
 
 import tearDown from './tearDown';
 import getTagNode from './TagNode';
@@ -52,9 +53,9 @@ function updateTextNode (part, node, oldNode) {
 function getOldNodeNextSibling (oldNode) {
   let lastNode;
 
-  if (oldNode.__$isBrahmosTag$__) {
+  if (isTagNode(oldNode)) {
     lastNode = lastItem(oldNode.templateNode.nodes);
-  } else if (oldNode.__$isBrahmosComponent$__) {
+  } else if (isComponentNode(oldNode)) {
     lastNode = oldNode.componentInstance.__lastNode;
   }
 
@@ -148,8 +149,10 @@ function updateArrayNodes (part, nodes, oldNodes = [], context, isSvgPart) {
 function updateTagNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
   const { parentNode, previousSibling, nextSibling } = part;
 
-  let { templateNode, values, oldValues = [], __$isBrahmosTagElement$__: isTagElement, element } = node;
+  let { templateNode, values, oldValues, nodeType, element } = node;
   let freshRender;
+
+  const isTagElement = nodeType === TAG_ELEMENT_NODE;
 
   // if the node is an svg element set the isSvgPart true
   isSvgPart = isSvgPart || element === 'svg';
@@ -224,9 +227,9 @@ export default function updateNode (part, node, oldNode, context, forceUpdate, i
     }
   } else if (Array.isArray(node)) {
     return updateArrayNodes(part, node, oldNode, context, isSvgPart);
-  } else if (node.__$isBrahmosComponent$__) {
+  } else if (isComponentNode(node)) {
     return updateComponentNode(part, node, oldNode, context, forceUpdate, isSvgPart);
-  } else if (node.__$isBrahmosTag$__) {
+  } else if (isTagNode(node)) {
     return updateTagNode(part, node, oldNode, context, forceUpdate, isSvgPart);
   } else if (isPrimitiveNode(node) && (node !== oldNode || forceUpdate)) {
     return updateTextNode(part, node, oldNode);
