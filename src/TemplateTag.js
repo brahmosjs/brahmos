@@ -32,6 +32,9 @@ function extractAttributeName (str) {
 export default class TemplateTag {
   constructor (strings) {
     this.strings = strings;
+    this.template = null;
+    this.svgTemplate = null;
+    this.partsMeta = [];
   }
 
   create (isSvgPart) {

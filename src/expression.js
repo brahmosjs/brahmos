@@ -1,4 +1,5 @@
-import { isBrahmosNode } from './utils';
+import { isBrahmosNode, isTagNode, TAG_ELEMENT_NODE, isComponentNode } from './brahmosNode';
+import { createTagNode } from './tags';
 import createElement, { createTagElement } from './createElement';
 
 export default function expression (node) {
@@ -11,25 +12,20 @@ export default function expression (node) {
       node.added = true;
 
       // if it is a tag node recursively add added flag
-      if (node.__$isBrahmosTag$__) {
+      if (isTagNode(node)) {
         node.values.forEach(expression);
       }
       return node;
-    } else if (node.__$isBrahmosComponent$__) {
+    } else if (isComponentNode(node)) {
       // create a new element and return that
-      const { type, configs, children } = node;
-      return createElement(type, configs, children);
-    } else if (node.__$isBrahmosTagElement$__) {
+      const { type, ref, key, props } = node;
+      return createElement(type, { ref, key, ...props }, props.children);
+    } else if (node.nodeType === TAG_ELEMENT_NODE) {
       // create a new tag element and return it
       const { element, values } = node;
       return createTagElement(element, values[0], values[1]);
     } else {
-      // copy and remove the templateNode instance, and old value
-      return {
-        template: node.template,
-        values: expression(node.values),
-        __$isBrahmosTag$__: true,
-      };
+      return createTagNode(node.template, expression(node.values));
     }
   } else if (Array.isArray(node)) {
     const newArray = [];
