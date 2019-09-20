@@ -40,10 +40,11 @@ export default function updater (parts, values, oldValues, context, forceUpdate,
       // reduce the counter to correct the loop index. As it is extra incremented in while loop
       i--;
 
-      const oldDynamicAttributes = node.__dynamicAttributes || {};
+      const { __brahmosData: brahmosData } = node;
+      const oldDynamicAttributes = brahmosData.attributes || {};
 
       // store the dynamic attribute reference on node so it can be used on next render
-      node.__dynamicAttributes = dynamicAttributes;
+      brahmosData.attributes = dynamicAttributes;
 
       updateNodeAttributes(node, dynamicAttributes, oldDynamicAttributes, isSvgPart);
     } else if (isNode) {
