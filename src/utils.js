@@ -30,6 +30,15 @@ export function isCustomElement (tagName) {
   return isHTMLElement(tagName) && tagName.indexOf('-') !== -1;
 }
 
+// add brahmos data container to domNode
+export function addDataContainer (domNode) {
+  // add brahmos data container
+  domNode.__brahmosData = {
+    attributes: {},
+    events: {},
+  };
+}
+
 /**
  * A smaller utility to omit keys from objects
  */
