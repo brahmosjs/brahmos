@@ -3,6 +3,7 @@ import {
   remove,
   toArray,
   createEmptyTextNode,
+  addDataContainer,
 } from './utils';
 
 export default class TemplateNode {
@@ -92,11 +93,7 @@ export default class TemplateNode {
           goToNextPart();
         }
 
-        // add brahmos data container
-        current.__brahmosData = {
-          attributes: {},
-          events: {},
-        };
+        addDataContainer(current);
       } else if (isBrahmosCommentNode(current)) {
         /**
          * If the node is a node marker add previous sibling and next sibling

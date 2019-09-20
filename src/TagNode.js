@@ -1,3 +1,4 @@
+import { addDataContainer } from './utils';
 /**
  * Generate a similar structure as Template node from BrahmosTagElement,
  * so that it can be processed in a same way tagged template literals.
@@ -13,6 +14,8 @@ export default function getTagNode (node, isSvgPart) {
   const domElement = isSvgPart
     ? document.createElementNS('http://www.w3.org/2000/svg', element)
     : document.createElement(element);
+
+  addDataContainer(domElement);
 
   const attributePart = {
     isAttribute: true,
