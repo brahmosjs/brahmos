@@ -8,7 +8,6 @@ import {
   getInputStateType,
   handleInputProperty,
   getPatchedEventHandler,
-  eventHandlerCache,
 } from './reactEvents';
 
 import {
@@ -55,16 +54,16 @@ function setAttribute (node, attrName, attrValue, oldAttrValue, isSvgAttribute) 
     let eventName = getEventName(attrName);
     eventName = getEffectiveEventName(eventName, node);
 
-    // remove old event and assign it again
-    if (oldAttrValue) {
-      const oldPatchedHandler = eventHandlerCache.get(oldAttrValue) || oldAttrValue;
-      node.removeEventListener(eventName, oldPatchedHandler);
-    }
+    // get patched event handler
+    const patchedHandler = getPatchedEventHandler(node, attrName, attrValue);
 
-    // if new event is defined assign new event handler
-    if (attrValue) {
-      const patchedEventHandler = getPatchedEventHandler(node, attrValue);
-      node.addEventListener(eventName, patchedEventHandler);
+    // if new event handler is not there but it had old handler, remove the old one
+    if (oldAttrValue && !attrValue) {
+      node.removeEventListener(eventName, patchedHandler);
+
+    // if the event is getting added first time add a listener
+    } else if (!oldAttrValue && attrValue) {
+      node.addEventListener(eventName, patchedHandler);
     }
 
   // handle style attributes

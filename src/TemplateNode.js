@@ -91,6 +91,12 @@ export default class TemplateNode {
           });
           goToNextPart();
         }
+
+        // add brahmos data container
+        current.__brahmosData = {
+          attributes: {},
+          events: {},
+        };
       } else if (isBrahmosCommentNode(current)) {
         /**
          * If the node is a node marker add previous sibling and next sibling

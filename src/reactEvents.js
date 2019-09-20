@@ -1,8 +1,6 @@
 import { getNodeName } from './utils';
 import { RENAMED_EVENTS } from './configs';
 
-export const eventHandlerCache = new WeakMap();
-
 export function getEffectiveEventName (eventName, node) {
   const nodeName = getNodeName(node);
 
@@ -50,9 +48,24 @@ export function handleInputProperty (inputStateType, node, attrName, attrValue) 
   }
 }
 
-export function getPatchedEventHandler (node, handler) {
-  let patchedHandler = eventHandlerCache.get(handler);
-  if (patchedHandler) return patchedHandler;
+export function getPatchedEventHandler (node, attrName, handler) {
+  const eventHandlers = node.__brahmosData.events;
+  let eventHandlerObj = eventHandlers[attrName];
+
+  /**
+   * if eventHandlerObj is already defined update it with new handler
+   * or else create a new object
+   */
+  //
+  if (eventHandlerObj) {
+    eventHandlerObj.handler = handler;
+    return eventHandlerObj.patched;
+  } else {
+    eventHandlerObj = eventHandlers[attrName] = {
+      handler,
+      patched: null,
+    };
+  }
 
   const inputStateType = getInputStateType(node);
 
@@ -70,7 +83,7 @@ export function getPatchedEventHandler (node, handler) {
     }
   };
 
-  patchedHandler = function (event) {
+  eventHandlerObj.patched = function (event) {
     if (inputStateType === 'checked') {
       const { checkedProp } = node;
 
@@ -85,12 +98,10 @@ export function getPatchedEventHandler (node, handler) {
     }
 
     // if the handler is defined call the handler
-    if (handler) {
-      handler.call(this, event);
+    if (eventHandlerObj.handler) {
+      eventHandlerObj.handler.call(this, event);
     }
   };
 
-  eventHandlerCache.set(handler, patchedHandler);
-
-  return patchedHandler;
+  return eventHandlerObj.patched;
 }
