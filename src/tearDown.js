@@ -2,6 +2,7 @@ import {
   isRenderableNode,
   deleteNodesBetween,
   callLifeCycle,
+  loopEntries,
 } from './utils';
 
 import { isComponentNode, isTagNode, CLASS_COMPONENT_NODE } from './brahmosNode';
@@ -58,7 +59,7 @@ function handleUnmount (node) {
 
       // if part is attribute type look for ref attribute and set the ref as null
       if (part.isAttribute) {
-        Object.entries(value).forEach(([attrName, attrValue]) => {
+        loopEntries(value, (attrName, attrValue) => {
           if (attrName === 'ref') {
             setRef(attrValue, null);
           }
