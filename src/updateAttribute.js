@@ -1,6 +1,7 @@
 import {
   getEventName,
   isEventAttribute,
+  loopEntries,
 } from './utils';
 
 import {
@@ -24,7 +25,7 @@ import {
 function applyDiffProperty (newObj, oldObj, resetValue, cb) {
   oldObj = oldObj || {};
   // add new attributes
-  Object.entries(newObj).forEach(([key, value]) => {
+  loopEntries(newObj, (key, value) => {
     const oldValue = oldObj[key];
     if (
       value !== oldValue
@@ -34,7 +35,7 @@ function applyDiffProperty (newObj, oldObj, resetValue, cb) {
   });
 
   // remove old attributes
-  Object.entries(oldObj).forEach(([key, value]) => {
+  loopEntries(oldObj, (key, value) => {
     if (newObj[key] === undefined) {
       cb(key, resetValue, value);
     }

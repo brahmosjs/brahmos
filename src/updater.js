@@ -1,3 +1,4 @@
+import { loopEntries } from './utils';
 import updateNodeAttributes from './updateAttribute';
 import { RESERVED_ATTRIBUTES, MODIFIED_ATTRIBUTES } from './configs';
 import updateNode from './updateNode';
@@ -24,7 +25,7 @@ export default function updater (parts, values, oldValues, context, forceUpdate,
       // mix all the consecutive attributes if they belong to same node
       const dynamicAttributes = {};
       while (part && node === part.node) {
-        Object.entries(values[i]).forEach(([attrName, attrValue]) => {
+        loopEntries(values[i], (attrName, attrValue) => {
           const overrideAttrNameCheck = MODIFIED_ATTRIBUTES[attrName];
           const isOverridden = isAttrOverridden(part.tagAttrs, overrideAttrNameCheck, part.attrIndex);
           if (!isOverridden && !RESERVED_ATTRIBUTES[attrName]) {

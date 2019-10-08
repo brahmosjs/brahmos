@@ -53,6 +53,19 @@ export function omit (obj, keys) {
 }
 
 /**
+ * Function to loop over object entries
+ */
+export function loopEntries (obj, cb) {
+  const keys = Object.keys(obj);
+
+  for (let i = 0, ln = keys.length; i < ln; i++) {
+    const key = keys[i];
+    const value = obj[key];
+    cb(key, value);
+  }
+}
+
+/**
  * Remove nodes from parent
  */
 
@@ -82,20 +95,20 @@ export function getKey (node, index) {
     for (let i = 0, ln = values.length; i < ln; i++) {
       const value = values[i];
       if (value.key !== undefined) {
-        key = value.key;
+        key = '' + value.key;
         break;
       }
     }
 
     // store the calculated key on node so we don't have to search next time on same node
-    node.key = key === undefined ? '' : key.toString();
+    node.key = key === undefined ? '' : '' + key;
   }
 
   /**
    * if key is defined use key or else use index as key.
    * Also key should always be a string
    */
-  return key === '' ? index.toString() : key;
+  return key === '' ? '' + index : key;
 }
 
 export function isClassComponent (element) {
@@ -156,7 +169,7 @@ export function changeToNode (value) {
   }
 
   // In other case it will be string so return a text node
-  return document.createTextNode(value.toString());
+  return document.createTextNode(value);
 }
 
 /**

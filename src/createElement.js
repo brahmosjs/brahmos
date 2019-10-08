@@ -26,15 +26,13 @@ export default function createElement (
    */
   if (typeof element === 'string') return createTagElement(element, configs, children);
 
-  const props = { ...element.defaultProps, ...omit(configs, { key: 1, ref: !element.__isForwardRef }) };
-
-  // add children to props
-  props.children = children;
+  // create a prop object excluding the key and ref prop and adding children prop
+  const props = { ...element.defaultProps, ...omit(configs, { key: 1, ref: !element.__isForwardRef }), children };
 
   const { key = '', ref } = configs;
   const _isClassComponent = isClassComponent(element);
 
-  const node = brahmosNode(props, null, key.toString());
+  const node = brahmosNode(props, null, '' + key);
 
   node.nodeType = _isClassComponent ? CLASS_COMPONENT_NODE : FUNCTIONAL_COMPONENT_NODE;
   node.type = element;

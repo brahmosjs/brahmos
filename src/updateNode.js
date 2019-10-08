@@ -91,12 +91,12 @@ function spliceUnusedNodes (index, oldNodes, parentNode, previousSibling) {
 }
 
 function formNodeMap (nodes) {
-  const maps = {};
+  const maps = new Map();
 
   for (let i = 0, ln = nodes.length; i < ln; i++) {
     const node = nodes[i];
     const key = getKey(node, i);
-    maps[key] = node;
+    maps.set(key, node);
   }
 
   return maps;
@@ -117,16 +117,16 @@ function updateArrayNodes (part, nodes, oldNodes = [], context, isSvgPart) {
   for (let i = 0, ln = nodes.length; i < ln; i++) {
     const node = nodes[i];
     const key = getKey(node, i);
-    const oldNode = oldNodesMap[key];
+    const oldNode = oldNodesMap.get(key);
     if (oldNode && isBrahmosNode(oldNode)) {
       oldNode.isReused = true;
     }
   }
 
-  for (let i = 0, j = 0; i < nodesLength; i++, j++) {
+  for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
     const key = getKey(node, i);
-    const oldNode = oldNodesMap[key];
+    const oldNode = oldNodesMap.get(key);
 
     // delete unused non brahmos node
     const currentOldNode = spliceUnusedNodes(i, oldNodes, parentNode, lastChild);
