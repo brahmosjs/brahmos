@@ -5,7 +5,7 @@ import render from './render';
  *  the parent component without losing the context
  */
 function createPortal (child, container) {
-  // mark the childe node as ported node
+  // mark the child node as ported node
   child.portalContainer = container;
 
   render(child, container);

@@ -1,5 +1,4 @@
 import createElement from './createElement';
-import expression from './expression';
 
 /** Portal */
 import createPortal from './createPortal';
@@ -39,7 +38,6 @@ import unmountComponentAtNode from './unmountComponentAtNode';
 
 const Brahmos = {
   createElement,
-  expression,
   render,
   Component,
   PureComponent,
@@ -63,7 +61,6 @@ const Brahmos = {
 
 export {
   createElement,
-  expression,
   render,
   Component,
   PureComponent,

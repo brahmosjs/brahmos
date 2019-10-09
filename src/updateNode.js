@@ -183,6 +183,14 @@ function updateTagNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
   // if the node is an svg element set the isSvgPart true
   isSvgPart = isSvgPart || element === 'svg';
 
+  /**
+   * if the node already has templateNode, and node reference is different from oldNode,
+   * it means the node is already being used somewhere, so duplicate the node
+   */
+  if (node.templateNode && node !== oldNode) {
+    node = { ...node, templateNode: null };
+  }
+
   if (oldNode && oldNode.template === node.template) {
     node.templateNode = oldNode.templateNode;
     oldNode.isReused = true;

@@ -1455,9 +1455,9 @@ babel-loader@^8.0.6:
     mkdirp "^0.5.1"
     pify "^4.0.1"
 
-"babel-plugin-brahmos@git://github.com/s-yadav/babel-plugin-brahmos.git#0.5.0-alpha":
-  version "0.5.0-alpha"
-  resolved "git://github.com/s-yadav/babel-plugin-brahmos.git#5017cc97cc857c61b9abe0d6871295467fcee879"
+"babel-plugin-brahmos@git://github.com/s-yadav/babel-plugin-brahmos.git#0.5.0-alpha2":
+  version "0.4.0"
+  resolved "git://github.com/s-yadav/babel-plugin-brahmos.git#b13d0434df568d00814ea9040456522b6555981d"
   dependencies:
     "@babel/plugin-syntax-jsx" "^7.2.0"
 
