@@ -3,6 +3,7 @@ import updateNodeAttributes from './updateAttribute';
 import { RESERVED_ATTRIBUTES, MODIFIED_ATTRIBUTES } from './configs';
 import updateNode from './updateNode';
 import { setRef } from './refs';
+import { isBrahmosNode, isTagNode, TAG_ELEMENT_NODE, isComponentNode } from './brahmosNode';
 
 import { applyHandlers } from './mountAndEffectQueue';
 
@@ -49,6 +50,7 @@ export default function updater (parts, values, oldValues, context, forceUpdate,
 
       updateNodeAttributes(node, dynamicAttributes, oldDynamicAttributes, isSvgPart);
     } else if (isNode) {
+      // check if node is used earlier
       updateNode(part, value, oldValue, context, forceUpdate, isSvgPart);
     }
   }

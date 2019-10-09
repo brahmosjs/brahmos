@@ -152,6 +152,14 @@ export default function updateComponentNode (part, node, oldNode, context, force
   let shouldUpdate = true;
   const isClassComponent = nodeType === CLASS_COMPONENT_NODE;
 
+  /**
+   * if the node already has componentInstance, and node reference is different from oldNode,
+   * it means the node is already being used somewhere, so duplicate the node
+   */
+  if (node.componentInstance && node !== oldNode) {
+    node = { ...node, componentInstance: null, mountHandler: null };
+  }
+
   if (oldNode && oldNode.type === node.type) {
     node.componentInstance = oldNode.componentInstance;
     oldNode.isReused = true;
