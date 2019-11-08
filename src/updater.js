@@ -25,7 +25,7 @@ export default function updater (parts, values, oldValues, context, forceUpdate,
 
       // mix all the consecutive attributes if they belong to same domNode
       const dynamicAttributes = {};
-      while (part && node === part.node) {
+      while (part && domNode === part.domNode) {
         loopEntries(values[i], (attrName, attrValue) => {
           const overrideAttrNameCheck = MODIFIED_ATTRIBUTES[attrName];
           const isOverridden = isAttrOverridden(part.tagAttrs, overrideAttrNameCheck, part.attrIndex);
