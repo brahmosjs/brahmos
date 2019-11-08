@@ -17,6 +17,7 @@ export class Component {
     this.__lastNode = null;
 
     this.__mounted = false;
+    this.__brahmosNode = null;
   }
 
   setState (newState, callback) {
@@ -35,6 +36,8 @@ export class Component {
     state = mergeState(state, _newState);
 
     this.__unCommittedState = state;
+
+    this.__brahmosNode.dirty = true;
 
     // when the rerender is done call the callback if provided
     this.__batchStateChange().then(() => {

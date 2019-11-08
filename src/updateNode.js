@@ -55,7 +55,7 @@ function getOldNodeNextSibling (oldNode) {
   let lastNode;
 
   if (isTagNode(oldNode)) {
-    lastNode = lastItem(oldNode.templateNode.nodes);
+    lastNode = lastItem(oldNode.templateNode.domNodes);
   } else if (isComponentNode(oldNode)) {
     lastNode = oldNode.componentInstance.__lastNode;
   }
@@ -240,21 +240,21 @@ function updateTagNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
      * if we are rendering as fragment it means the fragment might have childNodes
      * which templateNode does not have, so for such cases we should reset nodeList on templateNode;
      */
-    templateNode.nodes = insertBefore(parentNode, nextSibling, templateNode.fragment);
+    templateNode.domNodes = insertBefore(parentNode, nextSibling, templateNode.fragment);
   }
 
   /**
      * Rearrange node if forceUpdate is set and the element is not on correct position
      */
-  const firstChild = templateNode.nodes[0];
+  const firstChild = templateNode.domNodes[0];
   const onCorrectPos = firstChild && firstChild.previousSibling === previousSibling;
 
   if (firstChild && forceUpdate && !onCorrectPos) {
     // add nodes at the right position
-    insertBefore(parentNode, nextSibling, templateNode.nodes);
+    insertBefore(parentNode, nextSibling, templateNode.domNodes);
   }
 
-  return lastItem(templateNode.nodes);
+  return lastItem(templateNode.domNodes);
 }
 
 /**

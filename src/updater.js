@@ -21,9 +21,9 @@ export default function updater (parts, values, oldValues, context, forceUpdate,
 
     const { isAttribute, isNode } = part;
     if (isAttribute) {
-      const { node } = part;
+      const { domNode } = part;
 
-      // mix all the consecutive attributes if they belong to same node
+      // mix all the consecutive attributes if they belong to same domNode
       const dynamicAttributes = {};
       while (part && node === part.node) {
         loopEntries(values[i], (attrName, attrValue) => {
@@ -33,7 +33,7 @@ export default function updater (parts, values, oldValues, context, forceUpdate,
             dynamicAttributes[attrName] = attrValue;
           } else if (attrName === 'ref') {
             // Note only functional refs are supported
-            setRef(attrValue, node);
+            setRef(attrValue, domNode);
           }
         });
         part = parts[++i];
@@ -48,7 +48,7 @@ export default function updater (parts, values, oldValues, context, forceUpdate,
       // store the dynamic attribute reference on node so it can be used on next render
       brahmosData.attributes = dynamicAttributes;
 
-      updateNodeAttributes(node, dynamicAttributes, oldDynamicAttributes, isSvgPart);
+      updateNodeAttributes(domNode, dynamicAttributes, oldDynamicAttributes, isSvgPart);
     } else if (isNode) {
       // check if node is used earlier
       updateNode(part, value, oldValue, context, forceUpdate, isSvgPart);

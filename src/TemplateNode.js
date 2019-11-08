@@ -20,7 +20,7 @@ export default class TemplateNode {
 
     // keep the reference of child nodes
     // TODO: Check if you want to use Array.from instead
-    this.nodes = toArray(this.fragment.childNodes);
+    this.domNodes = toArray(this.fragment.childNodes);
 
     this.patched = false;
   }
@@ -88,7 +88,7 @@ export default class TemplateNode {
         ) {
           parts.push({
             ...partMeta, // Spread object is slow, but bublejs compiles it to Object.assign which is optimized
-            node: current,
+            domNode: current,
           });
           goToNextPart();
         }
