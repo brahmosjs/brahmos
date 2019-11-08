@@ -21,7 +21,7 @@ export default function getTagNode (node, isSvgPart) {
     isAttribute: true,
     tagAttrs: [],
     attrIndex: 0,
-    node: domElement,
+    domNode: domElement,
   };
 
   const nodePart = {

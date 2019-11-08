@@ -3,7 +3,6 @@ import updateNodeAttributes from './updateAttribute';
 import { RESERVED_ATTRIBUTES, MODIFIED_ATTRIBUTES } from './configs';
 import updateNode from './updateNode';
 import { setRef } from './refs';
-import { isBrahmosNode, isTagNode, TAG_ELEMENT_NODE, isComponentNode } from './brahmosNode';
 
 import { applyHandlers } from './mountAndEffectQueue';
 
@@ -42,7 +41,7 @@ export default function updater (parts, values, oldValues, context, forceUpdate,
       // reduce the counter to correct the loop index. As it is extra incremented in while loop
       i--;
 
-      const { __brahmosData: brahmosData } = node;
+      const { __brahmosData: brahmosData } = domNode;
       const oldDynamicAttributes = brahmosData.attributes || {};
 
       // store the dynamic attribute reference on node so it can be used on next render

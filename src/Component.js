@@ -37,7 +37,7 @@ export class Component {
 
     this.__unCommittedState = state;
 
-    this.__brahmosNode.dirty = true;
+    // this.__brahmosNode.dirty = true;
 
     // when the rerender is done call the callback if provided
     this.__batchStateChange().then(() => {
