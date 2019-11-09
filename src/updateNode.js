@@ -276,7 +276,12 @@ export default function updateNode (part, node, oldNode, context, forceUpdate, i
     return updateComponentNode(part, node, oldNode, context, forceUpdate, isSvgPart);
   } else if (isTagNode(node)) {
     return updateTagNode(part, node, oldNode, context, forceUpdate, isSvgPart);
-  } else if (isPrimitiveNode(node) && (node !== oldNode || forceUpdate)) {
-    return updateTextNode(part, node, oldNode);
+  } else if (isPrimitiveNode(node)) {
+    const isNodeDifferent = '' + node !== isPrimitiveNode(oldNode)? '' + oldNode: oldNode;
+    const shouldUpdate = isNodeDifferent || forceUpdate;
+
+    if(shouldUpdate) {
+      return updateTextNode(part, node, oldNode);
+    }    
   }
 }
