@@ -1,4 +1,6 @@
 import Brahmos, { Suspense, lazy } from '../src';
+// adding debug for react devtool support
+import '../src/debug';
 
 import TodoList from './TodoList';
 import UseStateExample from './UseStateExample';
