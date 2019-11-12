@@ -5,6 +5,10 @@
 # Brahmos
 Supercharged JavaScript library to build user interfaces with modern React API and native templates.
 
+## Installation
+
+[Create a New Brahmos App](https://www.npmjs.com/package/create-brahmos-app) if you're looking for a powerful JavaScript toolchain.
+
 ## Features
 - Lightweight and Fast.
 - Exact same React's Declarative APIs with JSX.
