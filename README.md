@@ -99,7 +99,7 @@ Check how it internally works [HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md)
 
 ## Demo
 Todo MVC with Brahmos
-[https://s-yadav.github.io/brahmos-todo-mvc](https://s-yadav.github.io/brahmos-todo-mvc)
+[https://brahmosjs.github.io/brahmos-todo-mvc](https://brahmosjs.github.io/brahmos-todo-mvc)
 
 ## Slack Channel
 https://brahmoscommunity.slack.com/join/shared_invite/enQtNjYxODIzMzA3NTg3LWY5ZWY4ZjczNThhMTZjN2Q3NTNmMTBjNjVlZGM5ZWMzNDIyYWI2OTUwMTZiOGQ5MjEwN2Q0ZGRkM2UxZjFiZTM
