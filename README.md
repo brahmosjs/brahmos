@@ -102,7 +102,7 @@ Todo MVC with Brahmos
 [https://brahmosjs.github.io/brahmos-todo-mvc](https://brahmosjs.github.io/brahmos-todo-mvc)
 
 ## Slack Channel
-https://brahmoscommunity.slack.com/join/shared_invite/enQtNjYxODIzMzA3NTg3LWY5ZWY4ZjczNThhMTZjN2Q3NTNmMTBjNjVlZGM5ZWMzNDIyYWI2OTUwMTZiOGQ5MjEwN2Q0ZGRkM2UxZjFiZTM
+https://join.slack.com/t/brahmoscommunity/shared_invite/enQtODM5NDMwODgwMzQyLTc4YjJlZjY3Mzk1ODJkNTRkODljYjhmM2NhMGIxNzFjMjZjODk0MmVjZTVkNmE5Y2MwYzZkMzk5NTUxYmI5OWE
 
 ## Progress
 - [x] Component and props
