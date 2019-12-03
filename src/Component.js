@@ -66,7 +66,7 @@ export class Component {
     // get the new rendered node
     const nodes = this.render();
 
-    // store the current reference of nodes so we can use this this on next render cycle
+    // store the current reference of nodes so we can use this on the next render cycle
     this.__nodes = nodes;
     return nodes;
   }
