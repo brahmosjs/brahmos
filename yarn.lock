@@ -327,9 +327,9 @@
     "@babel/helper-plugin-utils" "^7.0.0"
 
 "@babel/plugin-syntax-jsx@^7.2.0":
-  version "7.2.0"
-  resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-jsx/-/plugin-syntax-jsx-7.2.0.tgz#0b85a3b4bc7cdf4cc4b8bf236335b907ca22e7c7"
-  integrity sha512-VyN4QANJkRW6lDBmENzRszvZf3/4AXaj9YR7GwrWeeN9tEBPuXbmDYVU9bYBN0D70zCWVwUy0HWq2553VCb6Hw==
+  version "7.7.4"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-jsx/-/plugin-syntax-jsx-7.7.4.tgz#dab2b56a36fb6c3c222a1fbc71f7bf97f327a9ec"
+  integrity sha512-wuy6fiMe9y7HeZBWXYCGt2RGxZOj0BImZ9EyXJVnVGBKO/Br592rbR3rtIQn0eQhAk9vqaKP5n8tVqEFBQMfLg==
   dependencies:
     "@babel/helper-plugin-utils" "^7.0.0"
 
@@ -1455,9 +1455,9 @@ babel-loader@^8.0.6:
     mkdirp "^0.5.1"
     pify "^4.0.1"
 
-"babel-plugin-brahmos@git://github.com/s-yadav/babel-plugin-brahmos.git#0.5.0-alpha2":
+"babel-plugin-brahmos@git://github.com/brahmosjs/babel-plugin-brahmos.git#0.5.0-alpha2":
   version "0.4.0"
-  resolved "git://github.com/s-yadav/babel-plugin-brahmos.git#b13d0434df568d00814ea9040456522b6555981d"
+  resolved "git://github.com/brahmosjs/babel-plugin-brahmos.git#b13d0434df568d00814ea9040456522b6555981d"
   dependencies:
     "@babel/plugin-syntax-jsx" "^7.2.0"
 
