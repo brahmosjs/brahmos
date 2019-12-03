@@ -46,7 +46,7 @@ export class Suspense extends Component {
      * Show fallback till all promise are resolved, and if there are no promise
      * just show the children
      * We pass an array of lazyElement through provider so all lazy elements can
-     * add itself to suspense so that suspense can wait for them to resolved.
+     * add itself to suspense so that suspense can wait for them to be resolved.
      */
     return <Provider value = {lazyElements}>
       {resolved ? children : fallback}
