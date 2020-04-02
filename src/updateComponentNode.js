@@ -3,13 +3,13 @@ import { PureComponent } from './Component';
 import { Suspense } from './index';
 import { mergeState, callLifeCycle } from './utils';
 import { setRef } from './refs';
-import { CLASS_COMPONENT_NODE } from './brahmosNode';
+import { CLASS_COMPONENT_NODE, link, isComponentNode } from './brahmosNode';
 
 import { runEffects, cleanEffects } from './hooks';
 
 import { addHandler } from './mountAndEffectQueue';
 
-import updateNode from './updateNode';
+import updateNode, { getChildNodes } from './updateNode';
 
 import shallowEqual from './helpers/shallowEqual';
 
@@ -21,7 +21,7 @@ function getCurrentContext (Component, componentInstance, context) {
   // if component is not a provider return the same context
   if (!__ccId) return context;
 
-  // if componentInstance has context return that
+  // if it is a provider and componentInstance has context return that
   if (__context) return __context;
 
   // if it is provider create a new context extending the parent context
@@ -88,6 +88,19 @@ function renderWithErrorBoundaries (part, node, context, shouldUpdate, forceUpda
      * forward forceUpdate to component child only when forceUpdate is set to all.
      */
     componentInstance.__lastNode = updateNode(part, newNodes, oldNodes, context, forceUpdateAll, isSvgPart);
+
+    /**
+     * Fiber architecture related code
+     */
+    const childNodes = getChildNodes(part, newNodes, oldNodes, context, forceUpdateAll, isSvgPart);
+
+    if (childNodes) {
+      link(node, childNodes);
+    }
+
+    /**
+     * Fiber architecture related code end
+     */
 
     /**
      * For Suspense component if there are lazy elements which are not loaded yet

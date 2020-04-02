@@ -8,9 +8,6 @@ class Thread {
     this.currentNode = node;
     this.processed = false;
     this.flushed = false;
-    this.domEffects = [];
-    this.componentEffects = [];
-    this.snapshotEffects = [];
     this.idleCallback = null;
   }
 

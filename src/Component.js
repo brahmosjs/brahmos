@@ -2,16 +2,16 @@ import { reRender } from './render';
 import { mergeState } from './utils';
 
 export class Component {
-  constructor (props) {
+  constructor(props) {
     this.props = props;
 
     this.state = undefined;
     this.__unCommittedState = undefined;
 
-    this.__context = undefined;
     this.context = undefined;
 
-    this.__part = null;
+    this.__fiber = null;
+    this.__dirty = false;
     this.__componentNode = null;
     this.__nodes = null;
     this.__lastNode = null;
@@ -20,7 +20,7 @@ export class Component {
     this.__brahmosNode = null;
   }
 
-  setState (newState, callback) {
+  setState(newState, callback) {
     /**
      * When setState is called batch all the state changes
      * and call rerender asynchronously as next microTask.
@@ -30,14 +30,14 @@ export class Component {
      * with uncommitted state.
      */
     let state = this.__unCommittedState || this.state || {};
-    const _newState = typeof newState === 'function'
-      ? newState(state) : newState;
+    const _newState = typeof newState === 'function' ? newState(state) : newState;
 
     state = mergeState(state, _newState);
 
     this.__unCommittedState = state;
 
     // this.__brahmosNode.dirty = true;
+    this.__dirty = true;
 
     // when the rerender is done call the callback if provided
     this.__batchStateChange().then(() => {
@@ -45,12 +45,12 @@ export class Component {
     });
   }
 
-  forceUpdate (callback) {
+  forceUpdate(callback) {
     reRender(this, 'current');
     if (callback) callback(this.state);
   }
 
-  __batchStateChange () {
+  __batchStateChange() {
     if (this.__updatesPromise) return this.__updatesPromise;
 
     this.__updatesPromise = Promise.resolve().then(() => {
@@ -65,7 +65,7 @@ export class Component {
     return this.__updatesPromise;
   }
 
-  __render () {
+  __render() {
     // get the new rendered node
     const nodes = this.render();
 
@@ -75,4 +75,4 @@ export class Component {
   }
 }
 
-export class PureComponent extends Component {};
+export class PureComponent extends Component {}

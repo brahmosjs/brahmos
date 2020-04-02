@@ -11,12 +11,12 @@ import {
   getKey,
 } from './utils';
 
-import { isBrahmosNode, isTagNode, isComponentNode, TAG_ELEMENT_NODE } from './brahmosNode';
+import { isBrahmosNode, brahmosNode, isTagNode, isComponentNode, TAG_ELEMENT_NODE, link } from './brahmosNode';
 
 import tearDown from './tearDown';
 import getTagNode from './TagNode';
 
-import updater from './updater';
+import partsToNode from './updater';
 
 /**
  * Updater to handle text node
@@ -228,7 +228,8 @@ function updateTagNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
    * This will only happen when we are just doing position change
    */
   if (node !== oldNode) {
-    updater(templateNode.parts, values, oldValues, context, false, isSvgPart);
+    const children = partsToNode(templateNode.parts, values, oldValues, context, false, isSvgPart);
+    link(node, children);
   }
 
   if (freshRender) {
@@ -278,5 +279,30 @@ export default function updateNode (part, node, oldNode, context, forceUpdate, i
     return updateTagNode(part, node, oldNode, context, forceUpdate, isSvgPart);
   } else if (isPrimitiveNode(node) && (node !== oldNode || forceUpdate)) {
     return updateTextNode(part, node, oldNode);
+  }
+}
+
+export function getChildNodes (part, node, oldNode, context, forceUpdate, isSvgPart) {
+  if (!isRenderableNode(node)) {
+    /**
+       * If the new node is falsy value and
+       * the oldNode is present we have to delete the old node
+       * */
+    if (oldNode !== undefined) {
+      // delete the existing elements
+      tearDown(oldNode, part);
+    }
+  } else if (Array.isArray(node)) {
+    return updateArrayNodes(part, node, oldNode, context, isSvgPart);
+  } else if (isBrahmosNode(node)) {
+    node.part = part;
+    node.oldNode = oldNode;
+    return node;
+  } else if (isPrimitiveNode(node) && (node !== oldNode || forceUpdate)) {
+    const primitiveNode = brahmosNode();
+    primitiveNode.part = part;
+    primitiveNode.value = node;
+    primitiveNode.oldNode = oldNode;
+    return primitiveNode;
   }
 }

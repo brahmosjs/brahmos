@@ -8,19 +8,26 @@ export const ATTRIBUTE_NODE = Symbol('attribute');
 export const TEXT_NODE = Symbol('text');
 export const NULL_NODE = Symbol('null');
 
-export function isTagNode ({ nodeType }) {
+export function isTagNode({ nodeType }) {
   return nodeType === TAG_NODE || nodeType === TAG_ELEMENT_NODE;
 }
 
-export function isComponentNode ({ nodeType }) {
+export function isComponentNode({ nodeType }) {
   return nodeType === CLASS_COMPONENT_NODE || nodeType === FUNCTIONAL_COMPONENT_NODE;
 }
 
-export function isBrahmosNode (node) {
+export function isBrahmosNode(node) {
   return node && (isTagNode(node) || isComponentNode(node));
 }
 
-export function brahmosNode (props, values, key) {
+/**
+ * Function to check if a node should be rendered as string
+ */
+export function isPrimitiveNode(node) {
+  return typeof node === 'string' || typeof node === 'number';
+}
+
+export function brahmosNode(props, values, key) {
   return {
     /** Common node properties */
     nodeType: null,
@@ -34,7 +41,6 @@ export function brahmosNode (props, values, key) {
     level: -1,
     isArrayItem: false,
     part: null,
-    dirty: true,
 
     /** Component specific properties */
     type: null,
@@ -50,15 +56,27 @@ export function brahmosNode (props, values, key) {
     templateNode: null,
     template: null,
 
-    /** text content node or null node */
-    text: '',
+    /** part node */
+    value: null,
+    oldValue: null,
+    isSvgPart: false,
+  };
+}
+
+export function createFiber(node) {
+  return {
+    node: node,
+    parent: null,
+    child: null,
+    sibling: null,
+    alternate: null,
   };
 }
 
 // create a linked list through parent and child
-export function link (parent, children) {
+export function link(parent, children) {
   const lastChild = null;
-  for (let i = children.length; i > 0; i--) {
+  for (let i = children.length - 1; i >= 0; i--) {
     const child = children[i];
     child.sibling = lastChild;
     child.parent = parent;
