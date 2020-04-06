@@ -1,5 +1,10 @@
-import { isRenderableNode, isPrimitiveNode, isNil } from './utils';
-import { isComponentNode, isTagNode, ATTRIBUTE_NODE } from './brahmosNode';
+import {
+  isComponentNode,
+  isTagNode,
+  isRenderableNode,
+  isPrimitiveNode,
+  ATTRIBUTE_NODE,
+} from './brahmosNode';
 
 export const fibers = {
   workInProgress: null,
@@ -49,7 +54,7 @@ export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
   return wipFiber;
 }
 
-function getExistingFiber(refFiber, parentFiber) {
+export function getNextChildFiber(refFiber, parentFiber) {
   return refFiber === parentFiber ? refFiber.child : refFiber.sibling;
 }
 
@@ -81,6 +86,7 @@ export function createHostFiber(domNode) {
     wip: null,
     lastEffectFiber: null,
     lastSuspenseFiber: null,
+    tearDownFibers: [],
     nextEffect: null,
     alternate: null,
   };
@@ -140,19 +146,22 @@ export function addAlternates(current, wip) {
   wip.alternate = current;
 }
 
-export function createAndLink(node, part, refFiber, parentFiber) {
-  const currentFiber = getExistingFiber(refFiber, parentFiber);
-  const oldNode = currentFiber && currentFiber.node;
-
+export function createAndLink(node, part, currentFiber, refFiber, parentFiber) {
+  const { root } = refFiber;
   let fiber;
-  if (!isNil(oldNode) && shouldClone(node, oldNode)) {
+  if (currentFiber && shouldClone(node, currentFiber.node)) {
     fiber = cloneCurrentFiber(currentFiber, currentFiber.alternate, refFiber, parentFiber);
 
     // assign new node and part to the fiber
     fiber.node = node;
     fiber.part = part;
   } else {
-    fiber = createFiber(refFiber.root, node, part);
+    fiber = createFiber(root, node, part);
+
+    // if current fiber is there mark it to tear down
+    if (currentFiber) {
+      root.tearDownFibers.push(currentFiber);
+    }
   }
 
   linkFiber(fiber, refFiber, parentFiber);
@@ -160,6 +169,11 @@ export function createAndLink(node, part, refFiber, parentFiber) {
   fiber.processed = false;
 
   return fiber;
+}
+
+export function createCurrentAndLink(node, part, refFiber, parentFiber) {
+  const currentFiber = getNextChildFiber(refFiber, parentFiber);
+  return createAndLink(node, part, currentFiber, refFiber, parentFiber);
 }
 
 function shouldClone(newNode, oldNode) {
@@ -171,6 +185,8 @@ function shouldClone(newNode, oldNode) {
      * if there is oldNode it will always be same type in case of attribute node
      */
     newNode.nodeType === ATTRIBUTE_NODE ||
+    // if both are array type than clone
+    (Array.isArray(newNode) && Array.isArray(oldNode)) ||
     // if it is component node and node type matches with oldNode's type we should clone the current
     (isComponentNode(newNode) && newNode.type === oldNode.type) ||
     // if it is tag node and node's template matches with oldNode's template we should clone the current
@@ -184,7 +200,8 @@ function shouldClone(newNode, oldNode) {
 export function toFibers(node, part, parentFiber) {
   const { alternate } = parentFiber;
   const oldChild = alternate && alternate.child;
-  const childPart = oldChild && oldChild.part;
+
+  const refFiber = parentFiber;
 
   if (!isRenderableNode(node)) {
     /**
@@ -193,11 +210,10 @@ export function toFibers(node, part, parentFiber) {
      */
     if (oldChild) {
       // TEAR down old node
+      console.log(oldChild);
     }
-  } else if (Array.isArray(node)) {
-    // handle array nodes
   } else {
-    return createAndLink(node, childPart || part, parentFiber, parentFiber);
+    return createCurrentAndLink(node, part, refFiber, parentFiber);
   }
 }
 

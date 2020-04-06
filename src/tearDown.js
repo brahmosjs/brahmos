@@ -1,11 +1,6 @@
-import {
-  isRenderableNode,
-  deleteNodesBetween,
-  callLifeCycle,
-  loopEntries,
-} from './utils';
+import { callLifeCycle, loopEntries, remove } from './utils';
 
-import { isComponentNode, isTagNode, CLASS_COMPONENT_NODE } from './brahmosNode';
+import { isComponentNode, isRenderableNode, isTagNode, CLASS_COMPONENT_NODE } from './brahmosNode';
 
 import { removeHandler } from './mountAndEffectQueue';
 
@@ -13,7 +8,7 @@ import { setRef } from './refs';
 
 import { cleanEffects } from './hooks';
 
-function handleUnmount (node) {
+function handleUnmount(node) {
   const { componentInstance, ref, mountHandler } = node;
   /**
    * If node is mounted and
@@ -44,17 +39,20 @@ function handleUnmount (node) {
 
   if (Array.isArray(node)) {
     for (let i = 0, ln = node.length; i < ln; i++) {
-      tearDown(node[i]);
+      tearDownNode(node[i]);
     }
   } else if (isTagNode(node)) {
-    const { values, templateNode: { parts } } = node;
+    const {
+      values,
+      templateNode: { parts, domNodes },
+    } = node;
     for (let i = 0, ln = parts.length; i < ln; i++) {
       const part = parts[i];
       const value = values[i];
 
       // if part is node than tear down the node value
       if (part.isNode) {
-        tearDown(value);
+        tearDownNode(value);
       }
 
       // if part is attribute type look for ref attribute and set the ref as null
@@ -66,12 +64,16 @@ function handleUnmount (node) {
         });
       }
     }
+
+    // remove all the elements of templateNode
+    remove(domNodes);
+
     // remove the template node
     node.templateNode = null;
 
     // call the ref methods of attribute parts
   } else if (isComponentNode(node)) {
-    tearDown(componentInstance.__nodes);
+    tearDownNode(componentInstance.__nodes);
     // mark componentInstance as unmounted
     componentInstance.__mounted = false;
 
@@ -80,7 +82,7 @@ function handleUnmount (node) {
   }
 }
 
-export default function tearDown (node, part) {
+function tearDownNode(node, part) {
   // bail out if node is non-renderable node or if the node is reused (It might be on different index )
   if (!isRenderableNode(node) || node.isReused) return;
 
@@ -102,9 +104,21 @@ export default function tearDown (node, part) {
   // call componentWillUnmount Lifecycle
   handleUnmount(node);
 
-  // if part is defined it means we need to delete all nodes on a given part
-  if (part) {
-    const { parentNode, previousSibling, nextSibling } = part;
-    deleteNodesBetween(parentNode, previousSibling, nextSibling);
+  // // if part is defined it means we need to delete all nodes on a given part
+  // if (part) {
+  //   const { parentNode, previousSibling, nextSibling } = part;
+  //   deleteNodesBetween(parentNode, previousSibling, nextSibling);
+  // }
+}
+
+export default function(root) {
+  const { tearDownFibers } = root;
+
+  for (let i = 0, ln = tearDownFibers.length; i < ln; i++) {
+    const { node, part } = tearDownFibers[i];
+    tearDownNode(node, part);
   }
+
+  // rest the tear down fibers
+  root.tearDownFibers = [];
 }

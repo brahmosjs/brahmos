@@ -129,20 +129,6 @@ export function toArray(list) {
 }
 
 /**
- * Function to check if a node should be rendered as string
- */
-export function isPrimitiveNode(node) {
-  return typeof node === 'string' || typeof node === 'number';
-}
-
-/**
- * Function to check if node can be rendered or not
- */
-export function isRenderableNode(node) {
-  return isPrimitiveNode(node) || isBrahmosNode(node) || Array.isArray(node);
-}
-
-/**
  * Function to return lastItem in the list
  */
 export function lastItem(list) {
@@ -206,7 +192,8 @@ export function deleteNodesBetween(parent, start, end) {
  * Function to add child nodes before endNode, if it is not defined or null
  * It will add nodes on the last
  */
-export function insertBefore(parent, end = null, value) {
+export function insertBefore(parent, end, value) {
+  end = end === undefined ? null : end;
   const node = changeToNode(value);
 
   /**

@@ -1,17 +1,18 @@
 import TemplateNode from './TemplateNode';
 import updateComponentNode from './updateComponentNode';
 
-import {
-  isPrimitiveNode,
-  deleteNodesBetween,
-  insertBefore,
-  getCurrentNode,
-  lastItem,
-  isRenderableNode,
-  getKey,
-} from './utils';
+import { deleteNodesBetween, insertBefore, getCurrentNode, lastItem, getKey } from './utils';
 
-import { isBrahmosNode, brahmosNode, isTagNode, isComponentNode, TAG_ELEMENT_NODE, link } from './brahmosNode';
+import {
+  isBrahmosNode,
+  isPrimitiveNode,
+  isRenderableNode,
+  brahmosNode,
+  isTagNode,
+  isComponentNode,
+  TAG_ELEMENT_NODE,
+  link,
+} from './brahmosNode';
 
 import tearDown from './tearDown';
 import getTagNode from './TagNode';
@@ -21,7 +22,7 @@ import partsToNode from './updater';
 /**
  * Updater to handle text node
  */
-function updateTextNode (part, node, oldNode) {
+function updateTextNode(part, node, oldNode) {
   const { parentNode, previousSibling, nextSibling } = part;
   /**
    * get the last text node
@@ -33,9 +34,9 @@ function updateTextNode (part, node, oldNode) {
   let textNode = getCurrentNode(parentNode, previousSibling, null);
 
   /**
-     * In case of old node is not a text node or undefined, or textNode is not present
-     * delete old node and add new node
-     */
+   * In case of old node is not a text node or undefined, or textNode is not present
+   * delete old node and add new node
+   */
   if (!isPrimitiveNode(oldNode) || !textNode) {
     if (oldNode !== undefined) {
       // delete the existing elements
@@ -51,7 +52,7 @@ function updateTextNode (part, node, oldNode) {
   return textNode;
 }
 
-function getOldNodeNextSibling (oldNode) {
+function getOldNodeNextSibling(oldNode) {
   let lastNode;
 
   if (isTagNode(oldNode)) {
@@ -68,7 +69,7 @@ function getOldNodeNextSibling (oldNode) {
  * brahmos node on oldNodes at given index.
  * and returns the used/non brahmos node at that index
  */
-function spliceUnusedNodes (index, oldNodes, parentNode, previousSibling) {
+function spliceUnusedNodes(index, oldNodes, parentNode, previousSibling) {
   let oldNode = oldNodes[index];
   /**
    * remove all the oldNode until we don't get a non Brahmos node or reused node,
@@ -90,7 +91,7 @@ function spliceUnusedNodes (index, oldNodes, parentNode, previousSibling) {
   return oldNode;
 }
 
-function formNodeMap (nodes) {
+function formNodeMap(nodes) {
   const maps = new Map();
 
   for (let i = 0, ln = nodes.length; i < ln; i++) {
@@ -103,9 +104,9 @@ function formNodeMap (nodes) {
 }
 
 /**
-   * Updater to handle array of nodes
-   */
-function updateArrayNodes (part, nodes, oldNodes = [], context, isSvgPart) {
+ * Updater to handle array of nodes
+ */
+function updateArrayNodes(part, nodes, oldNodes = [], context, isSvgPart) {
   const { parentNode, previousSibling, nextSibling } = part;
 
   const nodesLength = nodes.length;
@@ -131,13 +132,14 @@ function updateArrayNodes (part, nodes, oldNodes = [], context, isSvgPart) {
     // delete unused non brahmos node
     const currentOldNode = spliceUnusedNodes(i, oldNodes, parentNode, lastChild);
     /**
-       * Pass forceUpdate as all when
-       * - node is primitive type as they don't have any key
-       * - when newNodes and oldNodes keys are not same
-       */
+     * Pass forceUpdate as all when
+     * - node is primitive type as they don't have any key
+     * - when newNodes and oldNodes keys are not same
+     */
 
-    const forceUpdate = (isPrimitiveNode(node) ||
-    (node && currentOldNode && node.key !== currentOldNode.key)) && 'all';
+    const forceUpdate =
+      (isPrimitiveNode(node) || (node && currentOldNode && node.key !== currentOldNode.key)) &&
+      'all';
 
     /**
      * if lasChild is not present it means the node has to be added before the firstChild
@@ -151,12 +153,20 @@ function updateArrayNodes (part, nodes, oldNodes = [], context, isSvgPart) {
      * the node is non  renderable node, so in such case
      * keep lastChild as old lastChild
      */
-    lastChild = updateNode({
-      parentNode,
-      previousSibling: lastChild,
-      nextSibling: _nextSibling,
-      isNode: true,
-    }, node, oldNode, context, forceUpdate, isSvgPart) || lastChild;
+    lastChild =
+      updateNode(
+        {
+          parentNode,
+          previousSibling: lastChild,
+          nextSibling: _nextSibling,
+          isNode: true,
+        },
+        node,
+        oldNode,
+        context,
+        forceUpdate,
+        isSvgPart,
+      ) || lastChild;
   }
 
   // teardown all extra pending old nodes
@@ -173,7 +183,7 @@ function updateArrayNodes (part, nodes, oldNodes = [], context, isSvgPart) {
 /**
  * Update tagged template node
  */
-function updateTagNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
+function updateTagNode(part, node, oldNode, context, forceUpdate, isSvgPart) {
   const { parentNode, previousSibling, nextSibling } = part;
 
   const { values, nodeType, element } = node;
@@ -203,21 +213,23 @@ function updateTagNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
   let { templateNode } = node;
 
   /**
-     * if you don't get the old template node it means you have to render the node first time
-     * in such cases delete the nodes where the template node is supposed to be present.
-     */
+   * if you don't get the old template node it means you have to render the node first time
+   * in such cases delete the nodes where the template node is supposed to be present.
+   */
   if (!templateNode) {
     freshRender = true;
 
-    templateNode = isTagElement ? getTagNode(node, isSvgPart) : new TemplateNode(node.template, isSvgPart);
+    templateNode = isTagElement
+      ? getTagNode(node, isSvgPart)
+      : new TemplateNode(node.template, isSvgPart);
 
     // add templateNode to node so we can access it on next updates
     node.templateNode = templateNode;
   } else if (!isTagElement) {
-  /**
-   * if any of templateNode part does not have proper parent node and its not first render
-   * patch the part information using the current node's part
-   */
+    /**
+     * if any of templateNode part does not have proper parent node and its not first render
+     * patch the part information using the current node's part
+     */
     templateNode.patchParts(part);
   }
 
@@ -245,8 +257,8 @@ function updateTagNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
   }
 
   /**
-     * Rearrange node if forceUpdate is set and the element is not on correct position
-     */
+   * Rearrange node if forceUpdate is set and the element is not on correct position
+   */
   const firstChild = templateNode.domNodes[0];
   const onCorrectPos = firstChild && firstChild.previousSibling === previousSibling;
 
@@ -259,14 +271,14 @@ function updateTagNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
 }
 
 /**
-   * Updater to handle any type of node
-   */
-export default function updateNode (part, node, oldNode, context, forceUpdate, isSvgPart) {
+ * Updater to handle any type of node
+ */
+export default function updateNode(part, node, oldNode, context, forceUpdate, isSvgPart) {
   if (!isRenderableNode(node)) {
     /**
-       * If the new node is falsy value and
-       * the oldNode is present we have to delete the old node
-       * */
+     * If the new node is falsy value and
+     * the oldNode is present we have to delete the old node
+     * */
     if (oldNode !== undefined) {
       // delete the existing elements
       tearDown(oldNode, part);
@@ -282,12 +294,12 @@ export default function updateNode (part, node, oldNode, context, forceUpdate, i
   }
 }
 
-export function getChildNodes (part, node, oldNode, context, forceUpdate, isSvgPart) {
+export function getChildNodes(part, node, oldNode, context, forceUpdate, isSvgPart) {
   if (!isRenderableNode(node)) {
     /**
-       * If the new node is falsy value and
-       * the oldNode is present we have to delete the old node
-       * */
+     * If the new node is falsy value and
+     * the oldNode is present we have to delete the old node
+     * */
     if (oldNode !== undefined) {
       // delete the existing elements
       tearDown(oldNode, part);

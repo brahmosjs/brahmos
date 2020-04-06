@@ -1,5 +1,5 @@
 import { TAG_ELEMENT_NODE, ATTRIBUTE_NODE } from './brahmosNode';
-import { linkEffect, createAndLink } from './fiber';
+import { linkEffect, createCurrentAndLink } from './fiber';
 import getTagNode from './TagNode';
 import TemplateNode from './TemplateNode';
 import { loopEntries } from './utils';
@@ -19,7 +19,7 @@ export function attributeNode(attributes, ref) {
   };
 }
 
-export function partsToFiber(parts, values, parentFiber, isReused) {
+export function partsToFiber(parts, values, parentFiber) {
   let refFiber = parentFiber;
 
   for (let i = 0, ln = parts.length; i < ln; i++) {
@@ -71,7 +71,7 @@ export function partsToFiber(parts, values, parentFiber, isReused) {
     /**
      * create a fiber from node and link it to reference fiber
      */
-    refFiber = createAndLink(node, part, refFiber, parentFiber);
+    refFiber = createCurrentAndLink(node, part, refFiber, parentFiber);
   }
 }
 
@@ -101,10 +101,6 @@ export default function processTagFiber(fiber) {
     oldNode.isReused = true;
   }
 
-  const oldValues = oldNode && oldNode.values ? oldNode.values : [];
-
-  let firstRender;
-
   let { templateNode } = node;
 
   /**
@@ -112,8 +108,6 @@ export default function processTagFiber(fiber) {
    * in such cases delete the nodes where the template node is supposed to be present.
    */
   if (!templateNode) {
-    firstRender = true;
-
     templateNode = isTagElement
       ? getTagNode(node, isSvgPart)
       : new TemplateNode(node.template, isSvgPart);
@@ -134,13 +128,11 @@ export default function processTagFiber(fiber) {
    * This will only happen when we are just doing position change
    */
   if (node !== oldNode) {
-    partsToFiber(templateNode.parts, values, fiber, firstRender);
+    partsToFiber(templateNode.parts, values, fiber);
   }
 
-  if (firstRender) {
-    // mark this node to be appended as a effect
-    linkEffect(fiber);
-  }
+  // mark this node to be updated or to get appended as a effect
+  linkEffect(fiber);
 
   // attach context on fiber
   fiber.context = context;

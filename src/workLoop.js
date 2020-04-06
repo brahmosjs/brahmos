@@ -1,7 +1,7 @@
 import {
-  isBrahmosNode,
   isComponentNode,
   isPrimitiveNode,
+  isRenderableNode,
   isTagNode,
   ATTRIBUTE_NODE,
 } from './brahmosNode';
@@ -9,12 +9,20 @@ import processComponentFiber from './processComponentFiber';
 import { processTextFiber } from './processTextFiber';
 import processTagFiber from './processTagFiber';
 import effectLoop from './effectLoop';
-import { linkEffect, getNextFiber, cloneWIPClone, cloneChildrenFibers } from './fiber';
+import { linkEffect, getNextFiber, cloneWIPClone, cloneChildrenFibers, fibers } from './fiber';
+import processArrayFiber from './processArrayFiber';
+import tearDown from './tearDown';
 
 const TIME_REQUIRE_TO_PROCESS_FIBER = 2;
 
 export function processFiber(fiber) {
-  const { node } = fiber;
+  const { node, root, alternate } = fiber;
+
+  // if new node is null mark old node to tear down
+  if (!isRenderableNode(node) && alternate) {
+    root.tearDownFibers.push(alternate);
+    return;
+  }
 
   /**
    * If a fiber is processed and node is not dirty we clone all the children from current tree
@@ -30,6 +38,8 @@ export function processFiber(fiber) {
   if (isPrimitiveNode(node)) {
     // have to write logic.
     processTextFiber(fiber);
+  } else if (Array.isArray(node)) {
+    processArrayFiber(fiber);
   } else if (isTagNode(node)) {
     processTagFiber(fiber);
     // TODO: Handle rearrange type of effect
@@ -69,6 +79,9 @@ export default function workLoop(fiber) {
       return;
     }
   }
+
+  // tearDown old nodes
+  tearDown(root);
 
   // when we are done with processing all fiber run effect loop
   effectLoop(root);
