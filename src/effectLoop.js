@@ -1,6 +1,13 @@
-import { isTagNode, isComponentNode, isPrimitiveNode, ATTRIBUTE_NODE } from './brahmosNode';
+import {
+  isTagNode,
+  isComponentNode,
+  isPrimitiveNode,
+  ATTRIBUTE_NODE,
+  CLASS_COMPONENT_NODE,
+} from './brahmosNode';
+import { callLifeCycle, insertBefore, getCurrentNode } from './utils';
+import { runEffects } from './hooks';
 
-import { insertBefore, getCurrentNode } from './utils';
 import updateNodeAttributes from './updateAttribute';
 
 /**
@@ -81,7 +88,36 @@ function updateTagNode(fiber) {
   root.lastArrayDOM = templateNode.domNodes[templateNode.domNodes.length - 1];
 }
 
-function handleComponentEffect(fiber) {}
+function handleComponentEffect(fiber) {
+  const { node, root } = fiber;
+  const { componentInstance, nodeType, prevProps, prevState } = node;
+
+  if (nodeType === CLASS_COMPONENT_NODE) {
+    node.lastSnapshot = callLifeCycle(componentInstance, 'getSnapshotBeforeUpdate', [
+      prevProps,
+      prevState,
+    ]);
+  }
+
+  root.postCommitEffects.push(fiber);
+}
+
+function handleComponentPostCommitEffect(fiber) {
+  const { node, alternate } = fiber;
+  const { componentInstance, nodeType, prevProps, prevState, lastSnapshot } = node;
+
+  if (nodeType === CLASS_COMPONENT_NODE) {
+    // if it is first time rendered call componentDidMount or else call componentDidUpdate
+    if (!alternate) {
+      callLifeCycle(componentInstance, 'componentDidMount');
+    } else {
+      callLifeCycle(componentInstance, 'componentDidUpdate', [prevProps, prevState, lastSnapshot]);
+    }
+  } else {
+    // call effects of functional component
+    runEffects(componentInstance);
+  }
+}
 
 function handleAttributeEffect(fiber) {
   const { part, node, alternate } = fiber;
@@ -94,7 +130,7 @@ function handleAttributeEffect(fiber) {
 }
 
 export default function effectLoop(root) {
-  let { nextEffect: fiber } = root;
+  let { nextEffect: fiber, postCommitEffects } = root;
   while (fiber) {
     const { node } = fiber;
     if (isPrimitiveNode(node)) {
@@ -116,7 +152,13 @@ export default function effectLoop(root) {
     fiber = nextEffect;
   }
 
-  // once all effect has been processed update root's last effect node and reset lastArrayDOM
+  // after applying the effects run all the post effects
+  for (let i = postCommitEffects.length - 1; i >= 0; i--) {
+    handleComponentPostCommitEffect(postCommitEffects[i]);
+  }
+
+  // once all effect has been processed update root's last effect node and reset lastArrayDOM and postCommitEffects
   root.lastEffectFiber = root;
+  root.postCommitEffects = [];
   root.lastArrayDOM = null;
 }

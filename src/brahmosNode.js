@@ -46,6 +46,9 @@ export function brahmosNode(props, values, key) {
     componentInstance: null,
     portalContainer: null,
     mountHandler: null,
+    prevProps: null,
+    prevState: null,
+    lastSnapshot: undefined,
 
     /** tag node specific properties */
     element: '',

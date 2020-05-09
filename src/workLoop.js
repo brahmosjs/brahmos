@@ -24,13 +24,15 @@ export function processFiber(fiber) {
     return;
   }
 
+  const nodeHasUpdates = node.componentInstance && node.componentInstance.__dirty;
+
   /**
    * If a fiber is processed and node is not dirty we clone all the children from current tree
    *
    * This will not affect the first render as fiber will never be on processed state
    * on the first render.
    */
-  if (fiber.processed && !(node.componentInstance && node.componentInstance.__dirty)) {
+  if (fiber.processed && !nodeHasUpdates) {
     cloneChildrenFibers(fiber);
     return;
   }

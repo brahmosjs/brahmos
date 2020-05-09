@@ -1,9 +1,10 @@
-import { toFibers } from './fiber';
+import { createCurrentAndLink, cloneChildrenFibers, linkEffect } from './fiber';
 
 import functionalComponentInstance from './functionalComponentInstance';
 import { CLASS_COMPONENT_NODE } from './brahmosNode';
 import { PureComponent } from './Component';
 
+import { cleanEffects } from './hooks';
 import { mergeState, callLifeCycle } from './utils';
 import shallowEqual from './helpers/shallowEqual';
 
@@ -42,23 +43,14 @@ export default function processComponentFiber(fiber) {
   const { node, part, alternate } = fiber;
   const { type: Component, nodeType, props = {}, ref } = node;
 
-  const { node: oldNode = {} } = alternate || {};
-
-  let isFirstRender = false;
-  let isReused = false;
+  const isFirstRender = false;
+  const isReused = false;
   let shouldUpdate = true;
   const isClassComponent = nodeType === CLASS_COMPONENT_NODE;
 
   // if an alternate fiber is there and its of same node type assign componentInstance from the old fiber
-  if (oldNode.type === Component) {
-    node.componentInstance = oldNode.componentInstance;
-
-    // if nothing has been changed early return
-    // if (node.props === oldNode.props) {
-    //   return;
-    // }
-
-    isReused = true;
+  if (alternate) {
+    node.componentInstance = alternate.node.componentInstance;
   }
 
   /** If Component instance is not present on node create a new instance */
@@ -72,12 +64,16 @@ export default function processComponentFiber(fiber) {
 
     // keep the reference of instance to the node.
     node.componentInstance = componentInstance;
-
-    isFirstRender = true;
   }
+
+  const { props: prevProps, state: prevState } = componentInstance;
 
   // add fiber reference on component instance, so the component is aware of its fiber
   componentInstance.__fiber = fiber;
+
+  // store previous props and prevState in node
+  node.prevProps = prevProps;
+  node.prevState = prevState;
 
   // get current context
   const context = getCurrentContext(fiber, isReused);
@@ -88,7 +84,7 @@ export default function processComponentFiber(fiber) {
    * and call all the life cycle method which comes before rendering.
    */
   if (isClassComponent) {
-    const { __unCommittedState, state: prevState, shouldComponentUpdate } = componentInstance;
+    const { __unCommittedState, shouldComponentUpdate } = componentInstance;
 
     let state = __unCommittedState || prevState;
 
@@ -135,19 +131,25 @@ export default function processComponentFiber(fiber) {
     componentInstance.props = props;
     componentInstance.context = contextValue;
     componentInstance.__unCommittedState = undefined;
+  } else if (alternate) {
+    // for functional component call cleanEffect only after second render
+    // alternate will be set on second render
+    cleanEffects(componentInstance);
   }
 
   // render the nodes
   if (shouldUpdate) {
     try {
       const childNodes = componentInstance.__render(props);
-      toFibers(childNodes, part, fiber);
+      createCurrentAndLink(childNodes, part, fiber, fiber);
     } catch (err) {
       console.log(err);
-      // handler the error case later
+      // TODO: handle error boundaries
     }
 
-    // schedule effects
-    // TODO: Handle effects
+    linkEffect(fiber);
+  } else {
+    // clone the existing nodes
+    cloneChildrenFibers(fiber);
   }
 }

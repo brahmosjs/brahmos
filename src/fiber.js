@@ -1,10 +1,4 @@
-import {
-  isComponentNode,
-  isTagNode,
-  isRenderableNode,
-  isPrimitiveNode,
-  ATTRIBUTE_NODE,
-} from './brahmosNode';
+import { isComponentNode, isTagNode, isPrimitiveNode, ATTRIBUTE_NODE } from './brahmosNode';
 
 export const fibers = {
   workInProgress: null,
@@ -34,19 +28,29 @@ function linkFiber(fiber, refFiber, parentFiber) {
 }
 
 export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
-  const { node, part, child, sibling } = fiber;
+  const { node, part, child, sibling, updatedTime } = fiber;
+
+  const workAlreadyDone = wipFiber && wipFiber.updatedTime > updatedTime;
+
   if (!wipFiber) {
     wipFiber = createFiber(fiber.root, node, part);
     // add fibers as each others alternate
     addAlternates(fiber, wipFiber);
-  } else {
+  } else if (!workAlreadyDone) {
     wipFiber.node = node;
     wipFiber.part = part;
   }
 
-  // add the current child and sibling pointer to work in progress fiber
-  wipFiber.child = child;
-  wipFiber.sibling = sibling;
+  /**
+   * If work isn't already done add the current child and sibling pointer to work in progress fiber
+   * If it's done we should stick to wip child and sibling
+   * */
+  if (!workAlreadyDone) {
+    wipFiber.child = child;
+    wipFiber.sibling = sibling;
+
+    wipFiber.updatedTime = performance.now();
+  }
 
   // link the new fiber to its parent or it's previous sibling
   linkFiber(wipFiber, refFiber, parentFiber);
@@ -59,7 +63,13 @@ export function getNextChildFiber(refFiber, parentFiber) {
 }
 
 export function cloneChildrenFibers(fiber) {
-  let { child } = fiber;
+  let { child, updatedTime } = fiber;
+
+  // do not clone children if the children are already newer fiber than the parent
+  if (child && child.updatedTime > updatedTime) {
+    return;
+  }
+
   let lastChild;
 
   while (child) {
@@ -87,6 +97,7 @@ export function createHostFiber(domNode) {
     lastEffectFiber: null,
     lastSuspenseFiber: null,
     tearDownFibers: [],
+    postCommitEffects: [],
     nextEffect: null,
     alternate: null,
   };
@@ -109,6 +120,7 @@ export function createFiber(root, node, part) {
     context: null, // Points to the context applicable for that fiber
     nextEffect: null,
     processed: false, // new fiber always have to be processed
+    updatedTime: performance.now(),
   };
 }
 
@@ -192,29 +204,6 @@ function shouldClone(newNode, oldNode) {
     // if it is tag node and node's template matches with oldNode's template we should clone the current
     (isTagNode(newNode) && newNode.template === oldNode.template)
   );
-}
-
-/**
- * Create fiber nodes from brahmos nodes. Try to reuse the existing fiber nodes
- */
-export function toFibers(node, part, parentFiber) {
-  const { alternate } = parentFiber;
-  const oldChild = alternate && alternate.child;
-
-  const refFiber = parentFiber;
-
-  if (!isRenderableNode(node)) {
-    /**
-     * If the new node is falsy value and
-     * the oldFiber is present we have to delete the old node
-     */
-    if (oldChild) {
-      // TEAR down old node
-      console.log(oldChild);
-    }
-  } else {
-    return createCurrentAndLink(node, part, refFiber, parentFiber);
-  }
 }
 
 export function getNextFiber(fiber) {
