@@ -1,0 +1,103 @@
+import { afterCurrentStack } from './utils';
+import { PREDEFINED_TRANSITION_SYNC, getTransitionFromFiber } from './transitionUtils';
+
+export const deferredMeta = {
+  initialized: false,
+  timeout: 0,
+};
+
+/** Update source related constants */
+const UPDATE_SOURCE_DEFAULT = 'js';
+export const UPDATE_SOURCE_EVENT = 'event';
+export const UPDATE_SOURCE_INITIAL_RENDER = 'initialRender';
+export const UPDATE_SOURCE_FORCE_UPDATE = 'forceUpdate';
+export const UPDATE_SOURCE_UNSTABLE_DEFERRED = 'deferredUpdate';
+export const UPDATE_SOURCE_TRANSITION = 'transition';
+
+/** update type related constants */
+export const UPDATE_TYPE_SYNC = 'sync';
+export const UPDATE_TYPE_DEFERRED = 'deferred';
+
+export let updateSource = 'js';
+export let currentTransition = PREDEFINED_TRANSITION_SYNC;
+
+export function getDeferredMeta() {
+  return { ...deferredMeta };
+}
+
+export function setUpdateSource(source) {
+  updateSource = source;
+}
+
+export function resetUpdateSource() {
+  /**
+   * reset update source one the current stack execution is done,
+   * This will make sure if there is sync update like event or
+   * force update, or initial render all the sync render and commit phase is done
+   */
+  afterCurrentStack(() => {
+    updateSource = UPDATE_SOURCE_DEFAULT;
+  });
+}
+
+/**
+ * Function to execute something in context of custom source
+ */
+export function withUpdateSource(source, cb) {
+  updateSource = source;
+  cb();
+  resetUpdateSource();
+}
+
+export function withTransition(transition, cb) {
+  const prevTransition = currentTransition;
+  currentTransition = transition;
+  // set update source as a transition before calling callback
+  withUpdateSource(UPDATE_SOURCE_TRANSITION, cb);
+  currentTransition = prevTransition;
+}
+
+export function shouldPreventSchedule(root) {
+  const { updateSource, preventSchedule } = root;
+  /**
+   * In case we explicity prevent schedule or
+   * set state triggered from event, or force update
+   * we don't want to do things synchronously
+   * as it needs to be flushed synchronously
+   */
+  return (
+    preventSchedule ||
+    updateSource === UPDATE_SOURCE_EVENT ||
+    updateSource === UPDATE_SOURCE_FORCE_UPDATE
+  );
+}
+
+export function isDeferredUpdate() {
+  return (
+    updateSource === UPDATE_SOURCE_UNSTABLE_DEFERRED || updateSource === UPDATE_SOURCE_TRANSITION
+  );
+}
+
+export function getUpdateType() {
+  return isDeferredUpdate() ? UPDATE_TYPE_DEFERRED : UPDATE_TYPE_SYNC;
+}
+
+/**
+ * Get the pendingUpdates key in class component instance
+ */
+
+export function getPendingUpdatesKey(updateType) {
+  return updateType === UPDATE_TYPE_DEFERRED ? '__pendingDeferredUpdates' : '__pendingSyncUpdates';
+}
+
+/**
+ * Get pending states based on update type and current transition
+ */
+export function getPendingUpdates(updateType, component) {
+  const currentTransitionId = getTransitionFromFiber(component.__fiber).transitionId;
+  const pendingUpdatesKey = getPendingUpdatesKey(updateType);
+
+  return component[pendingUpdatesKey].filter(
+    (stateMeta) => stateMeta.transitionId === currentTransitionId,
+  );
+}

@@ -36,6 +36,9 @@ import { forwardRef, createRef } from './refs';
 /** unmountComponentAtNode */
 import unmountComponentAtNode from './unmountComponentAtNode';
 
+/** unstableBatchedUpdate */
+import { deferredUpdates } from './deferredUpdates';
+
 const Brahmos = {
   createElement,
   render,
@@ -57,6 +60,7 @@ const Brahmos = {
   unmountComponentAtNode,
   Suspense,
   lazy,
+  unstable_deferredUpdates: deferredUpdates,
 };
 
 export {
@@ -80,6 +84,7 @@ export {
   unmountComponentAtNode,
   Suspense,
   lazy,
+  deferredUpdates as unstable_deferredUpdates,
 };
 
 export default Brahmos;

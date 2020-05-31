@@ -1,12 +1,72 @@
 import { reRender } from './render';
 import { getConsumerCallback } from './createContext';
+import { getUniqueId } from './utils';
+
+import {
+  UPDATE_TYPE_SYNC,
+  UPDATE_TYPE_DEFERRED,
+  withTransition,
+  getPendingUpdatesKey,
+  currentTransition,
+  getPendingUpdates,
+  getUpdateType,
+} from './updateMetaUtils';
+
+import {
+  TRANSITION_STATE_INITIAL,
+  TRANSITION_STATE_PENDING,
+  TRANSITION_STATE_TIMED_OUT,
+} from './transitionUtils';
+
+/**
+ * TODO: Rename currentComponent to currentComponentInstance
+ * and component to component
+ */
 
 let currentComponent;
 
 /**
+ * get updateType from component
+ */
+function getUpdateTypeFromComponent(component) {
+  return component.__fiber.root.updateType;
+}
+
+/**
+ * clone hooks, syncHooks to deferredHooks
+ */
+function cloneHooks(hooks) {
+  return hooks.map((hook) => {
+    if (Array.isArray(hook)) {
+      return [...hook];
+    }
+    return { ...hook };
+  });
+}
+
+/**
+ * Get the current hooks array based on updateType
+ */
+function getHooksList(updateType, component) {
+  const { syncHooks, deferredHooks } = component;
+  return updateType === UPDATE_TYPE_SYNC ? syncHooks : deferredHooks;
+}
+
+/**
+ * Get current hook, based on the type of update we are doing
+ * If it is inside transition of deferred update we need deferredHooksList,
+ * or else we need the sync hooks list
+ */
+function getCurrentHook(updateType, component) {
+  const { pointer } = component;
+  const hooks = getHooksList(updateType, component);
+  return hooks[pointer];
+}
+
+/**
  * Method to check if two dependency array are same
  */
-function isDependenciesChanged (deps, oldDeps) {
+function isDependenciesChanged(deps, oldDeps) {
   // if oldDeps or deps are not defined consider it is changed every time
   if (!deps || !oldDeps || deps.length !== oldDeps.length) return true;
   for (let i = 0, ln = deps.length; i < ln; i++) {
@@ -18,7 +78,7 @@ function isDependenciesChanged (deps, oldDeps) {
 /**
  * Function to rerender component if state is changed
  */
-function reRenderComponentIfRequired (component, state, lastState) {
+function reRenderComponentIfRequired(component, state, lastState) {
   if (!Object.is(state, lastState)) {
     reRender(component);
   }
@@ -30,8 +90,10 @@ function reRenderComponentIfRequired (component, state, lastState) {
  * We also pass a method to get value from the hook which is passed to the component
  * Plus a method to check if hook has to be updated
  */
-function getHook (createHook, shouldUpdate = hook => false, reduce = hook => hook) {
-  const { pointer, hooks } = currentComponent;
+function getHook(createHook, shouldUpdate = (hook) => false, reduce = (hook) => hook) {
+  const { pointer } = currentComponent;
+  const updateType = getUpdateTypeFromComponent(currentComponent);
+  const hooks = getHooksList(updateType, currentComponent);
   let hook = hooks[pointer];
 
   // if hook is not there initialize and add it to the pointer
@@ -48,35 +110,75 @@ function getHook (createHook, shouldUpdate = hook => false, reduce = hook => hoo
 /**
  * Method to set the current component while rendering the components
  */
-export function setCurrentComponent (component) {
+export function setCurrentComponent(component) {
   currentComponent = component;
   component.pointer = 0;
-  component.hooks = component.hooks || [];
+
+  // based on update type clone the hooks to deferred hooks
+  const updateType = getUpdateTypeFromComponent(component);
+  if (updateType === UPDATE_TYPE_DEFERRED) {
+    component.deferredHooks = cloneHooks(component.hooks);
+  }
+
+  // call all the pending update before trying to render,
+  const pendingUpdates = getPendingUpdates(updateType, component);
+  pendingUpdates.forEach((task) => task.updater());
 }
 
 /**
- * Use state hook
+ * Base logic for state hooks
  */
-export function useState (initialState) {
+
+function useStateBase(initialState, getNewState) {
   const component = currentComponent;
   return getHook(() => {
     /**
      * create a state hook
      */
-    const hook = [initialState, (state) => {
-      const lastState = hook[0];
-      hook[0] = state;
-      reRenderComponentIfRequired(component, state, lastState);
-    }];
+
+    if (typeof initialState === 'function') initialState = initialState();
+
+    const hook = [
+      initialState,
+      (param) => {
+        const updateType = getUpdateType();
+        const currentHook = getCurrentHook(updateType, component);
+
+        const lastState = currentHook[0];
+        const state = getNewState(param, lastState);
+
+        const pendingUpdatesKey = getPendingUpdatesKey(updateType);
+
+        const stateMeta = {
+          transitionId: currentTransition.transitionId,
+          updater() {
+            // call getNewState again as currentHook[0] might change if there are multiple setState
+            currentHook[0] = getNewState(param, currentHook[0]);
+          },
+        };
+        component[pendingUpdatesKey].push(stateMeta);
+        reRenderComponentIfRequired(component, state, lastState);
+      },
+    ];
 
     return hook;
   });
 }
 
 /**
+ * Use state hook
+ */
+export function useState(initialState) {
+  return useStateBase(initialState, (state, lastState) => {
+    if (typeof state === 'function') state = state(lastState);
+    return state;
+  });
+}
+
+/**
  * Use ref hook
  */
-export function useRef (initialValue) {
+export function useRef(initialValue) {
   return getHook(() => {
     /**
      * create a ref hook
@@ -90,33 +192,24 @@ export function useRef (initialValue) {
 /**
  * Use reducer hook
  */
-export function useReducer (reducer, initialState, getInitialState) {
-  const component = currentComponent;
+export function useReducer(reducer, initialState, getInitialState) {
+  /**
+   * If getInitialState method is provided, use that to form correct initial state
+   * Or else use passed initialState
+   */
 
-  return getHook(() => {
-    /**
-     * If getInitialState method is provided, use that to form correct initial state
-     * Or else use passed initialState
-     */
-    const _initialState = getInitialState ? getInitialState(initialState) : initialState;
+  const _initialState = getInitialState ? () => getInitialState(initialState) : initialState;
 
-    // create a reducer hook
-    const hook = [_initialState, (action) => {
-      const lastState = hook[0];
-      const state = reducer(lastState, action);
-      hook[0] = state;
-
-      reRenderComponentIfRequired(component, state, lastState);
-    }];
-
-    return hook;
+  return useStateBase(_initialState, (action, lastState) => {
+    const state = reducer(lastState, action);
+    return state;
   });
 }
 
 /**
  * use memo hook
  */
-export function useMemo (create, dependencies) {
+export function useMemo(create, dependencies) {
   const createHook = () => {
     return {
       value: create(),
@@ -124,9 +217,9 @@ export function useMemo (create, dependencies) {
     };
   };
 
-  const shouldUpdate = hook => isDependenciesChanged(dependencies, hook.dependencies);
+  const shouldUpdate = (hook) => isDependenciesChanged(dependencies, hook.dependencies);
 
-  const reduce = hook => hook.value;
+  const reduce = (hook) => hook.value;
 
   return getHook(createHook, shouldUpdate, reduce);
 }
@@ -134,22 +227,25 @@ export function useMemo (create, dependencies) {
 /**
  * Use callback hook
  */
-export function useCallback (callback, dependencies) {
+export function useCallback(callback, dependencies) {
   return useMemo(() => callback, dependencies);
 }
 
 /**
  * Base module to create effect hooks
  */
-function useEffectBase (effectHandler, dependencies) {
+function useEffectBase(effectHandler, dependencies) {
   const { pointer, hooks } = currentComponent;
-  const lastHook = hooks[pointer] || {};
+  const lastHook = hooks[pointer] || {
+    animationFrame: null,
+    cleanEffect: null,
+  };
 
   const hook = {
     ...lastHook,
     isDependenciesChanged: isDependenciesChanged(dependencies, lastHook.dependencies),
     dependencies,
-    effect () {
+    effect() {
       // if dependency is changed then only call the the effect handler
       if (hook.isDependenciesChanged) {
         effectHandler(hook);
@@ -164,7 +260,7 @@ function useEffectBase (effectHandler, dependencies) {
 /**
  * Use effect hook
  */
-export function useEffect (callback, dependencies) {
+export function useEffect(callback, dependencies) {
   useEffectBase((hook) => {
     /**
      * Run effect asynchronously after the paint cycle is finished
@@ -182,7 +278,7 @@ export function useEffect (callback, dependencies) {
   }, dependencies);
 }
 
-export function useLayoutEffect (callback, dependencies) {
+export function useLayoutEffect(callback, dependencies) {
   useEffectBase((hook) => {
     // run effect synchronously
     hook.cleanEffect = callback();
@@ -193,14 +289,14 @@ export function useLayoutEffect (callback, dependencies) {
  * useDebugValue hook. For now this is just a placeholder,
  * As there is no devtool support it. Revisit it when devtool is supported
  */
-export function useDebugValue () {
+export function useDebugValue() {
   // This is just a placeholder for react compatibility
 }
 
 /**
  * Create context hook
  */
-export function useContext (Context) {
+export function useContext(Context) {
   const { id, defaultValue } = Context;
   const { __context: context } = currentComponent;
   const provider = context[id];
@@ -229,10 +325,73 @@ export function useContext (Context) {
 }
 
 /**
+ * Transition hook
+ */
+export function useTransition({ timeoutMs }) {
+  const component = currentComponent;
+
+  return getHook(
+    () => {
+      /**
+       * create a transition hook
+       */
+
+      const hook = {
+        transitionId: getUniqueId(),
+        isPending: false,
+        transitionTimeout: null,
+        transitionState: TRANSITION_STATE_INITIAL,
+        suspendCount: 0,
+        resetIsPending() {
+          const currentHook = getCurrentHook(UPDATE_TYPE_DEFERRED, component);
+
+          clearTimeout(hook.transitionTimeout);
+          currentHook.isPending = false;
+        },
+        startTransition(cb) {
+          const currentHook = getCurrentHook(UPDATE_TYPE_DEFERRED, component);
+          const { root } = component.__fiber;
+
+          // set the transitionId globally so that state updates can get the transition id
+          withTransition(currentHook, cb);
+
+          /**
+           * If cb does not have any setState, we don't have to unnecessary
+           * set isPending flag, transitionState and trigger reRender.
+           */
+          if (root.lastDeferredCompleteTime > root.deferredUpdateTime) {
+            currentHook.isPending = true;
+            currentHook.transitionState = TRANSITION_STATE_PENDING;
+
+            // after setting isPending we will have to re-render the component
+            reRender(component);
+          }
+
+          /**
+           * Set a timeout which set's the is pending to false and then triggers a deferred update
+           */
+          currentHook.transitionTimeout = setTimeout(() => {
+            currentHook.transitionState = TRANSITION_STATE_TIMED_OUT;
+            currentHook.isPending = false;
+            reRender(component);
+          }, timeoutMs);
+        },
+      };
+
+      return hook;
+    },
+    undefined,
+    ({ startTransition, isPending }) => [startTransition, isPending],
+  );
+}
+
+/**
  * Method to run all the effects of a component
  */
-export function runEffects (component) {
-  const { hooks } = component;
+export function runEffects(component) {
+  const updateType = getUpdateTypeFromComponent(component);
+  const hooks = getHooksList(updateType, component);
+
   for (let i = 0, ln = hooks.length; i < ln; i++) {
     const hook = hooks[i];
     if (hook.effect) {
@@ -244,12 +403,19 @@ export function runEffects (component) {
 /**
  * Method to run cleanup all the effects of a component
  */
-export function cleanEffects (component, unmount) {
-  const { hooks } = component;
+export function cleanEffects(component, unmount) {
+  const updateType = getUpdateTypeFromComponent(component);
+  const hooks = getHooksList(updateType, component);
+
   for (let i = 0, ln = hooks.length; i < ln; i++) {
     const hook = hooks[i];
     if (hook.cleanEffect && (hook.isDependenciesChanged || unmount)) {
       hook.cleanEffect();
+    }
+
+    // clear any pending transitions on unmount
+    if (hook.resetIsPending && unmount) {
+      hook.resetIsPending();
     }
   }
 }

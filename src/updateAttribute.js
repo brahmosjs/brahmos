@@ -1,20 +1,14 @@
-import {
-  getEventName,
-  isEventAttribute,
-  loopEntries,
-} from './utils';
+import { getEventName, isEventAttribute, loopEntries } from './utils';
 
 import {
   getEffectiveEventName,
   getInputStateType,
   handleInputProperty,
   getPatchedEventHandler,
+  handleControlledReset,
 } from './reactEvents';
 
-import {
-  XLINK_NS,
-  IS_NON_DIMENSIONAL,
-} from './configs';
+import { XLINK_NS, IS_NON_DIMENSIONAL } from './configs';
 
 /**
  * Lot of diffing and applying attribute logic in this file is inspired/forked from Preact
@@ -22,14 +16,12 @@ import {
  * https://github.com/preactjs/preact/blob/master/src/diff/props.js
  */
 
-function applyDiffProperty (newObj, oldObj, resetValue, cb) {
+function applyDiffProperty(newObj, oldObj, resetValue, cb) {
   oldObj = oldObj || {};
   // add new attributes
   loopEntries(newObj, (key, value) => {
     const oldValue = oldObj[key];
-    if (
-      value !== oldValue
-    ) {
+    if (value !== oldValue) {
       cb(key, value, oldValue);
     }
   });
@@ -42,7 +34,7 @@ function applyDiffProperty (newObj, oldObj, resetValue, cb) {
   });
 }
 
-function setAttribute (node, attrName, attrValue, oldAttrValue, isSvgAttribute) {
+function setAttribute(node, attrName, attrValue, oldAttrValue, isSvgAttribute) {
   /*
       if node has property with attribute name, set the value directly as property
       otherwise set it as attribute
@@ -62,12 +54,12 @@ function setAttribute (node, attrName, attrValue, oldAttrValue, isSvgAttribute) 
     if (oldAttrValue && !attrValue) {
       node.removeEventListener(eventName, patchedHandler);
 
-    // if the event is getting added first time add a listener
+      // if the event is getting added first time add a listener
     } else if (!oldAttrValue && attrValue) {
       node.addEventListener(eventName, patchedHandler);
     }
 
-  // handle style attributes
+    // handle style attributes
   } else if (attrName === 'style') {
     const { style } = node;
     applyDiffProperty(attrValue, oldAttrValue, '', (key, value) => {
@@ -78,21 +70,22 @@ function setAttribute (node, attrName, attrValue, oldAttrValue, isSvgAttribute) 
       if (key[0] === '-') {
         style.setProperty(key, value);
       } else {
-        style[key] = typeof value === 'number' && IS_NON_DIMENSIONAL.test(key) === false
-          ? value + 'px'
-          : value;
+        style[key] =
+          typeof value === 'number' && IS_NON_DIMENSIONAL.test(key) === false
+            ? value + 'px'
+            : value;
       }
     });
 
-  // handle dangerously set innerHTML
+    // handle dangerously set innerHTML
   } else if (attrName === 'dangerouslySetInnerHTML') {
     const oldHTML = oldAttrValue && oldAttrValue.__html;
     const newHTML = attrValue && attrValue.__html;
     if (newHTML !== oldHTML) {
       node.innerHTML = newHTML == null ? '' : newHTML; // `==` here will check for undefined and null
     }
-  // handle node properties
-  } else if ((attrName in node && !isSvgAttribute)) {
+    // handle node properties
+  } else if (attrName in node && !isSvgAttribute) {
     const inputStateType = getInputStateType(node);
     /**
      * if it is input element it has to be handled differently,
@@ -104,7 +97,7 @@ function setAttribute (node, attrName, attrValue, oldAttrValue, isSvgAttribute) 
       node[attrName] = attrValue == null ? '' : attrValue; // `==` here will check for undefined and null
     }
 
-  // handle all other node attributes
+    // handle all other node attributes
   } else {
     /**
      * If attribute is prefixed with xlink then we have to set attribute with namespace
@@ -131,8 +124,11 @@ function setAttribute (node, attrName, attrValue, oldAttrValue, isSvgAttribute) 
   }
 }
 
-export default function updateNodeAttributes (node, attributes, oldAttributes, isSvgAttribute) {
+export default function updateNodeAttributes(node, attributes, oldAttributes, isSvgAttribute) {
   applyDiffProperty(attributes, oldAttributes, null, (attrName, attrValue, oldAttrValue) => {
     setAttribute(node, attrName, attrValue, oldAttrValue, isSvgAttribute);
   });
+
+  // handle controlled input resetting
+  handleControlledReset(node);
 }

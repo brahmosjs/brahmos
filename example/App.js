@@ -9,6 +9,7 @@ import SVGExample from './SVGExample';
 import LazySuspenseExample from './lazySuspenseExample';
 
 function shuffle(array) {
+  array = [...array];
   var currentIndex = array.length;
   var temporaryValue;
   var randomIndex;
@@ -65,14 +66,14 @@ export function oldApp() {
 }
 
 function Div() {
-  console.log('rendering Div');
+  // console.log('rendering Div');
   return <div>askjdkajsdks</div>;
 }
 
-function Div2({ length }) {
+function Div2({ length, list }) {
   return (
     <ul>
-      {shuffle([1, 2, 3, 4].slice(0, length)).map((val, idx) => (
+      {list.slice(0, length).map((val, idx) => (
         <li key={val}>{val}</li>
       ))}
     </ul>
@@ -82,21 +83,27 @@ function Div2({ length }) {
 export class AppBase extends Component {
   state = {
     name: '',
+    list: [1, 2, 3, 4],
   };
 
   render() {
-    const { name } = this.state;
+    const { name, list } = this.state;
     return (
       <div>
         <input
           type="text"
           value={name}
           onChange={(e) => {
-            this.setState({ name: e.target.value });
+            this.setState({ name: e.target.value.slice(0, 10) });
+
+            Brahmos.unstable_deferredUpdates(() => {
+              this.setState({ list: shuffle(list) }, null);
+            });
+            // this.deferredSetState({ list: shuffle(list) }, null);
           }}
         />
         <p>Hello {name}</p> {'Hello World'}
-        <Div2 length={name.length} />
+        <Div2 length={name.length} list={list} />
         {name && <Div />}
       </div>
     );
@@ -106,6 +113,7 @@ export class AppBase extends Component {
 export default function App() {
   return (
     <div>
+      <AppBase />
       <AppBase />
     </div>
   );

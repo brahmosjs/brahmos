@@ -267,3 +267,19 @@ export function createEmptyTextNode(element) {
   parentNode.insertBefore(textNode, element);
   return textNode;
 }
+
+/**
+ * Put a code execution in micro task, so that it's executed after current stack
+ */
+const resolvedPromise = Promise.resolve();
+export function afterCurrentStack(cb) {
+  return resolvedPromise.then(cb);
+}
+
+/**
+ * Function to create a unique id
+ */
+
+export function getUniqueId() {
+  return performance.now() + '-' + Math.random() * 1000000;
+}

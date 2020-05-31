@@ -1,4 +1,5 @@
 import { isComponentNode, isTagNode, isPrimitiveNode, ATTRIBUTE_NODE } from './brahmosNode';
+import { UPDATE_TYPE_DEFERRED } from './updateMetaUtils';
 
 export const fibers = {
   workInProgress: null,
@@ -16,6 +17,20 @@ export function getCurrentFiber() {
   return currentFiber;
 }
 
+export function getUpdateTimeKey(type) {
+  return type === UPDATE_TYPE_DEFERRED ? 'deferredUpdateTime' : 'updateTime';
+}
+
+export function setUpdateTime(fiber, type) {
+  const key = getUpdateTimeKey(type);
+  const time = performance.now();
+
+  while (fiber) {
+    fiber[key] = time;
+    fiber = fiber.parent;
+  }
+}
+
 // link the new fiber to its parent or it's previous sibling
 function linkFiber(fiber, refFiber, parentFiber) {
   if (refFiber === parentFiber) {
@@ -28,29 +43,22 @@ function linkFiber(fiber, refFiber, parentFiber) {
 }
 
 export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
-  const { node, part, child, sibling, updatedTime } = fiber;
-
-  const workAlreadyDone = wipFiber && wipFiber.updatedTime > updatedTime;
+  const { node, part, child, sibling } = fiber;
 
   if (!wipFiber) {
     wipFiber = createFiber(fiber.root, node, part);
     // add fibers as each others alternate
     addAlternates(fiber, wipFiber);
-  } else if (!workAlreadyDone) {
+  } else {
     wipFiber.node = node;
     wipFiber.part = part;
   }
 
   /**
-   * If work isn't already done add the current child and sibling pointer to work in progress fiber
-   * If it's done we should stick to wip child and sibling
+   * add the current child and sibling to wipFiber
    * */
-  if (!workAlreadyDone) {
-    wipFiber.child = child;
-    wipFiber.sibling = sibling;
-
-    wipFiber.updatedTime = performance.now();
-  }
+  wipFiber.child = child;
+  wipFiber.sibling = sibling;
 
   // link the new fiber to its parent or it's previous sibling
   linkFiber(wipFiber, refFiber, parentFiber);
@@ -63,10 +71,13 @@ export function getNextChildFiber(refFiber, parentFiber) {
 }
 
 export function cloneChildrenFibers(fiber) {
-  let { child, updatedTime } = fiber;
+  let { child, root } = fiber;
 
-  // do not clone children if the children are already newer fiber than the parent
-  if (child && child.updatedTime > updatedTime) {
+  /**
+   * No need to clone children if the updateType is sync,
+   * also do not clone children if the children are already newer fiber than the parent
+   */
+  if (root.updateType === 'sync') {
     return;
   }
 
@@ -96,10 +107,18 @@ export function createHostFiber(domNode) {
     wip: null,
     lastEffectFiber: null,
     lastSuspenseFiber: null,
+    preventSchedule: false,
+    currentTransition: null,
+    pendingTransitions: [],
     tearDownFibers: [],
     postCommitEffects: [],
+    batchUpdates: {},
     nextEffect: null,
     alternate: null,
+    lastDeferredCompleteTime: 0,
+    lastCompleteTime: 0,
+    deferredUpdateTime: 0,
+    updateTime: 0,
   };
 
   // check if this has any performance hit
@@ -118,9 +137,13 @@ export function createFiber(root, node, part) {
     part,
     alternate: null, // points to the current fiber
     context: null, // Points to the context applicable for that fiber
+    suspense: null,
+    errorBoundary: null,
+    isSVG: false,
     nextEffect: null,
-    processed: false, // new fiber always have to be processed
-    updatedTime: performance.now(),
+    deferredUpdateTime: 0,
+    updateTime: 0,
+    processedTime: 0, // processedTime 0 signifies it needs processing
   };
 }
 
@@ -160,6 +183,7 @@ export function addAlternates(current, wip) {
 
 export function createAndLink(node, part, currentFiber, refFiber, parentFiber) {
   const { root } = refFiber;
+  const updateTimeKey = getUpdateTimeKey(root.updateType);
   let fiber;
   if (currentFiber && shouldClone(node, currentFiber.node)) {
     fiber = cloneCurrentFiber(currentFiber, currentFiber.alternate, refFiber, parentFiber);
@@ -178,7 +202,10 @@ export function createAndLink(node, part, currentFiber, refFiber, parentFiber) {
 
   linkFiber(fiber, refFiber, parentFiber);
 
-  fiber.processed = false;
+  fiber.processedTime = 0;
+
+  // add parent's update time to child
+  fiber[updateTimeKey] = parentFiber[updateTimeKey];
 
   return fiber;
 }
@@ -206,33 +233,41 @@ function shouldClone(newNode, oldNode) {
   );
 }
 
-export function getNextFiber(fiber) {
-  // if there a child return child
-  if (fiber.child) return fiber.child;
+function needProcessing(fiber, lastCompleteTime, updateTimeKey) {
+  return fiber && fiber[updateTimeKey] >= lastCompleteTime;
+}
 
-  // or else return the sibling or the next uncle to process
-  while (!fiber.sibling) {
-    /**
-     * If we don't find any parent it means we reached at top to root, so return that
-     */
-    if (!fiber.parent) return fiber;
+function getFiberWhichRequiresProcessing(fiber, lastCompleteTime, updateTimeKey) {
+  if (!fiber) return;
 
-    // set the parent as the current fiber
+  // keep looping till we find a child which needs processing
+  while (fiber && !needProcessing(fiber, lastCompleteTime, updateTimeKey)) fiber = fiber.sibling;
+
+  return fiber;
+}
+
+export function getNextFiber(fiber, topFiber, lastCompleteTime, updateTimeKey) {
+  /**
+   * Skip fibers which does not require processing
+   */
+
+  // if there is a child which required processing return that child
+  const child = getFiberWhichRequiresProcessing(fiber.child, lastCompleteTime, updateTimeKey);
+  if (child) return child;
+
+  let sibling;
+
+  // or else return the sibling or the next uncle which requires processing
+  while (
+    !(sibling = getFiberWhichRequiresProcessing(fiber.sibling, lastCompleteTime, updateTimeKey))
+  ) {
+    // go to fiber parents
     fiber = fiber.parent;
+
+    // if the parent fiber is topFiber, no further processing is required, so return that
+    if (fiber === topFiber) return fiber;
   }
 
   // return fiber's sibling
-  return fiber.sibling;
-}
-
-export function cloneWIPClone(fiber, parent) {
-  if (!fiber) return fiber;
-  const newFiber = { ...fiber, parent };
-
-  // recurse on children and sibling
-  newFiber.child = cloneWIPClone(fiber.child, newFiber);
-  newFiber.sibling = cloneWIPClone(fiber.sibling, parent);
-
-  addAlternates(fiber, newFiber);
-  return newFiber;
+  return sibling;
 }

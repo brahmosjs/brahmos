@@ -1,11 +1,13 @@
-import { createCurrentAndLink, cloneChildrenFibers, linkEffect } from './fiber';
+import { createCurrentAndLink, cloneChildrenFibers, linkEffect, fibers } from './fiber';
 
 import functionalComponentInstance from './functionalComponentInstance';
 import { CLASS_COMPONENT_NODE } from './brahmosNode';
 import { PureComponent } from './Component';
 
 import { cleanEffects } from './hooks';
-import { mergeState, callLifeCycle } from './utils';
+import { callLifeCycle } from './utils';
+import { getPendingUpdates } from './updateMetaUtils';
+
 import shallowEqual from './helpers/shallowEqual';
 
 function getCurrentContext(fiber, isReused) {
@@ -39,8 +41,16 @@ function getCurrentContext(fiber, isReused) {
   return newContext;
 }
 
+export function getUpdatedState(prevState, updates) {
+  return updates.reduce((combinedState, { state }) => {
+    if (typeof state === 'function') state = state(combinedState);
+    return { ...combinedState, ...state };
+  }, prevState);
+}
+
 export default function processComponentFiber(fiber) {
   const { node, part, alternate } = fiber;
+  const { updateType } = fiber.root;
   const { type: Component, nodeType, props = {}, ref } = node;
 
   const isFirstRender = false;
@@ -48,14 +58,21 @@ export default function processComponentFiber(fiber) {
   let shouldUpdate = true;
   const isClassComponent = nodeType === CLASS_COMPONENT_NODE;
 
-  // if an alternate fiber is there and its of same node type assign componentInstance from the old fiber
+  /**
+   * If an alternate fiber is present it means the parent is rendered,
+   * but the fiber can reuse the previous instance
+   *
+   * Note: alternate fiber may not be present if parent never re-renders, but in which case
+   * node will already have componentInstance and the processing of fiber is happening due to
+   * state change and not parent render.
+   */
   if (alternate) {
     node.componentInstance = alternate.node.componentInstance;
   }
 
   /** If Component instance is not present on node create a new instance */
   let { componentInstance } = node;
-
+  let firstRender;
   if (!componentInstance) {
     // create an instance of the component
     componentInstance = isClassComponent
@@ -64,6 +81,8 @@ export default function processComponentFiber(fiber) {
 
     // keep the reference of instance to the node.
     node.componentInstance = componentInstance;
+
+    firstRender = true;
   }
 
   const { props: prevProps, state: prevState } = componentInstance;
@@ -71,9 +90,11 @@ export default function processComponentFiber(fiber) {
   // add fiber reference on component instance, so the component is aware of its fiber
   componentInstance.__fiber = fiber;
 
-  // store previous props and prevState in node
-  node.prevProps = prevProps;
-  node.prevState = prevState;
+  // store previous props and prevState in node if it's not a first time render for the component
+  if (!firstRender) {
+    node.prevProps = prevProps;
+    node.prevState = prevState;
+  }
 
   // get current context
   const context = getCurrentContext(fiber, isReused);
@@ -84,14 +105,22 @@ export default function processComponentFiber(fiber) {
    * and call all the life cycle method which comes before rendering.
    */
   if (isClassComponent) {
-    const { __unCommittedState, shouldComponentUpdate } = componentInstance;
+    const { shouldComponentUpdate } = componentInstance;
 
-    let state = __unCommittedState || prevState;
+    const pendingUpdates = getPendingUpdates(updateType, componentInstance);
+
+    let state = getUpdatedState(prevState, pendingUpdates);
 
     const checkShouldUpdate = !isFirstRender;
 
     // call getDerivedStateFromProps hook with the unCommitted state
-    state = mergeState(state, callLifeCycle(Component, 'getDerivedStateFromProps', [props, state]));
+    state = { ...state, ...callLifeCycle(Component, 'getDerivedStateFromProps', [props, state]) };
+
+    // call callbacks of setState with new state
+    pendingUpdates.forEach(({ callback }) => {
+      if (callback) callback(state);
+    });
+
     /**
      * check if component is instance of PureComponent, if yes then,
      * do shallow check for props and states
@@ -131,9 +160,10 @@ export default function processComponentFiber(fiber) {
     componentInstance.props = props;
     componentInstance.context = contextValue;
     componentInstance.__unCommittedState = undefined;
-  } else if (alternate) {
-    // for functional component call cleanEffect only after second render
+  } else if (!firstRender) {
+    // for functional component call cleanEffect only on second render
     // alternate will be set on second render
+    // NOTE: This is buggy, cleanEffects should be called before commit phase, check the behavior of react.
     cleanEffects(componentInstance);
   }
 

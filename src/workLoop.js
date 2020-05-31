@@ -5,15 +5,56 @@ import {
   isTagNode,
   ATTRIBUTE_NODE,
 } from './brahmosNode';
+
 import processComponentFiber from './processComponentFiber';
 import { processTextFiber } from './processTextFiber';
 import processTagFiber from './processTagFiber';
-import effectLoop from './effectLoop';
-import { linkEffect, getNextFiber, cloneWIPClone, cloneChildrenFibers, fibers } from './fiber';
+import effectLoop, { resetEffectList } from './effectLoop';
+import {
+  UPDATE_SOURCE_TRANSITION,
+  shouldPreventSchedule,
+  getPendingUpdates,
+  withUpdateSource,
+} from './updateMetaUtils';
+import {
+  TRANSITION_STATE_COMPLETED,
+  TRANSITION_STATE_TIMED_OUT,
+  getFirstPendingTransition,
+} from './transitionUtils';
+import {
+  linkEffect,
+  getNextFiber,
+  cloneChildrenFibers,
+  getUpdateTimeKey,
+  cloneCurrentFiber,
+} from './fiber';
 import processArrayFiber from './processArrayFiber';
 import tearDown from './tearDown';
 
 const TIME_REQUIRE_TO_PROCESS_FIBER = 2;
+
+export function schedule(shouldSchedule, cb) {
+  if (shouldSchedule) {
+    return requestIdleCallback(cb, { timeout: 1000 });
+  }
+
+  cb();
+}
+
+function fiberHasUnprocessedUpdates(fiber) {
+  const { node, root } = fiber;
+  const { updateType } = root;
+
+  const { componentInstance } = node;
+
+  /**
+   * Return if node is not component type or if it is component
+   * which is yet to mount (componentInstance will be null in such case)
+   */
+  if (!componentInstance) return false;
+
+  return !!getPendingUpdates(updateType, componentInstance).length;
+}
 
 export function processFiber(fiber) {
   const { node, root, alternate } = fiber;
@@ -24,7 +65,7 @@ export function processFiber(fiber) {
     return;
   }
 
-  const nodeHasUpdates = node.componentInstance && node.componentInstance.__dirty;
+  const nodeHasUpdates = fiberHasUnprocessedUpdates(fiber);
 
   /**
    * If a fiber is processed and node is not dirty we clone all the children from current tree
@@ -32,71 +73,150 @@ export function processFiber(fiber) {
    * This will not affect the first render as fiber will never be on processed state
    * on the first render.
    */
-  if (fiber.processed && !nodeHasUpdates) {
+  if (fiber.processedTime && !nodeHasUpdates) {
+    // We need to clone children only in case we are doing deferred rendering
     cloneChildrenFibers(fiber);
     return;
   }
 
   if (isPrimitiveNode(node)) {
-    // have to write logic.
     processTextFiber(fiber);
   } else if (Array.isArray(node)) {
     processArrayFiber(fiber);
   } else if (isTagNode(node)) {
     processTagFiber(fiber);
-    // TODO: Handle rearrange type of effect
   } else if (isComponentNode(node)) {
     processComponentFiber(fiber);
   } else if (node.nodeType === ATTRIBUTE_NODE) {
     linkEffect(fiber);
   }
 
-  // after processing, mark the fiber as processed
-  fiber.processed = true;
+  // after processing, set the processedTime to the fiber
+  fiber.processedTime = performance.now();
 }
 
-export default function workLoop(fiber) {
-  const { root } = fiber;
-  const deadline = {
-    timeRemaining: () => Number.MAX_SAFE_INTEGER,
-    didTimeout: false,
-  };
-
-  // root.idleCallback = requestIdleCallback((deadline) => {
-
-  while (fiber !== root) {
-    // process the current fiber which will return the next fiber
-    /**
-     * If there is time remaining to do some chunk of work,
-     * process the current fiber, and then move to next
-     * and keep doing it till we are out of time.
-     */
-    if (deadline.timeRemaining() >= TIME_REQUIRE_TO_PROCESS_FIBER || deadline.didTimeout) {
-      processFiber(fiber);
-      fiber = getNextFiber(fiber);
-    } else {
-      // if we are out of time schedule work for next fiber
-      workLoop(fiber);
-
-      return;
-    }
+function shouldCommit(root) {
+  if (root.updateSource === UPDATE_SOURCE_TRANSITION) {
+    const { transitionState } = root.currentTransition;
+    return (
+      transitionState === TRANSITION_STATE_COMPLETED ||
+      transitionState === TRANSITION_STATE_TIMED_OUT
+    );
   }
+
+  return true;
+}
+
+/**
+ * This is the part where all the changes are flushed on dom,
+ * It will also take care of tearing the old nodes down
+ */
+function commitChanges(root, onComplete) {
+  const lastCompleteTimeKey =
+    root.updateType === 'deferred' ? 'lastDeferredCompleteTime' : 'lastCompleteTime';
 
   // tearDown old nodes
   tearDown(root);
 
+  /**
+   * set the last updated time for render
+   * NOTE: We do it before effect loop so setStates in effect are aware of last render finish
+   */
+  root[lastCompleteTimeKey] = performance.now();
+
   // when we are done with processing all fiber run effect loop
   effectLoop(root);
 
-  let { current } = root;
-
-  // if previous fiber tree is not present then create a clone of wip tree
-  if (!current) {
-    current = cloneWIPClone(root.wip, root);
-  }
-
-  // after flushing effects swap wip and current
-  root.current = root.wip;
-  root.wip = current;
-  // }, { timeout: 1000 });
+  if (onComplete) onComplete();
 }
+
+export default function workLoop(fiber, topFiber, onComplete) {
+  const { root } = fiber;
+  const { updateType, updateSource } = root;
+  const lastCompleteTimeKey =
+    updateType === 'deferred' ? 'lastDeferredCompleteTime' : 'lastCompleteTime';
+  const updateTimeKey = getUpdateTimeKey(updateType);
+  const lastCompleteTime = root[lastCompleteTimeKey];
+
+  /**
+   * If the update is triggered from update source which needs to be flushed
+   * synchronously we don't need requestIdleCallback, in other case we should
+   * schedule our renders.
+   */
+  const shouldSchedule = !shouldPreventSchedule(root);
+
+  // cancel the previous requestIdle handle
+  if (root.requestIdleHandle) cancelIdleCallback(root.requestIdleHandle);
+
+  root.requestIdleHandle = schedule(shouldSchedule, (deadline) => {
+    while (fiber !== topFiber) {
+      // process the current fiber which will return the next fiber
+      /**
+       * If there is time remaining to do some chunk of work,
+       * process the current fiber, and then move to next
+       * and keep doing it till we are out of time.
+       */
+      if (
+        !shouldSchedule ||
+        deadline.didTimeout ||
+        deadline.timeRemaining() >= TIME_REQUIRE_TO_PROCESS_FIBER
+      ) {
+        processFiber(fiber);
+        fiber = getNextFiber(fiber, topFiber, lastCompleteTime, updateTimeKey);
+      } else {
+        // if we are out of time schedule work for next fiber
+        workLoop(fiber, topFiber, onComplete);
+
+        return;
+      }
+    }
+
+    if (shouldCommit(root)) {
+      commitChanges(root, onComplete);
+    }
+
+    // check if there are any pending transition, if yes try rendering them
+    if (getFirstPendingTransition(root)) {
+      withUpdateSource(UPDATE_SOURCE_TRANSITION, () => {
+        doDeferredProcessing(root);
+      });
+    }
+  });
+}
+
+export function doDeferredProcessing(root) {
+  // if there is no deferred work or pending transition return
+  const pendingTransition = getFirstPendingTransition(root);
+
+  if (root.lastDeferredCompleteTime >= root.deferredUpdateTime || !pendingTransition) return;
+
+  root.updateType = 'deferred';
+
+  // reset the effect list before starting new one
+  resetEffectList(root);
+
+  // if the update source is transition set the current transition
+  root.currentTransition =
+    root.updateSource === UPDATE_SOURCE_TRANSITION ? pendingTransition : null;
+
+  root.wip = cloneCurrentFiber(root.current, root.wip, root, root);
+  workLoop(root.wip, root, () => {
+    // after flushing effects (onComplete) swap wip and current
+    const { current } = root;
+
+    root.current = root.wip;
+    root.wip = current;
+  });
+}
+
+export function doSyncProcessing(fiber) {
+  const { root, parent } = fiber;
+  root.updateType = 'sync';
+
+  // reset the effect list before starting new one
+  resetEffectList(root);
+
+  workLoop(fiber, parent);
+}
+
+export function doTransitionProcessing(fiber) {}

@@ -6,6 +6,8 @@ import {
   CLASS_COMPONENT_NODE,
 } from './brahmosNode';
 import { callLifeCycle, insertBefore, getCurrentNode } from './utils';
+import { getTransitionFromFiber } from './transitionUtils';
+import { getPendingUpdatesKey } from './updateMetaUtils';
 import { runEffects } from './hooks';
 
 import updateNodeAttributes from './updateAttribute';
@@ -90,6 +92,7 @@ function updateTagNode(fiber) {
 
 function handleComponentEffect(fiber) {
   const { node, root } = fiber;
+  const { updateType, pendingTransitions } = root;
   const { componentInstance, nodeType, prevProps, prevState } = node;
 
   if (nodeType === CLASS_COMPONENT_NODE) {
@@ -99,16 +102,33 @@ function handleComponentEffect(fiber) {
     ]);
   }
 
+  // remove all the transitions with current transition id as its already flushed
+  const currentTransition = getTransitionFromFiber(componentInstance.__fiber);
+  const currentTransitionId = currentTransition.transitionId;
+  const pendingUpdatesKey = getPendingUpdatesKey(updateType);
+  componentInstance[pendingUpdatesKey] = componentInstance[pendingUpdatesKey].filter(
+    (stateMeta) => stateMeta.transitionId !== currentTransitionId,
+  );
+
+  // remove the currentTransition from the pending transition
+  const currentTransitionIndex = pendingTransitions.indexOf(currentTransition);
+  if (currentTransitionIndex !== -1) {
+    pendingTransitions.splice(currentTransitionIndex, 1);
+  }
+
   root.postCommitEffects.push(fiber);
 }
 
 function handleComponentPostCommitEffect(fiber) {
-  const { node, alternate } = fiber;
+  const { node } = fiber;
   const { componentInstance, nodeType, prevProps, prevState, lastSnapshot } = node;
 
   if (nodeType === CLASS_COMPONENT_NODE) {
-    // if it is first time rendered call componentDidMount or else call componentDidUpdate
-    if (!alternate) {
+    /**
+     * if it is first time rendered call componentDidMount or else call componentDidUpdate
+     * prevProps will not be available for first time render
+     */
+    if (!prevProps) {
       callLifeCycle(componentInstance, 'componentDidMount');
     } else {
       callLifeCycle(componentInstance, 'componentDidUpdate', [prevProps, prevState, lastSnapshot]);
@@ -127,6 +147,16 @@ function handleAttributeEffect(fiber) {
 
   // TODO: Fix svg case
   updateNodeAttributes(domNode, attributes, oldAttributes, false);
+
+  // Handle value resets
+}
+
+export function resetEffectList(root) {
+  root.lastEffectFiber = root;
+  root.nextEffect = null;
+  root.tearDownFibers = [];
+  root.postCommitEffects = [];
+  root.lastArrayDOM = null;
 }
 
 export default function effectLoop(root) {
@@ -158,7 +188,5 @@ export default function effectLoop(root) {
   }
 
   // once all effect has been processed update root's last effect node and reset lastArrayDOM and postCommitEffects
-  root.lastEffectFiber = root;
-  root.postCommitEffects = [];
-  root.lastArrayDOM = null;
+  resetEffectList(root);
 }
