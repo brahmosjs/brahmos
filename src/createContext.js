@@ -1,39 +1,42 @@
-import { Component } from './Component';
-import { reRender } from './render';
+import { Component } from './circularDep';
+import { setUpdateTime } from './fiber';
+import { brahmosDataKey } from './configs';
 
 let ctxId = 1;
-export function getConsumerCallback (component) {
-  return function (value) {
+export function getConsumerCallback(component) {
+  return function(value) {
     /**
-     * NOTE: This might have to be changed when async rendering is in place
+     * just set the correct update time on subscribed component,
+     * and then workloop will take care of updating them.
      */
-    setTimeout(() => {
-      if (component.context !== value && component.__mounted) {
-        component.context = value;
-        reRender(component);
-      }
-    });
+    const { fiber } = component[brahmosDataKey];
+    const { updateType } = fiber.root;
+
+    // update time only when context value has been changed
+    if (component.context !== value) {
+      setUpdateTime(fiber, updateType);
+    }
   };
 }
 
-export default function createContext (defaultValue) {
+export default function createContext(defaultValue) {
   const id = `cC${ctxId++}`;
 
   class Provider extends Component {
-    constructor (props) {
+    constructor(props) {
       super(props);
       this.subs = [];
     }
 
-    shouldComponentUpdate (nextProp) {
+    shouldComponentUpdate(nextProp) {
       const { value } = this.props;
       if (value !== nextProp.value) {
-        this.subs.forEach(cb => cb(nextProp.value));
+        this.subs.forEach((cb) => cb(nextProp.value));
       }
       return true;
     }
 
-    sub (component) {
+    sub(component) {
       const { subs } = this;
       const callback = getConsumerCallback(component);
 
@@ -47,7 +50,7 @@ export default function createContext (defaultValue) {
       };
     }
 
-    render () {
+    render() {
       return this.props.children;
     }
   }
@@ -60,10 +63,10 @@ export default function createContext (defaultValue) {
    * and unsubscribe on component unmount
    */
   class Consumer extends Component {
-    render () {
+    render() {
       return this.props.children(this.context);
     }
-  };
+  }
 
   const context = {
     id,

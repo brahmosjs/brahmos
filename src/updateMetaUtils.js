@@ -1,5 +1,6 @@
 import { afterCurrentStack } from './utils';
 import { PREDEFINED_TRANSITION_SYNC, getTransitionFromFiber } from './transitionUtils';
+import { brahmosDataKey } from './configs';
 
 export const deferredMeta = {
   initialized: false,
@@ -18,8 +19,8 @@ export const UPDATE_SOURCE_TRANSITION = 'transition';
 export const UPDATE_TYPE_SYNC = 'sync';
 export const UPDATE_TYPE_DEFERRED = 'deferred';
 
-export let updateSource = 'js';
-export let currentTransition = PREDEFINED_TRANSITION_SYNC;
+let updateSource = 'js';
+let currentTransition = PREDEFINED_TRANSITION_SYNC;
 
 export function getDeferredMeta() {
   return { ...deferredMeta };
@@ -27,6 +28,14 @@ export function getDeferredMeta() {
 
 export function setUpdateSource(source) {
   updateSource = source;
+}
+
+export function getCurrentUpdateSource() {
+  return updateSource;
+}
+
+export function getCurrentTransition() {
+  return currentTransition;
 }
 
 export function resetUpdateSource() {
@@ -87,17 +96,18 @@ export function getUpdateType() {
  */
 
 export function getPendingUpdatesKey(updateType) {
-  return updateType === UPDATE_TYPE_DEFERRED ? '__pendingDeferredUpdates' : '__pendingSyncUpdates';
+  return updateType === UPDATE_TYPE_DEFERRED ? 'pendingDeferredUpdates' : 'pendingSyncUpdates';
 }
 
 /**
  * Get pending states based on update type and current transition
  */
 export function getPendingUpdates(updateType, component) {
-  const currentTransitionId = getTransitionFromFiber(component.__fiber).transitionId;
+  const brahmosData = component[brahmosDataKey];
+  const currentTransitionId = getTransitionFromFiber(brahmosData.fiber).transitionId;
   const pendingUpdatesKey = getPendingUpdatesKey(updateType);
 
-  return component[pendingUpdatesKey].filter(
+  return brahmosData[pendingUpdatesKey].filter(
     (stateMeta) => stateMeta.transitionId === currentTransitionId,
   );
 }

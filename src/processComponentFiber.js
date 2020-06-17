@@ -2,13 +2,14 @@ import { createCurrentAndLink, cloneChildrenFibers, linkEffect, fibers } from '.
 
 import functionalComponentInstance from './functionalComponentInstance';
 import { CLASS_COMPONENT_NODE } from './brahmosNode';
-import { PureComponent } from './Component';
+import { PureComponent, Suspense, getClosestSuspense } from './circularDep';
 
 import { cleanEffects } from './hooks';
 import { callLifeCycle } from './utils';
 import { getPendingUpdates } from './updateMetaUtils';
 
 import shallowEqual from './helpers/shallowEqual';
+import { brahmosDataKey } from './configs';
 
 function getCurrentContext(fiber, isReused) {
   const {
@@ -49,8 +50,8 @@ export function getUpdatedState(prevState, updates) {
 }
 
 export default function processComponentFiber(fiber) {
-  const { node, part, alternate } = fiber;
-  const { updateType } = fiber.root;
+  const { node, part, alternate, root } = fiber;
+  const { updateType } = root;
   const { type: Component, nodeType, props = {}, ref } = node;
 
   const isFirstRender = false;
@@ -85,19 +86,16 @@ export default function processComponentFiber(fiber) {
     firstRender = true;
   }
 
-  const { props: prevProps, state: prevState } = componentInstance;
+  const brahmosData = componentInstance[brahmosDataKey];
 
   // add fiber reference on component instance, so the component is aware of its fiber
-  componentInstance.__fiber = fiber;
-
-  // store previous props and prevState in node if it's not a first time render for the component
-  if (!firstRender) {
-    node.prevProps = prevProps;
-    node.prevState = prevState;
-  }
+  brahmosData.fiber = fiber;
 
   // get current context
   const context = getCurrentContext(fiber, isReused);
+
+  // store context in fiber
+  fiber.context = context;
 
   /**
    * If it is a class component,
@@ -105,7 +103,14 @@ export default function processComponentFiber(fiber) {
    * and call all the life cycle method which comes before rendering.
    */
   if (isClassComponent) {
+    const { props: prevProps, state: prevState } = brahmosData.committedValues;
+
     const { shouldComponentUpdate } = componentInstance;
+
+    // if component is of Suspense type add it in fiber
+    if (componentInstance instanceof Suspense) {
+      fiber.suspense = componentInstance;
+    }
 
     const pendingUpdates = getPendingUpdates(updateType, componentInstance);
 
@@ -159,7 +164,6 @@ export default function processComponentFiber(fiber) {
     componentInstance.state = state;
     componentInstance.props = props;
     componentInstance.context = contextValue;
-    componentInstance.__unCommittedState = undefined;
   } else if (!firstRender) {
     // for functional component call cleanEffect only on second render
     // alternate will be set on second render
@@ -173,8 +177,42 @@ export default function processComponentFiber(fiber) {
       const childNodes = componentInstance.__render(props);
       createCurrentAndLink(childNodes, part, fiber, fiber);
     } catch (err) {
+      const { errorBoundary } = fiber;
       console.log(err);
       // TODO: handle error boundaries
+
+      // if error is a suspender, handle the suspender in suspense component
+      // TODO: this is very basic case for suspender, add better code to check if it is a suspender
+      if (typeof err.then === 'function') {
+        const suspense = getClosestSuspense(fiber);
+
+        /**
+         * if there is no suspense in parent hierarchy throw error that suspender can't be
+         * used outside of suspense
+         * TODO: think for better message
+         */
+        if (!suspense) {
+          throw new Error(`Rendering which got suspended can't be used outside of suspense.`);
+        }
+
+        suspense.handleSuspender(err);
+
+        // set the suspense fiber as retry fiber, so we go back to suspense fiber next after processing this fiber
+        root.retryFiber = suspense[brahmosDataKey].fiber;
+
+        // else if there is any error boundary handle the error in error boundary
+      } else if (errorBoundary) {
+        errorBoundary.__handleError(err);
+
+        // set the errorBoundary fiber as retry fiber, so we go back to suspense fiber next after processing this fiber
+        root.retryFiber = errorBoundary[brahmosDataKey].fiber;
+
+        // else throw error
+      } else {
+        throw err;
+      }
+
+      return;
     }
 
     linkEffect(fiber);

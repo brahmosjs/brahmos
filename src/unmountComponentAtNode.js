@@ -1,11 +1,14 @@
 import tearDown from './tearDown';
+import { brahmosDataKey } from './configs';
 
-function unmountComponentAtNode (container) {
+function unmountComponentAtNode(container) {
   /**
-    * if container has a brahmosNode, it will be tear down.
-    */
-  if (container.__brahmosNode) {
-    tearDown(container.__brahmosNode, { parentNode: container });
+   * if container has a brahmosNode, it will be tear down.
+   * TODO: Check this with new fiber architecture
+   */
+  const { brahmosNode } = container[brahmosDataKey];
+  if (brahmosNode) {
+    tearDown(brahmosNode, { parentNode: container });
     return true;
   }
   return false;

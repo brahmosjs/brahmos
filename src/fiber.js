@@ -1,5 +1,5 @@
 import { isComponentNode, isTagNode, isPrimitiveNode, ATTRIBUTE_NODE } from './brahmosNode';
-import { UPDATE_TYPE_DEFERRED } from './updateMetaUtils';
+import { UPDATE_TYPE_DEFERRED, UPDATE_TYPE_SYNC } from './updateMetaUtils';
 
 export const fibers = {
   workInProgress: null,
@@ -19,6 +19,21 @@ export function getCurrentFiber() {
 
 export function getUpdateTimeKey(type) {
   return type === UPDATE_TYPE_DEFERRED ? 'deferredUpdateTime' : 'updateTime';
+}
+
+export function getCurrentTreeFiber(componentFiber, type) {
+  const { wip } = componentFiber.root;
+  let fiber = componentFiber;
+
+  while (fiber) {
+    if (type === UPDATE_TYPE_SYNC && fiber === wip) {
+      return componentFiber.alternate;
+    }
+
+    fiber = fiber.parent;
+  }
+
+  return componentFiber;
 }
 
 export function setUpdateTime(fiber, type) {
@@ -92,7 +107,7 @@ export function cloneChildrenFibers(fiber) {
      */
     const { alternate } = child;
 
-    cloneCurrentFiber(child, alternate, lastChild || parent, parent);
+    cloneCurrentFiber(child, alternate, lastChild || fiber, fiber);
 
     lastChild = child;
     child = child.sibling;
@@ -113,6 +128,7 @@ export function createHostFiber(domNode) {
     tearDownFibers: [],
     postCommitEffects: [],
     batchUpdates: {},
+    pendingSuspenseMangers: {},
     nextEffect: null,
     alternate: null,
     lastDeferredCompleteTime: 0,
@@ -137,26 +153,13 @@ export function createFiber(root, node, part) {
     part,
     alternate: null, // points to the current fiber
     context: null, // Points to the context applicable for that fiber
-    suspense: null,
     errorBoundary: null,
-    isSVG: false,
+    isSvgPart: false,
     nextEffect: null,
     deferredUpdateTime: 0,
     updateTime: 0,
     processedTime: 0, // processedTime 0 signifies it needs processing
   };
-}
-
-// create a linked list through parent and child
-export function link(parent, children) {
-  const lastChild = null;
-  for (let i = children.length - 1; i >= 0; i--) {
-    const child = children[i];
-    child.sibling = lastChild;
-    child.parent = parent;
-  }
-
-  parent.child = lastChild;
 }
 
 /**
@@ -185,7 +188,7 @@ export function createAndLink(node, part, currentFiber, refFiber, parentFiber) {
   const { root } = refFiber;
   const updateTimeKey = getUpdateTimeKey(root.updateType);
   let fiber;
-  if (currentFiber && shouldClone(node, currentFiber.node)) {
+  if (currentFiber && currentFiber.node && node && shouldClone(node, currentFiber.node)) {
     fiber = cloneCurrentFiber(currentFiber, currentFiber.alternate, refFiber, parentFiber);
 
     // assign new node and part to the fiber
@@ -204,8 +207,11 @@ export function createAndLink(node, part, currentFiber, refFiber, parentFiber) {
 
   fiber.processedTime = 0;
 
-  // add parent's update time to child
+  // add parent's inheriting property to children
   fiber[updateTimeKey] = parentFiber[updateTimeKey];
+  fiber.context = parentFiber.context;
+  fiber.isSvgPart = parentFiber.isSvgPart;
+  fiber.errorBoundary = parentFiber.errorBoundary;
 
   return fiber;
 }
@@ -247,10 +253,18 @@ function getFiberWhichRequiresProcessing(fiber, lastCompleteTime, updateTimeKey)
 }
 
 export function getNextFiber(fiber, topFiber, lastCompleteTime, updateTimeKey) {
+  // if we have any retry fiber reset return that fiber
+  const { root } = fiber;
+  const { retryFiber } = root;
+  if (retryFiber) {
+    // reset the retry fiber and return it
+    root.retryFiber = null;
+    return retryFiber;
+  }
+
   /**
    * Skip fibers which does not require processing
    */
-
   // if there is a child which required processing return that child
   const child = getFiberWhichRequiresProcessing(fiber.child, lastCompleteTime, updateTimeKey);
   if (child) return child;

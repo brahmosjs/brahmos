@@ -91,14 +91,15 @@ export default function processTagFiber(fiber) {
 
   const isTagElement = nodeType === TAG_ELEMENT_NODE;
 
-  // if the node is an svg element set the isSvgPart true
-  // TODO: Handle svg part later
-  const isSvgPart = false;
+  // if the node is an svg element, or fiber is already mentioned as svgPart set the isSvgPart true
+  const isSvgPart = fiber.isSvgPart || (isTagElement && node.element === 'svg');
+
+  // store isSvgPart info back to fiber, this will be forwarded to children
+  fiber.isSvgPart = isSvgPart;
 
   // if new node and old node share same template we can reuse the templateNode instance
   if (oldNode && oldNode.template === node.template) {
     node.templateNode = oldNode.templateNode;
-    oldNode.isReused = true;
   }
 
   let { templateNode } = node;
@@ -114,11 +115,14 @@ export default function processTagFiber(fiber) {
 
     // add templateNode to node so we can access it on next updates
     node.templateNode = templateNode;
-  } else if (!isTagElement) {
-    /**
-     * if any of templateNode part does not have proper parent node and its not first render
-     * patch the part information using the current node's part
-     */
+  }
+
+  /**
+   * if any of templateNode part does not have proper parent node and its not first render
+   * patch the part information using the current node's part
+   * This can happen if the parent node is fragment, or it is the first or last item
+   */
+  if (!isTagElement) {
     templateNode.patchParts(part);
   }
 

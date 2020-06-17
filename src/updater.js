@@ -7,13 +7,21 @@ import { setRef } from './refs';
 
 import { applyHandlers } from './mountAndEffectQueue';
 
-export function isAttrOverridden (tagAttrs, attrName, attrIndex) {
+export function isAttrOverridden(tagAttrs, attrName, attrIndex) {
   const lastIndex = tagAttrs.lastIndexOf(attrName);
   // if attrIndex is before the last attribute with same name it means its overridden
   return attrIndex <= lastIndex;
 }
 
-export default function partsToNode (parts, values, oldValues, context, forceUpdate, isSvgPart, root) {
+export default function partsToNode(
+  parts,
+  values,
+  oldValues,
+  context,
+  forceUpdate,
+  isSvgPart,
+  root,
+) {
   const children = [];
   for (let i = 0, ln = parts.length; i < ln; i++) {
     let part = parts[i];
@@ -32,7 +40,11 @@ export default function partsToNode (parts, values, oldValues, context, forceUpd
       while (part && domNode === part.domNode) {
         loopEntries(values[i], (attrName, attrValue) => {
           const overrideAttrNameCheck = MODIFIED_ATTRIBUTES[attrName];
-          const isOverridden = isAttrOverridden(part.tagAttrs, overrideAttrNameCheck, part.attrIndex);
+          const isOverridden = isAttrOverridden(
+            part.tagAttrs,
+            overrideAttrNameCheck,
+            part.attrIndex,
+          );
           if (!isOverridden && !RESERVED_ATTRIBUTES[attrName]) {
             dynamicAttributes[attrName] = attrValue;
           } else if (attrName === 'ref') {

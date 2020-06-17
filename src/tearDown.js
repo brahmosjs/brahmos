@@ -7,6 +7,7 @@ import { removeHandler } from './mountAndEffectQueue';
 import { setRef } from './refs';
 
 import { cleanEffects } from './hooks';
+import { brahmosDataKey } from './configs';
 
 function handleUnmount(node) {
   const { componentInstance, ref, mountHandler } = node;
@@ -15,7 +16,7 @@ function handleUnmount(node) {
    * if node is classComponent We may have to call componentWillUnmount lifecycle method
    * In case of functional component we have to clean all the effects for that component
    */
-  if (componentInstance && componentInstance.__mounted) {
+  if (componentInstance && componentInstance[brahmosDataKey].mounted) {
     if (node.nodeType === CLASS_COMPONENT_NODE) {
       callLifeCycle(componentInstance, 'componentWillUnmount');
 
@@ -73,9 +74,10 @@ function handleUnmount(node) {
 
     // call the ref methods of attribute parts
   } else if (isComponentNode(node)) {
-    tearDownNode(componentInstance.__nodes);
+    const brahmosData = componentInstance[brahmosDataKey];
+    tearDownNode(brahmosData.nodes);
     // mark componentInstance as unmounted
-    componentInstance.__mounted = false;
+    brahmosData.mounted = false;
 
     // remove the componentInstance from node;
     node.componentInstance = null;
@@ -83,8 +85,8 @@ function handleUnmount(node) {
 }
 
 function tearDownNode(node, part) {
-  // bail out if node is non-renderable node or if the node is reused (It might be on different index )
-  if (!isRenderableNode(node) || node.isReused) return;
+  // bail out if node is non-renderable node
+  if (!isRenderableNode(node)) return;
 
   /**
    * in case of portal nodes the passed part information will be incorrect

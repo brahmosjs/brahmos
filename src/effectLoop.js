@@ -7,10 +7,11 @@ import {
 } from './brahmosNode';
 import { callLifeCycle, insertBefore, getCurrentNode } from './utils';
 import { getTransitionFromFiber } from './transitionUtils';
-import { getPendingUpdatesKey } from './updateMetaUtils';
+import { UPDATE_TYPE_DEFERRED, getPendingUpdatesKey } from './updateMetaUtils';
 import { runEffects } from './hooks';
 
 import updateNodeAttributes from './updateAttribute';
+import { brahmosDataKey } from './configs';
 
 /**
  * Updater to handle text node
@@ -93,9 +94,12 @@ function updateTagNode(fiber) {
 function handleComponentEffect(fiber) {
   const { node, root } = fiber;
   const { updateType, pendingTransitions } = root;
-  const { componentInstance, nodeType, prevProps, prevState } = node;
+  const { componentInstance, nodeType } = node;
+  const brahmosData = componentInstance[brahmosDataKey];
 
   if (nodeType === CLASS_COMPONENT_NODE) {
+    const { props: prevProps, state: prevState } = brahmosData.committedValues;
+
     node.lastSnapshot = callLifeCycle(componentInstance, 'getSnapshotBeforeUpdate', [
       prevProps,
       prevState,
@@ -103,12 +107,15 @@ function handleComponentEffect(fiber) {
   }
 
   // remove all the transitions with current transition id as its already flushed
-  const currentTransition = getTransitionFromFiber(componentInstance.__fiber);
+  const currentTransition = getTransitionFromFiber(brahmosData.fiber);
   const currentTransitionId = currentTransition.transitionId;
   const pendingUpdatesKey = getPendingUpdatesKey(updateType);
-  componentInstance[pendingUpdatesKey] = componentInstance[pendingUpdatesKey].filter(
+  brahmosData[pendingUpdatesKey] = brahmosData[pendingUpdatesKey].filter(
     (stateMeta) => stateMeta.transitionId !== currentTransitionId,
   );
+
+  // reset isForceUpdate flag
+  brahmosData.isForceUpdate = false;
 
   // remove the currentTransition from the pending transition
   const currentTransitionIndex = pendingTransitions.indexOf(currentTransition);
@@ -120,10 +127,16 @@ function handleComponentEffect(fiber) {
 }
 
 function handleComponentPostCommitEffect(fiber) {
-  const { node } = fiber;
-  const { componentInstance, nodeType, prevProps, prevState, lastSnapshot } = node;
+  const { node, root } = fiber;
+  const { updateType } = root;
+
+  const { componentInstance, nodeType, lastSnapshot } = node;
 
   if (nodeType === CLASS_COMPONENT_NODE) {
+    const { props, state } = componentInstance;
+    const { committedValues } = componentInstance[brahmosDataKey];
+    // get the previous state and prevProps
+    const { props: prevProps, state: prevState } = committedValues;
     /**
      * if it is first time rendered call componentDidMount or else call componentDidUpdate
      * prevProps will not be available for first time render
@@ -133,9 +146,20 @@ function handleComponentPostCommitEffect(fiber) {
     } else {
       callLifeCycle(componentInstance, 'componentDidUpdate', [prevProps, prevState, lastSnapshot]);
     }
+
+    // after commit is done set the current prop and state on committed values
+    committedValues.props = props;
+    committedValues.state = state;
   } else {
     // call effects of functional component
     runEffects(componentInstance);
+
+    // switch deferred hooks array and syncHooks hooks array, if it is deferred state update
+    if (updateType === UPDATE_TYPE_DEFERRED) {
+      const { syncHooks, deferredHooks } = componentInstance;
+      componentInstance.deferredHooks = syncHooks;
+      componentInstance.syncHooks = deferredHooks;
+    }
   }
 }
 

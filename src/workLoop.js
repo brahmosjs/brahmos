@@ -11,15 +11,17 @@ import { processTextFiber } from './processTextFiber';
 import processTagFiber from './processTagFiber';
 import effectLoop, { resetEffectList } from './effectLoop';
 import {
+  UPDATE_TYPE_SYNC,
   UPDATE_SOURCE_TRANSITION,
   shouldPreventSchedule,
   getPendingUpdates,
   withUpdateSource,
 } from './updateMetaUtils';
 import {
-  TRANSITION_STATE_COMPLETED,
-  TRANSITION_STATE_TIMED_OUT,
-  getFirstPendingTransition,
+  TRANSITION_STATE_SUSPENDED,
+  getFirstTransitionToProcess,
+  canCommitTransition,
+  setTransitionComplete,
 } from './transitionUtils';
 import {
   linkEffect,
@@ -30,6 +32,7 @@ import {
 } from './fiber';
 import processArrayFiber from './processArrayFiber';
 import tearDown from './tearDown';
+import { brahmosDataKey } from './configs';
 
 const TIME_REQUIRE_TO_PROCESS_FIBER = 2;
 
@@ -53,15 +56,31 @@ function fiberHasUnprocessedUpdates(fiber) {
    */
   if (!componentInstance) return false;
 
-  return !!getPendingUpdates(updateType, componentInstance).length;
+  return (
+    !!getPendingUpdates(updateType, componentInstance).length ||
+    (updateType === UPDATE_TYPE_SYNC && componentInstance[brahmosDataKey].isForceUpdate)
+  );
+}
+
+/**
+ * Function to handle pending suspense managers, if transition is in suspended state
+ */
+function handlePendingSuspenseManager(root) {
+  const { currentTransition, pendingSuspenseMangers } = root;
+  const pendingMangers = pendingSuspenseMangers[currentTransition.transitionId];
+  if (currentTransition.transitionState === TRANSITION_STATE_SUSPENDED && pendingMangers) {
+    pendingMangers.forEach((manager) => {
+      manager.handleSuspense();
+    });
+  }
 }
 
 export function processFiber(fiber) {
   const { node, root, alternate } = fiber;
 
   // if new node is null mark old node to tear down
-  if (!isRenderableNode(node) && alternate) {
-    root.tearDownFibers.push(alternate);
+  if (!isRenderableNode(node)) {
+    if (alternate) root.tearDownFibers.push(alternate);
     return;
   }
 
@@ -97,11 +116,7 @@ export function processFiber(fiber) {
 
 function shouldCommit(root) {
   if (root.updateSource === UPDATE_SOURCE_TRANSITION) {
-    const { transitionState } = root.currentTransition;
-    return (
-      transitionState === TRANSITION_STATE_COMPLETED ||
-      transitionState === TRANSITION_STATE_TIMED_OUT
-    );
+    return canCommitTransition(root.currentTransition);
   }
 
   return true;
@@ -132,7 +147,7 @@ function commitChanges(root, onComplete) {
 
 export default function workLoop(fiber, topFiber, onComplete) {
   const { root } = fiber;
-  const { updateType, updateSource } = root;
+  const { updateType, currentTransition } = root;
   const lastCompleteTimeKey =
     updateType === 'deferred' ? 'lastDeferredCompleteTime' : 'lastCompleteTime';
   const updateTimeKey = getUpdateTimeKey(updateType);
@@ -171,13 +186,22 @@ export default function workLoop(fiber, topFiber, onComplete) {
       }
     }
 
+    if (currentTransition) {
+      // if the transition is suspended and there are pending suspense managers call this managers
+      handlePendingSuspenseManager(root);
+
+      // set transition complete if it is not on suspended or timed out state
+      setTransitionComplete(currentTransition);
+    }
+
     if (shouldCommit(root)) {
       commitChanges(root, onComplete);
     }
 
     // check if there are any pending transition, if yes try rendering them
-    if (getFirstPendingTransition(root)) {
+    if (getFirstTransitionToProcess(root)) {
       withUpdateSource(UPDATE_SOURCE_TRANSITION, () => {
+        root.updateSource = UPDATE_SOURCE_TRANSITION;
         doDeferredProcessing(root);
       });
     }
@@ -186,7 +210,7 @@ export default function workLoop(fiber, topFiber, onComplete) {
 
 export function doDeferredProcessing(root) {
   // if there is no deferred work or pending transition return
-  const pendingTransition = getFirstPendingTransition(root);
+  const pendingTransition = getFirstTransitionToProcess(root);
 
   if (root.lastDeferredCompleteTime >= root.deferredUpdateTime || !pendingTransition) return;
 

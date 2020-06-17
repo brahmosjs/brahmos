@@ -1,22 +1,25 @@
-import { reRender } from './render';
+import reRender from './reRender';
 import { getConsumerCallback } from './createContext';
 import { getUniqueId } from './utils';
 
 import {
   UPDATE_TYPE_SYNC,
   UPDATE_TYPE_DEFERRED,
+  getCurrentUpdateSource,
+  withUpdateSource,
   withTransition,
   getPendingUpdatesKey,
-  currentTransition,
+  getCurrentTransition,
   getPendingUpdates,
   getUpdateType,
 } from './updateMetaUtils';
 
 import {
   TRANSITION_STATE_INITIAL,
-  TRANSITION_STATE_PENDING,
+  TRANSITION_STATE_START,
   TRANSITION_STATE_TIMED_OUT,
 } from './transitionUtils';
+import { brahmosDataKey } from './configs';
 
 /**
  * TODO: Rename currentComponent to currentComponentInstance
@@ -29,16 +32,22 @@ let currentComponent;
  * get updateType from component
  */
 function getUpdateTypeFromComponent(component) {
-  return component.__fiber.root.updateType;
+  return component[brahmosDataKey].fiber.root.updateType;
 }
 
 /**
  * clone hooks, syncHooks to deferredHooks
  */
-function cloneHooks(hooks) {
-  return hooks.map((hook) => {
+function cloneHooks(component) {
+  component.deferredHooks = component.syncHooks.map((hook, index) => {
     if (Array.isArray(hook)) {
       return [...hook];
+    } else if (hook.transitionId) {
+      /**
+       * Transition hooks are shared across sync and deferred hooks,
+       * so use the same instance of hook don't clone it
+       */
+      return hook;
     }
     return { ...hook };
   });
@@ -57,10 +66,17 @@ function getHooksList(updateType, component) {
  * If it is inside transition of deferred update we need deferredHooksList,
  * or else we need the sync hooks list
  */
-function getCurrentHook(updateType, component) {
-  const { pointer } = component;
+function getCurrentHook(updateType, hookIndex, component) {
+  /**
+   * if deferred hooks is not populated clone from the syncHooks
+   * This will only happen when component is rendered only once.
+   */
+  if (updateType === UPDATE_TYPE_DEFERRED && !component.deferredHooks.length) {
+    cloneHooks(component);
+  }
+
   const hooks = getHooksList(updateType, component);
-  return hooks[pointer];
+  return hooks[hookIndex];
 }
 
 /**
@@ -117,7 +133,7 @@ export function setCurrentComponent(component) {
   // based on update type clone the hooks to deferred hooks
   const updateType = getUpdateTypeFromComponent(component);
   if (updateType === UPDATE_TYPE_DEFERRED) {
-    component.deferredHooks = cloneHooks(component.hooks);
+    cloneHooks(component);
   }
 
   // call all the pending update before trying to render,
@@ -131,6 +147,7 @@ export function setCurrentComponent(component) {
 
 function useStateBase(initialState, getNewState) {
   const component = currentComponent;
+  const { pointer: hookIndex } = component;
   return getHook(() => {
     /**
      * create a state hook
@@ -142,7 +159,7 @@ function useStateBase(initialState, getNewState) {
       initialState,
       (param) => {
         const updateType = getUpdateType();
-        const currentHook = getCurrentHook(updateType, component);
+        const currentHook = getCurrentHook(updateType, hookIndex, component);
 
         const lastState = currentHook[0];
         const state = getNewState(param, lastState);
@@ -150,13 +167,19 @@ function useStateBase(initialState, getNewState) {
         const pendingUpdatesKey = getPendingUpdatesKey(updateType);
 
         const stateMeta = {
-          transitionId: currentTransition.transitionId,
+          transitionId: getCurrentTransition().transitionId,
           updater() {
+            /**
+             * get the hook again inside, as the reference of currentHook might change
+             * if we clone sync hook to deferred hook
+             */
+            const stateHook = getCurrentHook(updateType, hookIndex, component);
+
             // call getNewState again as currentHook[0] might change if there are multiple setState
-            currentHook[0] = getNewState(param, currentHook[0]);
+            stateHook[0] = getNewState(param, currentHook[0]);
           },
         };
-        component[pendingUpdatesKey].push(stateMeta);
+        component[brahmosDataKey][pendingUpdatesKey].push(stateMeta);
         reRenderComponentIfRequired(component, state, lastState);
       },
     ];
@@ -341,40 +364,45 @@ export function useTransition({ timeoutMs }) {
         isPending: false,
         transitionTimeout: null,
         transitionState: TRANSITION_STATE_INITIAL,
-        suspendCount: 0,
         resetIsPending() {
-          const currentHook = getCurrentHook(UPDATE_TYPE_DEFERRED, component);
-
           clearTimeout(hook.transitionTimeout);
-          currentHook.isPending = false;
+          hook.isPending = false;
+        },
+        updatePendingState(isPending) {
+          hook.isPending = isPending;
+          // mark component to force update as isPending is not treated as state
+          component[brahmosDataKey].isForceUpdate = true;
+          reRender(component);
         },
         startTransition(cb) {
-          const currentHook = getCurrentHook(UPDATE_TYPE_DEFERRED, component);
-          const { root } = component.__fiber;
+          const currentUpdateSource = getCurrentUpdateSource();
+
+          const { root } = component[brahmosDataKey].fiber;
+
+          // set the transitionState and suspend count
+          hook.transitionState = TRANSITION_STATE_START;
 
           // set the transitionId globally so that state updates can get the transition id
-          withTransition(currentHook, cb);
+          withTransition(hook, cb);
 
           /**
            * If cb does not have any setState, we don't have to unnecessary
            * set isPending flag, transitionState and trigger reRender.
            */
-          if (root.lastDeferredCompleteTime > root.deferredUpdateTime) {
-            currentHook.isPending = true;
-            currentHook.transitionState = TRANSITION_STATE_PENDING;
-
+          if (root.lastDeferredCompleteTime < root.deferredUpdateTime) {
             // after setting isPending we will have to re-render the component
-            reRender(component);
+            withUpdateSource(currentUpdateSource, () => {
+              hook.updatePendingState(true);
+            });
           }
 
           /**
            * Set a timeout which set's the is pending to false and then triggers a deferred update
            */
-          currentHook.transitionTimeout = setTimeout(() => {
-            currentHook.transitionState = TRANSITION_STATE_TIMED_OUT;
-            currentHook.isPending = false;
-            reRender(component);
-          }, timeoutMs);
+          // hook.transitionTimeout = setTimeout(() => {
+          //   hook.transitionState = TRANSITION_STATE_TIMED_OUT;
+          //   hook.updatePendingState(false);
+          // }, timeoutMs);
         },
       };
 

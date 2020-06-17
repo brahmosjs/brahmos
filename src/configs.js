@@ -1,4 +1,3 @@
-
 // reserved props which cannot be forward to component props
 export const RESERVED_ATTRIBUTES = {
   key: 1,
@@ -25,3 +24,8 @@ export const IS_NON_DIMENSIONAL = /acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine
  * xlink namespace for svgs
  */
 export const XLINK_NS = 'http://www.w3.org/1999/xlink';
+
+/**
+ * Brahmos data key which shouldn't be touched
+ */
+export const brahmosDataKey = '__brahmosData';

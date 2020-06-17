@@ -1,6 +1,3 @@
-import { Component } from './Component';
-import { isBrahmosNode, isTagNode } from './brahmosNode';
-
 /**
  * Method to identify if a jsx element is a html element or custom component
  * Taken from https://github.com/babel/babel/blob/master/packages/babel-types/src/validators/react/isCompatTag.js
@@ -39,7 +36,6 @@ export function isNil(val) {
 export function addDataContainer(domNode) {
   // add brahmos data container
   domNode.__brahmosData = {
-    attributes: {},
     events: {},
   };
 }
@@ -80,44 +76,6 @@ export function remove(nodes) {
     const node = nodes[i];
     node.parentNode.removeChild(node);
   }
-}
-
-/**
- * Get the key of looped node
- */
-export function getKey(node, index) {
-  /**
-   * Get the key from node directly if not
-   * found search key on the values
-   */
-  let key = node && node.key;
-  if (key === '' && node && isTagNode(node)) {
-    /**
-     * TODO: This might be buggy, it can give key from any node,
-     * not necessarily key from the root node.
-     */
-    const { values } = node;
-    for (let i = 0, ln = values.length; i < ln; i++) {
-      const value = values[i];
-      if (value.key !== undefined) {
-        key = '' + value.key;
-        break;
-      }
-    }
-
-    // store the calculated key on node so we don't have to search next time on same node
-    node.key = key === undefined ? '' : '' + key;
-  }
-
-  /**
-   * if key is defined use key or else use index as key.
-   * Also key should always be a string
-   */
-  return key === '' ? '' + index : key;
-}
-
-export function isClassComponent(element) {
-  return element.prototype instanceof Component;
 }
 
 /**
@@ -282,4 +240,33 @@ export function afterCurrentStack(cb) {
 
 export function getUniqueId() {
   return performance.now() + '-' + Math.random() * 1000000;
+}
+
+/**
+ * Method to get a promise which support suspension of rendering
+ */
+export function getPromiseSuspendedValue(promise) {
+  let status = 'pending';
+  let result;
+  const suspender = promise.then(
+    (r) => {
+      status = 'success';
+      result = r;
+    },
+    (e) => {
+      status = 'error';
+      result = e;
+    },
+  );
+  return {
+    read() {
+      if (status === 'pending') {
+        throw suspender;
+      } else if (status === 'error') {
+        throw result;
+      } else if (status === 'success') {
+        return result;
+      }
+    },
+  };
 }

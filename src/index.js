@@ -1,19 +1,14 @@
-import { createElement } from './createElement';
-
-/** Portal */
-import createPortal from './createPortal';
-
-/** Suspense and lazy */
-import { Suspense, lazy } from './Suspense';
+/** Component classes,  Suspense and lazy */
+import { Component, PureComponent, createElement, Suspense, lazy } from './circularDep';
 
 /** render methods */
 import render from './render';
 
-/** Component classes */
-import { Component, PureComponent } from './Component';
-
 /** React lit tags */
 import { html } from './tags';
+
+/** Portal */
+import createPortal from './createPortal';
 
 /** Hooks */
 import {
@@ -25,6 +20,7 @@ import {
   useCallback,
   useLayoutEffect,
   useContext,
+  useTransition,
 } from './hooks';
 
 /** createContext */
@@ -53,6 +49,7 @@ const Brahmos = {
   useCallback,
   useLayoutEffect,
   useContext,
+  useTransition,
   createContext,
   forwardRef,
   createRef,
@@ -77,6 +74,7 @@ export {
   useCallback,
   useLayoutEffect,
   useContext,
+  useTransition,
   createContext,
   forwardRef,
   createRef,

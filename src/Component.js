@@ -1,29 +1,29 @@
-import { reRender } from './render';
+import reRender from './reRender';
 import {
   UPDATE_SOURCE_FORCE_UPDATE,
   withUpdateSource,
   getUpdateType,
   getPendingUpdatesKey,
-  currentTransition,
+  getCurrentTransition,
 } from './updateMetaUtils';
+import { brahmosDataKey } from './configs';
 
 export class Component {
   constructor(props) {
     this.props = props;
 
     this.state = undefined;
-    this.__pendingSyncUpdates = [];
-    this.__pendingDeferredUpdates = [];
+    this[brahmosDataKey] = {
+      pendingSyncUpdates: [],
+      pendingDeferredUpdates: [],
+      fiber: null,
+      nodes: null,
+      mounted: false,
+      committedValues: {},
+      isForceUpdate: false,
+    };
 
     this.context = undefined;
-
-    this.__fiber = null;
-    this.__componentNode = null;
-    this.__nodes = null;
-    this.__lastNode = null;
-
-    this.__mounted = false;
-    this.__brahmosNode = null;
   }
 
   setState(newState, callback, type) {
@@ -39,32 +39,39 @@ export class Component {
 
     const stateMeta = {
       state: newState,
-      transitionId: currentTransition.transitionId,
+      transitionId: getCurrentTransition().transitionId,
       callback,
     };
 
     const pendingUpdateKey = getPendingUpdatesKey(updateType);
 
-    this[pendingUpdateKey].push(stateMeta);
+    this[brahmosDataKey][pendingUpdateKey].push(stateMeta);
 
     reRender(this);
   }
 
   forceUpdate(callback) {
     withUpdateSource(UPDATE_SOURCE_FORCE_UPDATE, () => {
+      this[brahmosDataKey].isForceUpdate = true;
       reRender();
       if (callback) callback(this.state);
     });
   }
+
+  __handleError() {}
 
   __render() {
     // get the new rendered node
     const nodes = this.render();
 
     // store the current reference of nodes so we can use this this on next render cycle
-    this.__nodes = nodes;
+    this[brahmosDataKey].nodes = nodes;
     return nodes;
   }
+}
+
+export function isClassComponent(element) {
+  return element.prototype instanceof Component;
 }
 
 export class PureComponent extends Component {}

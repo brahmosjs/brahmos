@@ -1,5 +1,5 @@
 import { getNextChildFiber, createAndLink } from './fiber';
-import { getKey } from './utils';
+import { getKey } from './brahmosNode';
 
 // handle array nodes
 export default function processArrayFiber(fiber) {

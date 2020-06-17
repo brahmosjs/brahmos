@@ -1,4 +1,5 @@
-import { omit, isClassComponent } from './utils';
+import { omit } from './utils';
+import { isClassComponent } from './circularDep';
 import {
   brahmosNode,
   TAG_ELEMENT_NODE,
