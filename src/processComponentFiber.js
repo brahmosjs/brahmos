@@ -9,7 +9,7 @@ import { callLifeCycle } from './utils';
 import { getPendingUpdates } from './updateMetaUtils';
 
 import shallowEqual from './helpers/shallowEqual';
-import { brahmosDataKey } from './configs';
+import { BRAHMOS_DATA_KEY } from './configs';
 
 function getCurrentContext(fiber, isReused) {
   const {
@@ -86,7 +86,7 @@ export default function processComponentFiber(fiber) {
     firstRender = true;
   }
 
-  const brahmosData = componentInstance[brahmosDataKey];
+  const brahmosData = componentInstance[BRAHMOS_DATA_KEY];
 
   // add fiber reference on component instance, so the component is aware of its fiber
   brahmosData.fiber = fiber;
@@ -178,13 +178,14 @@ export default function processComponentFiber(fiber) {
       createCurrentAndLink(childNodes, part, fiber, fiber);
     } catch (err) {
       const { errorBoundary } = fiber;
-      console.log(err);
       // TODO: handle error boundaries
 
       // if error is a suspender, handle the suspender in suspense component
       // TODO: this is very basic case for suspender, add better code to check if it is a suspender
       if (typeof err.then === 'function') {
         const suspense = getClosestSuspense(fiber);
+
+        console.log(err, fiber.node.type, suspense.props.fallback.template.strings);
 
         /**
          * if there is no suspense in parent hierarchy throw error that suspender can't be
@@ -198,14 +199,14 @@ export default function processComponentFiber(fiber) {
         suspense.handleSuspender(err);
 
         // set the suspense fiber as retry fiber, so we go back to suspense fiber next after processing this fiber
-        root.retryFiber = suspense[brahmosDataKey].fiber;
+        root.retryFiber = suspense[BRAHMOS_DATA_KEY].fiber;
 
         // else if there is any error boundary handle the error in error boundary
       } else if (errorBoundary) {
         errorBoundary.__handleError(err);
 
         // set the errorBoundary fiber as retry fiber, so we go back to suspense fiber next after processing this fiber
-        root.retryFiber = errorBoundary[brahmosDataKey].fiber;
+        root.retryFiber = errorBoundary[BRAHMOS_DATA_KEY].fiber;
 
         // else throw error
       } else {

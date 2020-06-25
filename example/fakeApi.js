@@ -73,7 +73,7 @@ function fetchPosts() {
     setTimeout(() => {
       console.log('fetched posts');
       resolve(ringoPostsAtTheTime);
-    }, 1300);
+    }, 2000);
   });
 }
 

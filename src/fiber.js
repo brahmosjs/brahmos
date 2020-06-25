@@ -1,5 +1,5 @@
 import { isComponentNode, isTagNode, isPrimitiveNode, ATTRIBUTE_NODE } from './brahmosNode';
-import { UPDATE_TYPE_DEFERRED, UPDATE_TYPE_SYNC } from './updateMetaUtils';
+import { UPDATE_TYPE_DEFERRED, UPDATE_TYPE_SYNC } from './configs';
 
 export const fibers = {
   workInProgress: null,
@@ -26,7 +26,8 @@ export function getCurrentTreeFiber(componentFiber, type) {
   let fiber = componentFiber;
 
   while (fiber) {
-    if (type === UPDATE_TYPE_SYNC && fiber === wip) {
+    // fiber is from wip tree return the alternate of the fiber
+    if (fiber === wip) {
       return componentFiber.alternate;
     }
 
@@ -58,7 +59,7 @@ function linkFiber(fiber, refFiber, parentFiber) {
 }
 
 export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
-  const { node, part, child, sibling } = fiber;
+  const { node, part, child, sibling, deferredUpdateTime } = fiber;
 
   if (!wipFiber) {
     wipFiber = createFiber(fiber.root, node, part);
@@ -74,6 +75,15 @@ export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
    * */
   wipFiber.child = child;
   wipFiber.sibling = sibling;
+
+  /**
+   * We should add deferred update times from current fiber.
+   * We don't need to add updateTime as cloneCurrentFiber called only
+   * when a new fiber is created, in which case it will get the time from its parent
+   * and the other case is when we clone current to deferred tree,
+   * in which case we should add the deferredUpdateTime from the current fiber.
+   */
+  wipFiber.deferredUpdateTime = deferredUpdateTime;
 
   // link the new fiber to its parent or it's previous sibling
   linkFiber(wipFiber, refFiber, parentFiber);

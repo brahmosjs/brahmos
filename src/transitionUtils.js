@@ -1,4 +1,5 @@
 import { getUniqueId } from './utils';
+import { UPDATE_TYPE_DEFERRED } from './configs';
 
 export const TRANSITION_STATE_INITIAL = 'initial';
 export const TRANSITION_STATE_START = 'start';
@@ -28,8 +29,14 @@ function shouldProcessTransition(transition) {
 
 export function canCommitTransition(transition) {
   const { transitionState } = transition;
+  /**
+   * We can commit a transition if transition is completed, timed-out
+   * We can also commit if it got started and didn't got suspended
+   */
   return (
-    transitionState === TRANSITION_STATE_COMPLETED || transitionState === TRANSITION_STATE_TIMED_OUT
+    transitionState === TRANSITION_STATE_START ||
+    transitionState === TRANSITION_STATE_COMPLETED ||
+    transitionState === TRANSITION_STATE_TIMED_OUT
   );
 }
 
@@ -48,7 +55,7 @@ export function setTransitionComplete(transition) {
      */
     if (transition.isPending) {
       transition.resetIsPending();
-      transition.updatePendingState(false);
+      transition.updatePendingState(false, false);
     } else {
       transition.transitionState = TRANSITION_STATE_COMPLETED;
     }
@@ -59,8 +66,8 @@ export function setTransitionComplete(transition) {
  * get current transition id from the current rendering
  */
 export function getTransitionFromFiber(fiber) {
-  const { currentTransition } = fiber.root;
-  return currentTransition || PREDEFINED_TRANSITION_SYNC;
+  const { currentTransition, updateType } = fiber.root;
+  return updateType === UPDATE_TYPE_DEFERRED ? currentTransition : PREDEFINED_TRANSITION_SYNC;
 }
 
 /**

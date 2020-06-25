@@ -12,7 +12,7 @@ export default function App() {
   }
 
   let page;
-  if (tab === 'home' || true) {
+  if (tab === 'home') {
     page = <HomePage showProfile={showProfile} />;
   } else if (tab === 'profile') {
     page = <ProfilePage />;
@@ -46,7 +46,7 @@ function ProfilePage() {
           <>
             <ProfileDetails resource={resource} />
 
-            <Suspense fallback={<h2>Loading posts...</h2>}>
+            <Suspense fallback={<h2>Loading timeline...</h2>}>
               <ProfileTimeline resource={resource} />
               <ProfileTrivia resource={resource} />
               <Suspense fallback={<h2>Loading fun facts...</h2>} />
@@ -60,7 +60,6 @@ function ProfilePage() {
 
 function ProfileDetails({ resource }) {
   const user = resource.user.read();
-  const posts = resource.posts.read();
   return <h1>{user.name}</h1>;
 }
 
@@ -102,10 +101,10 @@ function Button({ children, onClick }) {
 
   const spinner = (
     <span
+      className="DelayedSpinner"
       style={{
         marginLeft: 4,
         fontSize: 'small',
-        visibility: isPending ? 'visible' : 'hidden',
       }}
     >
       Loading...

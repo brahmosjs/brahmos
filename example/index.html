@@ -23,6 +23,17 @@
         background: white;
         box-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
       }
+
+      .DelayedSpinner {
+        animation: 0s linear 0.3s forwards makeVisible;
+        visibility: hidden;
+      }
+
+      @keyframes makeVisible {
+        to {
+          visibility: visible;
+        }
+      }
     </style>
   </head>
 

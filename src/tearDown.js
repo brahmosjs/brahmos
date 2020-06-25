@@ -7,7 +7,7 @@ import { removeHandler } from './mountAndEffectQueue';
 import { setRef } from './refs';
 
 import { cleanEffects } from './hooks';
-import { brahmosDataKey } from './configs';
+import { BRAHMOS_DATA_KEY } from './configs';
 
 function handleUnmount(node) {
   const { componentInstance, ref, mountHandler } = node;
@@ -16,7 +16,7 @@ function handleUnmount(node) {
    * if node is classComponent We may have to call componentWillUnmount lifecycle method
    * In case of functional component we have to clean all the effects for that component
    */
-  if (componentInstance && componentInstance[brahmosDataKey].mounted) {
+  if (componentInstance && componentInstance[BRAHMOS_DATA_KEY].mounted) {
     if (node.nodeType === CLASS_COMPONENT_NODE) {
       callLifeCycle(componentInstance, 'componentWillUnmount');
 
@@ -73,8 +73,11 @@ function handleUnmount(node) {
     node.templateNode = null;
 
     // call the ref methods of attribute parts
-  } else if (isComponentNode(node)) {
-    const brahmosData = componentInstance[brahmosDataKey];
+  } else if (isComponentNode(node) && componentInstance) {
+    const brahmosData = componentInstance[BRAHMOS_DATA_KEY];
+    // if component is not mounted, we can skip the teardown
+    if (!brahmosData.mounted) return;
+
     tearDownNode(brahmosData.nodes);
     // mark componentInstance as unmounted
     brahmosData.mounted = false;

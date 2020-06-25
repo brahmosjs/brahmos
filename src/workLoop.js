@@ -6,12 +6,13 @@ import {
   ATTRIBUTE_NODE,
 } from './brahmosNode';
 
+import { UPDATE_TYPE_SYNC, BRAHMOS_DATA_KEY } from './configs';
+
 import processComponentFiber from './processComponentFiber';
 import { processTextFiber } from './processTextFiber';
 import processTagFiber from './processTagFiber';
 import effectLoop, { resetEffectList } from './effectLoop';
 import {
-  UPDATE_TYPE_SYNC,
   UPDATE_SOURCE_TRANSITION,
   shouldPreventSchedule,
   getPendingUpdates,
@@ -32,7 +33,6 @@ import {
 } from './fiber';
 import processArrayFiber from './processArrayFiber';
 import tearDown from './tearDown';
-import { brahmosDataKey } from './configs';
 
 const TIME_REQUIRE_TO_PROCESS_FIBER = 2;
 
@@ -58,7 +58,7 @@ function fiberHasUnprocessedUpdates(fiber) {
 
   return (
     !!getPendingUpdates(updateType, componentInstance).length ||
-    (updateType === UPDATE_TYPE_SYNC && componentInstance[brahmosDataKey].isForceUpdate)
+    componentInstance[BRAHMOS_DATA_KEY].isForceUpdate
   );
 }
 
@@ -116,7 +116,8 @@ export function processFiber(fiber) {
 
 function shouldCommit(root) {
   if (root.updateSource === UPDATE_SOURCE_TRANSITION) {
-    return canCommitTransition(root.currentTransition);
+    // all sync changes should be committed before committing transition
+    return root.lastCompleteTime >= root.updateTime && canCommitTransition(root.currentTransition);
   }
 
   return true;
@@ -186,6 +187,8 @@ export default function workLoop(fiber, topFiber, onComplete) {
       }
     }
 
+    console.log(currentTransition, currentTransition && currentTransition.transitionState);
+
     if (currentTransition) {
       // if the transition is suspended and there are pending suspense managers call this managers
       handlePendingSuspenseManager(root);
@@ -236,6 +239,9 @@ export function doDeferredProcessing(root) {
 export function doSyncProcessing(fiber) {
   const { root, parent } = fiber;
   root.updateType = 'sync';
+
+  // set current transition as null for sync processing
+  root.currentTransition = null;
 
   // reset the effect list before starting new one
   resetEffectList(root);

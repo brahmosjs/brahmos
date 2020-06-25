@@ -28,4 +28,8 @@ export const XLINK_NS = 'http://www.w3.org/1999/xlink';
 /**
  * Brahmos data key which shouldn't be touched
  */
-export const brahmosDataKey = '__brahmosData';
+export const BRAHMOS_DATA_KEY = '__brahmosData';
+
+/** update type related constants */
+export const UPDATE_TYPE_SYNC = 'sync';
+export const UPDATE_TYPE_DEFERRED = 'deferred';

@@ -6,14 +6,14 @@ import {
   getPendingUpdatesKey,
   getCurrentTransition,
 } from './updateMetaUtils';
-import { brahmosDataKey } from './configs';
+import { BRAHMOS_DATA_KEY } from './configs';
 
 export class Component {
   constructor(props) {
     this.props = props;
 
     this.state = undefined;
-    this[brahmosDataKey] = {
+    this[BRAHMOS_DATA_KEY] = {
       pendingSyncUpdates: [],
       pendingDeferredUpdates: [],
       fiber: null,
@@ -45,14 +45,14 @@ export class Component {
 
     const pendingUpdateKey = getPendingUpdatesKey(updateType);
 
-    this[brahmosDataKey][pendingUpdateKey].push(stateMeta);
+    this[BRAHMOS_DATA_KEY][pendingUpdateKey].push(stateMeta);
 
     reRender(this);
   }
 
   forceUpdate(callback) {
     withUpdateSource(UPDATE_SOURCE_FORCE_UPDATE, () => {
-      this[brahmosDataKey].isForceUpdate = true;
+      this[BRAHMOS_DATA_KEY].isForceUpdate = true;
       reRender();
       if (callback) callback(this.state);
     });
@@ -65,7 +65,7 @@ export class Component {
     const nodes = this.render();
 
     // store the current reference of nodes so we can use this this on next render cycle
-    this[brahmosDataKey].nodes = nodes;
+    this[BRAHMOS_DATA_KEY].nodes = nodes;
     return nodes;
   }
 }

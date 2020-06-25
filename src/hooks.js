@@ -2,9 +2,10 @@ import reRender from './reRender';
 import { getConsumerCallback } from './createContext';
 import { getUniqueId } from './utils';
 
+import { UPDATE_TYPE_SYNC, UPDATE_TYPE_DEFERRED, BRAHMOS_DATA_KEY } from './configs';
+
 import {
-  UPDATE_TYPE_SYNC,
-  UPDATE_TYPE_DEFERRED,
+  UPDATE_SOURCE_DEFAULT,
   getCurrentUpdateSource,
   withUpdateSource,
   withTransition,
@@ -14,12 +15,7 @@ import {
   getUpdateType,
 } from './updateMetaUtils';
 
-import {
-  TRANSITION_STATE_INITIAL,
-  TRANSITION_STATE_START,
-  TRANSITION_STATE_TIMED_OUT,
-} from './transitionUtils';
-import { brahmosDataKey } from './configs';
+import { TRANSITION_STATE_INITIAL, TRANSITION_STATE_START } from './transitionUtils';
 
 /**
  * TODO: Rename currentComponent to currentComponentInstance
@@ -32,7 +28,7 @@ let currentComponent;
  * get updateType from component
  */
 function getUpdateTypeFromComponent(component) {
-  return component[brahmosDataKey].fiber.root.updateType;
+  return component[BRAHMOS_DATA_KEY].fiber.root.updateType;
 }
 
 /**
@@ -179,7 +175,7 @@ function useStateBase(initialState, getNewState) {
             stateHook[0] = getNewState(param, currentHook[0]);
           },
         };
-        component[brahmosDataKey][pendingUpdatesKey].push(stateMeta);
+        component[BRAHMOS_DATA_KEY][pendingUpdatesKey].push(stateMeta);
         reRenderComponentIfRequired(component, state, lastState);
       },
     ];
@@ -364,20 +360,25 @@ export function useTransition({ timeoutMs }) {
         isPending: false,
         transitionTimeout: null,
         transitionState: TRANSITION_STATE_INITIAL,
+        currentUpdateSource: '',
         resetIsPending() {
           clearTimeout(hook.transitionTimeout);
           hook.isPending = false;
         },
-        updatePendingState(isPending) {
+        updatePendingState(isPending, useUpdateSource) {
           hook.isPending = isPending;
           // mark component to force update as isPending is not treated as state
-          component[brahmosDataKey].isForceUpdate = true;
-          reRender(component);
+          const updateSource = useUpdateSource ? hook.currentUpdateSource : UPDATE_SOURCE_DEFAULT;
+
+          withUpdateSource(updateSource, () => {
+            component[BRAHMOS_DATA_KEY].isForceUpdate = true;
+            reRender(component);
+          });
         },
         startTransition(cb) {
-          const currentUpdateSource = getCurrentUpdateSource();
+          hook.currentUpdateSource = getCurrentUpdateSource();
 
-          const { root } = component[brahmosDataKey].fiber;
+          const { root } = component[BRAHMOS_DATA_KEY].fiber;
 
           // set the transitionState and suspend count
           hook.transitionState = TRANSITION_STATE_START;
@@ -391,13 +392,14 @@ export function useTransition({ timeoutMs }) {
            */
           if (root.lastDeferredCompleteTime < root.deferredUpdateTime) {
             // after setting isPending we will have to re-render the component
-            withUpdateSource(currentUpdateSource, () => {
-              hook.updatePendingState(true);
-            });
+            hook.updatePendingState(true, true);
           }
 
           /**
            * Set a timeout which set's the is pending to false and then triggers a deferred update
+           */
+          /**
+           * UNCOMMENT THIS:
            */
           // hook.transitionTimeout = setTimeout(() => {
           //   hook.transitionState = TRANSITION_STATE_TIMED_OUT;

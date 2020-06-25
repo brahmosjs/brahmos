@@ -9,7 +9,7 @@ import { PREDEFINED_TRANSITION_DEFERRED } from './transitionUtils';
 import { setUpdateTime, getCurrentTreeFiber } from './fiber';
 import { doSyncProcessing, doDeferredProcessing } from './workLoop';
 import { afterCurrentStack } from './utils';
-import { brahmosDataKey } from './configs';
+import { BRAHMOS_DATA_KEY } from './configs';
 
 /**
  * Method to rerender a given component
@@ -18,7 +18,7 @@ import { brahmosDataKey } from './configs';
  * to children of current tree.
  */
 export default function reRender(component) {
-  let { fiber } = component[brahmosDataKey];
+  let { fiber } = component[BRAHMOS_DATA_KEY];
 
   const { root } = fiber;
 
