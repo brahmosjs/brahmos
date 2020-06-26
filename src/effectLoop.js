@@ -114,8 +114,8 @@ function handleComponentEffect(fiber) {
     (stateMeta) => stateMeta.transitionId !== currentTransitionId,
   );
 
-  // reset isForceUpdate flag
-  brahmosData.isForceUpdate = false;
+  // reset isDirty flag
+  brahmosData.isDirty = false;
 
   // remove the currentTransition from the pending transition
   const currentTransitionIndex = pendingTransitions.indexOf(currentTransition);

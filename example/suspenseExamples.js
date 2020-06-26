@@ -39,22 +39,24 @@ function ProfilePage() {
   }
 
   return (
-    <>
+    <div>
       <Button onClick={showProfile}>Open Profile</Button>
       <Suspense fallback={<h2>Loading posts...</h2>}>
         {resource && (
           <>
             <ProfileDetails resource={resource} />
-
-            <Suspense fallback={<h2>Loading timeline...</h2>}>
-              <ProfileTimeline resource={resource} />
-              <ProfileTrivia resource={resource} />
-              <Suspense fallback={<h2>Loading fun facts...</h2>} />
-            </Suspense>
           </>
         )}
       </Suspense>
-    </>
+      <Suspense fallback={<h2>Loading timeline...</h2>}>
+        {resource && (
+          <div>
+            <ProfileTimeline resource={resource} />
+            <ProfileTrivia resource={resource} />
+          </div>
+        )}
+      </Suspense>
+    </div>
   );
 }
 

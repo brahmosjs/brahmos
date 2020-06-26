@@ -18,7 +18,7 @@ export default function functionalComponentInstance(FuncComponent) {
       pendingDeferredUpdates: [],
       fiber: null,
       nodes: null,
-      isForceUpdate: false,
+      isDirty: false,
       mounted: false,
     },
   };

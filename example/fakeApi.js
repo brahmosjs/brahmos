@@ -94,6 +94,6 @@ function fetchTrivia() {
           text: 'Nominated for one Daytime Emmy Award, but did not win',
         },
       ]);
-    }, 2400);
+    }, 3400);
   });
 }

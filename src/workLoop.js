@@ -33,6 +33,7 @@ import {
 } from './fiber';
 import processArrayFiber from './processArrayFiber';
 import tearDown from './tearDown';
+import { loopEntries } from './utils';
 
 const TIME_REQUIRE_TO_PROCESS_FIBER = 2;
 
@@ -58,7 +59,7 @@ function fiberHasUnprocessedUpdates(fiber) {
 
   return (
     !!getPendingUpdates(updateType, componentInstance).length ||
-    componentInstance[BRAHMOS_DATA_KEY].isForceUpdate
+    componentInstance[BRAHMOS_DATA_KEY].isDirty
   );
 }
 
@@ -66,13 +67,12 @@ function fiberHasUnprocessedUpdates(fiber) {
  * Function to handle pending suspense managers, if transition is in suspended state
  */
 function handlePendingSuspenseManager(root) {
-  const { currentTransition, pendingSuspenseMangers } = root;
-  const pendingMangers = pendingSuspenseMangers[currentTransition.transitionId];
-  if (currentTransition.transitionState === TRANSITION_STATE_SUSPENDED && pendingMangers) {
+  const { pendingSuspenseMangers } = root;
+  loopEntries(pendingSuspenseMangers, (transitionId, pendingMangers) => {
     pendingMangers.forEach((manager) => {
       manager.handleSuspense();
     });
-  }
+  });
 }
 
 export function processFiber(fiber) {

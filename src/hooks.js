@@ -371,7 +371,7 @@ export function useTransition({ timeoutMs }) {
           const updateSource = useUpdateSource ? hook.currentUpdateSource : UPDATE_SOURCE_DEFAULT;
 
           withUpdateSource(updateSource, () => {
-            component[BRAHMOS_DATA_KEY].isForceUpdate = true;
+            component[BRAHMOS_DATA_KEY].isDirty = true;
             reRender(component);
           });
         },

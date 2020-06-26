@@ -27,17 +27,21 @@ function shouldProcessTransition(transition) {
   );
 }
 
+export function isTransitionCompleted(transition) {
+  const { transitionState } = transition;
+
+  return (
+    transitionState === TRANSITION_STATE_COMPLETED || transitionState === TRANSITION_STATE_TIMED_OUT
+  );
+}
+
 export function canCommitTransition(transition) {
   const { transitionState } = transition;
   /**
    * We can commit a transition if transition is completed, timed-out
    * We can also commit if it got started and didn't got suspended
    */
-  return (
-    transitionState === TRANSITION_STATE_START ||
-    transitionState === TRANSITION_STATE_COMPLETED ||
-    transitionState === TRANSITION_STATE_TIMED_OUT
-  );
+  return transitionState === TRANSITION_STATE_START || isTransitionCompleted(transition);
 }
 
 export function setTransitionComplete(transition) {
