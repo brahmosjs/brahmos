@@ -64,7 +64,7 @@ class SuspenseManager {
     this.component = component;
     this.transition = transition;
     this.childManagers = [];
-    this.suspenders = [];
+    this.suspender = [];
     this.showFallback = true;
     this.resolved = true;
     const parentFiber = component[BRAHMOS_DATA_KEY].fiber.parent;
@@ -308,9 +308,15 @@ export class Suspense extends Component {
 
 export const lazy = (lazyCallback) => {
   let componentPromise;
-  return forwardRef((props, ref) => {
-    if (!componentPromise) componentPromise = lazyCallback();
+
+  const LazyComponent = forwardRef((props, ref) => {
     const Component = getPromiseSuspendedValue(componentPromise).read();
     return createElement(Component, { ...props, ref: ref }, props.children);
   });
+
+  LazyComponent.__loadLazyComponent = () => {
+    if (!componentPromise) componentPromise = lazyCallback();
+  };
+
+  return LazyComponent;
 };

@@ -35,6 +35,9 @@ export function createElement(element, configs, children) {
     children,
   };
 
+  // if the element is a lazy component, start fetching the underlying component
+  if (element.__loadLazyComponent) element.__loadLazyComponent();
+
   const { key = '', ref } = configs;
   const _isClassComponent = isClassComponent(element);
 
