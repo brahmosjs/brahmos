@@ -110,7 +110,7 @@ class SuspenseManager {
   }
 
   resolve() {
-    const { suspenders, component, transition, childManagers } = this;
+    const { suspenders, component, transition, childManagers, parentSuspenseManager } = this;
     const { pendingManagers, allPendingManagers } = this.getPendingManagers();
 
     // mark the suspense as resolved and component as dirty
@@ -119,55 +119,71 @@ class SuspenseManager {
 
     // hasSuspenders
     const hadSuspenders = suspenders.length;
-    const managerIndex = pendingManagers.indexOf(this.rootSuspenseManager);
 
-    /**
-     * If there were any suspenders it means we can resolve the
-     * transition from here only, other child suspense can be resolved
-     * later
-     * For that remove the rootManagers from pending managers
-     */
-    if (hadSuspenders && managerIndex !== -1) {
-      pendingManagers.splice(managerIndex, 1);
-    }
+    // if it does not have any suspenders no need to do any thing and just resolve the child managers
 
-    // reset the suspenders array
-    suspenders.length = 0;
+    if (hadSuspenders) {
+      const managerIndex = pendingManagers.indexOf(this.rootSuspenseManager);
 
-    /**
-     * If a transition is timed out, we need to always have to deferred update
-     * Non custom transitions are timed out by default
-     */
-    if (hadSuspenders && transition.transitionState === TRANSITION_STATE_TIMED_OUT) {
-      deferredUpdates(() => reRender(component));
+      const hasUnresolvedSiblings =
+        parentSuspenseManager &&
+        parentSuspenseManager.childManagers.filter((managers) => !managers.resolved).length;
+
+      console.log(
+        'Inside resolve ----',
+        component.props.fallback.template.strings,
+        hadSuspenders,
+        managerIndex,
+        pendingManagers,
+      );
+
       /**
-       * if the pendingManagers count for a transition becomes 0 it means we mark the transition as complete
-       * and then do rerender.
+       * If there are no unresolved siblings, we can resolve the
+       * transition from here only, other child suspense can be resolved
+       * later
+       * For that remove the rootManagers from pending managers
        */
-    } else if (hadSuspenders && pendingManagers.length === 0) {
-      // if the transition is done with pending managers, remove the transition from pending transitions
-      delete allPendingManagers[transition.transitionId];
+      if (!hasUnresolvedSiblings && managerIndex !== -1) {
+        pendingManagers.splice(managerIndex, 1);
+      }
 
-      // set transition state as resoled
-      transition.transitionState = TRANSITION_STATE_RESOLVED;
-      transition.resetIsPending();
-      withTransition(transition, () => reRender(component));
+      // reset the suspenders array
+      suspenders.length = 0;
+
+      /**
+       * If a transition is timed out, we need to always have to deferred update
+       * Non custom transitions are timed out by default
+       */
+      if (hadSuspenders && transition.transitionState === TRANSITION_STATE_TIMED_OUT) {
+        deferredUpdates(() => reRender(component));
+        /**
+         * if the pendingManagers count for a transition becomes 0 it means we mark the transition as complete
+         * and then do rerender.
+         */
+      } else if (hadSuspenders && pendingManagers.length === 0) {
+        // if the transition is done with pending managers, remove the transition from pending transitions
+        delete allPendingManagers[transition.transitionId];
+
+        // set transition state as resoled
+        transition.transitionState = TRANSITION_STATE_RESOLVED;
+        transition.resetIsPending();
+        withTransition(transition, () => reRender(component));
+      }
     }
 
-    console.log(hadSuspenders, managerIndex, pendingManagers);
     // handle the child suspense after the rerender has started
+    /**
+     * NOTE: All child need to be resolved together
+     */
     childManagers.forEach((manager) => {
       manager.handleSuspense();
     });
   }
 
   suspend(suspender) {
-    const { suspenders, component } = this;
+    const { suspenders } = this;
     this.resolved = false;
     suspenders.push(suspender);
-
-    // mark component as dirty
-    component[BRAHMOS_DATA_KEY].isDirty = true;
 
     this.addRootToProcess();
   }
@@ -268,6 +284,13 @@ export class Suspense extends Component {
     }
 
     suspenseManager.suspend(suspender);
+
+    console.log(
+      'transition -------',
+      this.props.fallback.template.strings,
+      transition,
+      suspenseManager.rootSuspenseManager,
+    );
   }
 
   render() {

@@ -9,7 +9,7 @@ import { callLifeCycle } from './utils';
 import { getPendingUpdates } from './updateMetaUtils';
 
 import shallowEqual from './helpers/shallowEqual';
-import { BRAHMOS_DATA_KEY } from './configs';
+import { BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED } from './configs';
 
 function getCurrentContext(fiber, isReused) {
   const {
@@ -42,11 +42,32 @@ function getCurrentContext(fiber, isReused) {
   return newContext;
 }
 
-export function getUpdatedState(prevState, updates) {
+function getUpdatedState(prevState, updates) {
   return updates.reduce((combinedState, { state }) => {
     if (typeof state === 'function') state = state(combinedState);
     return { ...combinedState, ...state };
   }, prevState);
+}
+
+// method to reset work loop to a fiber of given component
+function resetLoopToFiber(component) {
+  const brahmosData = component[BRAHMOS_DATA_KEY];
+  const { fiber } = brahmosData;
+  const { root, alternate } = fiber;
+  const { updateType } = root;
+
+  // mark component as dirty, so it can be rendered again
+  brahmosData.isDirty = true;
+
+  /**
+   * if updateType is deferred we should reset the child to current tree's child,
+   * so that the work loop in wip tree should behave as it should without reset.
+   */
+  if (updateType === UPDATE_TYPE_DEFERRED) {
+    fiber.child = alternate && alternate.child;
+  }
+
+  root.retryFiber = fiber;
 }
 
 export default function processComponentFiber(fiber) {
@@ -198,15 +219,15 @@ export default function processComponentFiber(fiber) {
 
         suspense.handleSuspender(err);
 
-        // set the suspense fiber as retry fiber, so we go back to suspense fiber next after processing this fiber
-        root.retryFiber = suspense[BRAHMOS_DATA_KEY].fiber;
+        // reset the work loop to suspense fiber
+        resetLoopToFiber(suspense);
 
         // else if there is any error boundary handle the error in error boundary
       } else if (errorBoundary) {
         errorBoundary.__handleError(err);
 
-        // set the errorBoundary fiber as retry fiber, so we go back to suspense fiber next after processing this fiber
-        root.retryFiber = errorBoundary[BRAHMOS_DATA_KEY].fiber;
+        // reset the work loop to errorBoundary fiber
+        resetLoopToFiber(errorBoundary);
 
         // else throw error
       } else {

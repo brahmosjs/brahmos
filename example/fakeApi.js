@@ -80,6 +80,8 @@ function fetchPosts() {
 function fetchTrivia() {
   return new Promise((resolve) => {
     setTimeout(() => {
+      console.log('fetched trivia');
+
       resolve([
         {
           id: 1,
@@ -94,6 +96,6 @@ function fetchTrivia() {
           text: 'Nominated for one Daytime Emmy Award, but did not win',
         },
       ]);
-    }, 3400);
+    }, 3000);
   });
 }
