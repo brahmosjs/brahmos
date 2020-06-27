@@ -64,7 +64,7 @@ class SuspenseManager {
     this.component = component;
     this.transition = transition;
     this.childManagers = [];
-    this.suspender = [];
+    this.suspender = null;
     this.showFallback = true;
     this.resolved = true;
     const parentFiber = component[BRAHMOS_DATA_KEY].fiber.parent;
@@ -110,19 +110,15 @@ class SuspenseManager {
   }
 
   resolve() {
-    const { suspenders, component, transition, childManagers, parentSuspenseManager } = this;
+    const { suspender, component, transition, childManagers, parentSuspenseManager } = this;
     const { pendingManagers, allPendingManagers } = this.getPendingManagers();
 
     // mark the suspense as resolved and component as dirty
     this.resolved = true;
     component[BRAHMOS_DATA_KEY].isDirty = true;
 
-    // hasSuspenders
-    const hadSuspenders = suspenders.length;
-
-    // if it does not have any suspenders no need to do any thing and just resolve the child managers
-
-    if (hadSuspenders) {
+    // if it does not have any suspender no need to do any thing and just resolve the child managers
+    if (suspender) {
       const managerIndex = pendingManagers.indexOf(this.rootSuspenseManager);
 
       const hasUnresolvedSiblings =
@@ -132,7 +128,6 @@ class SuspenseManager {
       console.log(
         'Inside resolve ----',
         component.props.fallback.template.strings,
-        hadSuspenders,
         managerIndex,
         pendingManagers,
       );
@@ -147,20 +142,20 @@ class SuspenseManager {
         pendingManagers.splice(managerIndex, 1);
       }
 
-      // reset the suspenders array
-      suspenders.length = 0;
+      // reset the suspender
+      this.suspender = null;
 
       /**
        * If a transition is timed out, we need to always have to deferred update
        * Non custom transitions are timed out by default
        */
-      if (hadSuspenders && transition.transitionState === TRANSITION_STATE_TIMED_OUT) {
+      if (transition.transitionState === TRANSITION_STATE_TIMED_OUT) {
         deferredUpdates(() => reRender(component));
         /**
          * if the pendingManagers count for a transition becomes 0 it means we mark the transition as complete
          * and then do rerender.
          */
-      } else if (hadSuspenders && pendingManagers.length === 0) {
+      } else if (pendingManagers.length === 0) {
         // if the transition is done with pending managers, remove the transition from pending transitions
         delete allPendingManagers[transition.transitionId];
 
@@ -181,22 +176,21 @@ class SuspenseManager {
   }
 
   suspend(suspender) {
-    const { suspenders } = this;
     this.resolved = false;
-    suspenders.push(suspender);
+    this.suspender = suspender;
 
     this.addRootToProcess();
   }
 
   handleSuspense() {
-    const { component, suspenders } = this;
+    const { component, suspender } = this;
 
     const isSuspenseList = component instanceof SuspenseList;
 
     if (isSuspenseList) {
       this.handleSuspenseList();
     } else {
-      Promise.all(suspenders).then(this.resolve);
+      Promise.resolve(suspender).then(this.resolve);
     }
   }
 
@@ -220,7 +214,7 @@ class SuspenseManager {
 
     // resolve the child managers based on reveal order
 
-    const managerSuspender = (manager) => Promise.all(manager.suspenders);
+    const managerSuspender = (manager) => Promise.resolve(manager.suspender);
 
     const handleManagerInOrder = (promise, manager) => {
       return promise.then(() => {
