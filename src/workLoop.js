@@ -21,8 +21,8 @@ import {
 import {
   TRANSITION_STATE_SUSPENDED,
   getFirstTransitionToProcess,
-  canCommitTransition,
   setTransitionComplete,
+  isTransitionCompleted,
 } from './transitionUtils';
 import {
   linkEffect,
@@ -119,7 +119,9 @@ export function processFiber(fiber) {
 function shouldCommit(root) {
   if (root.updateSource === UPDATE_SOURCE_TRANSITION) {
     // all sync changes should be committed before committing transition
-    return root.lastCompleteTime >= root.updateTime && canCommitTransition(root.currentTransition);
+    return (
+      root.lastCompleteTime >= root.updateTime && isTransitionCompleted(root.currentTransition)
+    );
   }
 
   return true;

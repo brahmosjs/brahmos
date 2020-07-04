@@ -361,9 +361,8 @@ export function useTransition({ timeoutMs }) {
         transitionTimeout: null,
         transitionState: TRANSITION_STATE_INITIAL,
         currentUpdateSource: '',
-        resetIsPending() {
+        clearTimeout() {
           clearTimeout(hook.transitionTimeout);
-          hook.isPending = false;
         },
         updatePendingState(isPending, useUpdateSource) {
           hook.isPending = isPending;
@@ -445,8 +444,8 @@ export function cleanEffects(component, unmount) {
     }
 
     // clear any pending transitions on unmount
-    if (hook.resetIsPending && unmount) {
-      hook.resetIsPending();
+    if (hook.clearTimeout && unmount) {
+      hook.clearTimeout();
     }
   }
 }

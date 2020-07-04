@@ -214,7 +214,6 @@ class SuspenseManager {
       ) {
         // set transition state as resolved
         transition.transitionState = TRANSITION_STATE_RESOLVED;
-        transition.resetIsPending();
 
         withTransition(transition, () => reRender(component));
       }
@@ -341,11 +340,10 @@ export class Suspense extends Component {
     const suspenseManager = getSuspenseManager(this, transition);
 
     /**
-     * Mark current transition as suspended only if transition has started,
-     * if its already resolved, completed or timed out, it can't go back to
-     * suspended state
+     * Mark current transition as suspended
+     * only if transition is not completed or timed out.
      */
-    if (transition.transitionState === TRANSITION_STATE_START) {
+    if (!isTransitionCompleted(transition)) {
       transition.transitionState = TRANSITION_STATE_SUSPENDED;
     }
 

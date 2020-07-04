@@ -42,15 +42,6 @@ export function isTransitionResolved(transition) {
   return transitionState === TRANSITION_STATE_RESOLVED || isTransitionCompleted(transition);
 }
 
-export function canCommitTransition(transition) {
-  const { transitionState } = transition;
-  /**
-   * We can commit a transition if transition is completed, timed-out
-   * We can also commit if it got started and didn't got suspended
-   */
-  return transitionState === TRANSITION_STATE_START || isTransitionCompleted(transition);
-}
-
 export function setTransitionComplete(transition) {
   const { transitionState } = transition;
   if (
@@ -58,14 +49,12 @@ export function setTransitionComplete(transition) {
     transitionState !== TRANSITION_STATE_SUSPENDED
   ) {
     /**
-     * If transition is in pending state and hasn't been reset
-     * by suspense, then manually reset it.
-     * This will only happen if nothing suspends the component
-     * in a transition.
-     * else mark the transition as complete
+     * If transition is in pending state, first reset the isPending state
+     * and then on next render cycle mark transition as completed
+     * so that isPending and transition changes can be shown on one commit phase
      */
     if (transition.isPending) {
-      transition.resetIsPending();
+      transition.clearTimeout();
       transition.updatePendingState(false, false);
     } else {
       transition.transitionState = TRANSITION_STATE_COMPLETED;
