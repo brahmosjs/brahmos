@@ -35,6 +35,13 @@ export function isTransitionCompleted(transition) {
   );
 }
 
+export function isTransitionResolved(transition) {
+  const { transitionState } = transition;
+
+  // send true, on either the transition is resolved or completed
+  return transitionState === TRANSITION_STATE_RESOLVED || isTransitionCompleted(transition);
+}
+
 export function canCommitTransition(transition) {
   const { transitionState } = transition;
   /**

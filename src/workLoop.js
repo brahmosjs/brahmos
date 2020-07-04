@@ -67,7 +67,9 @@ function fiberHasUnprocessedUpdates(fiber) {
  * Function to handle pending suspense managers, if transition is in suspended state
  */
 function handlePendingSuspenseManager(root) {
+  console.log('checking for pending managers...');
   const { pendingSuspenseMangers } = root;
+  window.pendingSuspenseMangers = pendingSuspenseMangers;
   loopEntries(pendingSuspenseMangers, (transitionId, pendingMangers) => {
     pendingMangers.forEach((manager) => {
       manager.handleSuspense();

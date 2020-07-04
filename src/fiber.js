@@ -198,7 +198,6 @@ export function createAndLink(node, part, currentFiber, refFiber, parentFiber) {
   const { root } = refFiber;
   const updateTimeKey = getUpdateTimeKey(root.updateType);
   let fiber;
-  console.log('createAndLink ---- ', node && node.template && node.template.strings);
   if (currentFiber && currentFiber.node && node && shouldClone(node, currentFiber.node)) {
     fiber = cloneCurrentFiber(currentFiber, currentFiber.alternate, refFiber, parentFiber);
 

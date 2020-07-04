@@ -47,16 +47,16 @@ function ProfilePage() {
             <ProfileDetails resource={resource} />
           </>
         )}
-        <Suspense fallback={<h2>Loading timeline...</h2>}>
-          {resource && (
-            <>
-              <ProfileTimeline resource={resource} />
-              <Suspense fallback={<h2>Loading Trivia...</h2>}>
-                <ProfileTrivia resource={resource} />
-              </Suspense>
-            </>
-          )}
-        </Suspense>
+        {/* <Suspense fallback={<h2>Loading timeline...</h2>}> */}
+        {resource && (
+          <>
+            <ProfileTimeline resource={resource} />
+            <Suspense fallback={<h2>Loading Trivia...</h2>}>
+              <ProfileTrivia resource={resource} />
+            </Suspense>
+          </>
+        )}
+        {/* </Suspense> */}
       </Suspense>
     </>
   );

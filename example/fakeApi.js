@@ -14,12 +14,15 @@ export function fetchProfileData() {
 // Real implementations can be significantly more complex.
 // Don't copy-paste this into your project!
 function wrapPromise(promise) {
+  const promiseId = performance.now();
   let status = 'pending';
   let result;
   const suspender = promise.then(
     (r) => {
+      console.log('promiseId on success ---', promiseId, r);
       status = 'success';
       result = r;
+      return result;
     },
     (e) => {
       status = 'error';
@@ -29,6 +32,7 @@ function wrapPromise(promise) {
   return {
     read() {
       if (status === 'pending') {
+        console.log('promiseId on suspend ---', promiseId);
         throw suspender;
       } else if (status === 'error') {
         throw result;

@@ -376,6 +376,7 @@ export function useTransition({ timeoutMs }) {
           });
         },
         startTransition(cb) {
+          console.log('started transition. *************');
           hook.currentUpdateSource = getCurrentUpdateSource();
 
           const { root } = component[BRAHMOS_DATA_KEY].fiber;

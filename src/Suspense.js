@@ -10,6 +10,7 @@ import {
   getTransitionFromFiber,
   TRANSITION_STATE_START,
   isTransitionCompleted,
+  isTransitionResolved,
 } from './transitionUtils';
 import { withTransition } from './updateMetaUtils';
 import { deferredUpdates } from './deferredUpdates';
@@ -39,7 +40,8 @@ export function getClosestSuspense(fiber, includeSuspenseList) {
 function getActiveTransition(component) {
   const { fiber } = component[BRAHMOS_DATA_KEY];
   const currentTransition = getTransitionFromFiber(fiber);
-  return isTransitionCompleted(currentTransition)
+  console.log('+++++++++++++', currentTransition, isTransitionCompleted(currentTransition));
+  return isTransitionResolved(currentTransition)
     ? PREDEFINED_TRANSITION_DEFERRED
     : currentTransition;
 }
@@ -74,7 +76,6 @@ class SuspenseManager {
     );
     this.rootSuspenseManager = null;
     this.recordChildSuspense();
-    this.resolve = this.resolve.bind(this);
   }
 
   recordChildSuspense() {
@@ -87,31 +88,63 @@ class SuspenseManager {
     }
   }
 
+  resetChildSuspense() {}
+
+  rootHasSuspendedChild() {
+    const { rootSuspenseManager } = this;
+    const suspenseManger = rootSuspenseManager;
+    const hasSuspendedChild = !rootSuspenseManager.resolved;
+
+    while (!hasSuspendedChild && suspenseManger) {
+      suspenseManger.childManagers();
+    }
+  }
+
   getPendingManagers() {
     const { component, transition } = this;
     const { transitionId } = transition;
     const { pendingSuspenseMangers: allPendingManagers } = component[BRAHMOS_DATA_KEY].fiber.root;
 
-    let pendingManagers = allPendingManagers[transitionId];
-    if (!pendingManagers) {
-      allPendingManagers[transitionId] = pendingManagers = [];
-    }
+    const pendingManagers = allPendingManagers[transitionId];
+
     return { allPendingManagers, pendingManagers };
   }
 
   addRootToProcess() {
-    const { rootSuspenseManager } = this;
+    const { rootSuspenseManager, transition } = this;
 
-    const { pendingManagers } = this.getPendingManagers();
+    let { pendingManagers, allPendingManagers } = this.getPendingManagers();
+    if (!pendingManagers) {
+      allPendingManagers[transition.transitionId] = pendingManagers = [];
+    }
+    console.log('addRootToProcess', this.transition, allPendingManagers);
 
     if (rootSuspenseManager && !pendingManagers.includes(rootSuspenseManager)) {
       pendingManagers.push(rootSuspenseManager);
     }
   }
 
-  resolve() {
-    const { suspender, component, transition, childManagers, parentSuspenseManager } = this;
+  resolve(resolvedWithSuspender) {
+    const {
+      suspender,
+      component,
+      transition,
+      childManagers,
+      parentSuspenseManager,
+      rootSuspenseManager,
+    } = this;
     const { pendingManagers, allPendingManagers } = this.getPendingManagers();
+
+    // if (resolvedWithSuspender !== suspender)
+    console.log(
+      'old resolver',
+      resolvedWithSuspender,
+      suspender,
+      resolvedWithSuspender === suspender,
+    );
+
+    // if suspense is resolved with stale suspender return from here
+    if (resolvedWithSuspender !== suspender) return;
 
     // mark the suspense as resolved and component as dirty
     this.resolved = true;
@@ -125,11 +158,14 @@ class SuspenseManager {
         parentSuspenseManager &&
         parentSuspenseManager.childManagers.filter((managers) => !managers.resolved).length;
 
+      // const rootManagerHasUnresolvedChild = this.rootHasSuspendedChild();
+
       console.log(
         'Inside resolve ----',
         component.props.fallback.template.strings,
         managerIndex,
         pendingManagers,
+        allPendingManagers,
       );
 
       /**
@@ -145,23 +181,41 @@ class SuspenseManager {
       // reset the suspender
       this.suspender = null;
 
+      // if there are no pending managers we can delete the transition from pending manager list
+      if (pendingManagers.length === 0 && transition !== PREDEFINED_TRANSITION_DEFERRED) {
+        console.log(
+          '-----deleting transition',
+          transition,
+          allPendingManagers[transition.transitionId],
+        );
+        // if the transition is done with pending managers, remove the transition from pending transitions
+        delete allPendingManagers[transition.transitionId];
+      }
+
       /**
-       * If a transition is timed out, we need to always have to deferred update
-       * Non custom transitions are timed out by default
+       * If a transition is timed out or completed, we need to always have to deferred update
+       * A transition will come to completed state, if it is resolved by any of parent suspenders
+       * And non custom transitions are timed out by default
        */
-      if (transition.transitionState === TRANSITION_STATE_TIMED_OUT) {
+      if (isTransitionCompleted(transition)) {
+        console.log(
+          'doing rerender',
+          transition.transitionState === 'timedOut' && Object.keys(allPendingManagers).length === 0,
+          allPendingManagers,
+        );
         deferredUpdates(() => reRender(component));
         /**
          * if the pendingManagers count for a transition becomes 0 it means we mark the transition as complete
          * and then do rerender.
          */
-      } else if (pendingManagers.length === 0) {
-        // if the transition is done with pending managers, remove the transition from pending transitions
-        delete allPendingManagers[transition.transitionId];
-
-        // set transition state as resoled
+      } else if (
+        pendingManagers.length === 0 &&
+        transition.transitionState === TRANSITION_STATE_SUSPENDED
+      ) {
+        // set transition state as resolved
         transition.transitionState = TRANSITION_STATE_RESOLVED;
         transition.resetIsPending();
+
         withTransition(transition, () => reRender(component));
       }
     }
@@ -190,7 +244,10 @@ class SuspenseManager {
     if (isSuspenseList) {
       this.handleSuspenseList();
     } else {
-      Promise.resolve(suspender).then(this.resolve);
+      Promise.resolve(suspender).then((data) => {
+        console.log(data);
+        this.resolve(suspender);
+      });
     }
   }
 
@@ -202,8 +259,11 @@ class SuspenseManager {
      *  set show fallback of all child managers based on tail prop
      *  by default all fallbacks will be shown.
      *  In collapsed mode only one unresolved suspense's fallback will be shown
+     *
+     *  Also, create a child resolver array
      */
     let showFallback = tail !== 'hidden';
+
     childManagers.forEach((manager) => {
       if (tail === 'collapsed' && !manager.resolved) {
         showFallback = false;
@@ -212,14 +272,24 @@ class SuspenseManager {
       manager.showFallback = showFallback;
     });
 
+    /**
+     * get binded resolvers for child managers,
+     * so manager know, with which suspender its resolved
+     */
+    const getChildResolver = (manager, suspender) => manager.resolve.bind(manager, suspender);
+
     // resolve the child managers based on reveal order
-
-    const managerSuspender = (manager) => Promise.resolve(manager.suspender);
-
     const handleManagerInOrder = (promise, manager) => {
+      const { suspender } = manager;
+      const resolver = getChildResolver(manager, suspender);
+      /**
+       * get binded resolvers for child managers,
+       * so manager know, with which suspender its resolved
+       */
+
       return promise.then(() => {
-        return managerSuspender(manager).then(() => {
-          manager.resolve();
+        return suspender.then(() => {
+          resolver();
         });
       });
     };
@@ -232,9 +302,11 @@ class SuspenseManager {
      * in the provided order event the promise resolves concurrently
      */
     if (revealOrder === 'together') {
-      Promise.all(childManagers.map(managerSuspender)).then(() => {
-        childManagers.forEach((manager) => {
-          manager.resolve();
+      const suspenders = childManagers.map((manager) => manager.suspender);
+      Promise.all(suspenders).then(() => {
+        childManagers.forEach((manager, index) => {
+          const resolver = getChildResolver(manager, suspenders[index]);
+          resolver();
         });
       });
     } else if (revealOrder === 'forwards') {
