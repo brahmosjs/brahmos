@@ -12,10 +12,11 @@ import {
   isTransitionCompleted,
   isTransitionResolved,
 } from './transitionUtils';
-import { withTransition } from './updateMetaUtils';
+import { withTransition, withUpdateSource } from './updateMetaUtils';
 import { deferredUpdates } from './deferredUpdates';
 import reRender from './reRender';
 import { BRAHMOS_DATA_KEY } from './configs';
+import { getFiberFromComponent } from './fiber';
 
 export function getClosestSuspense(fiber, includeSuspenseList) {
   const { root } = fiber;
@@ -38,9 +39,9 @@ export function getClosestSuspense(fiber, includeSuspenseList) {
 }
 
 function getActiveTransition(component) {
-  const { fiber } = component[BRAHMOS_DATA_KEY];
+  const fiber = getFiberFromComponent(component);
   const currentTransition = getTransitionFromFiber(fiber);
-  console.log('+++++++++++++', currentTransition, isTransitionCompleted(currentTransition));
+  // console.log('+++++++++++++', currentTransition, isTransitionCompleted(currentTransition));
   return isTransitionResolved(currentTransition)
     ? PREDEFINED_TRANSITION_DEFERRED
     : currentTransition;
@@ -61,7 +62,7 @@ function getSuspenseManager(component, transition) {
   return suspenseManager;
 }
 
-class SuspenseManager {
+class SuspenseManagerOld {
   constructor(component, transition) {
     this.component = component;
     this.transition = transition;
@@ -69,7 +70,7 @@ class SuspenseManager {
     this.suspender = null;
     this.showFallback = true;
     this.resolved = true;
-    const parentFiber = component[BRAHMOS_DATA_KEY].fiber.parent;
+    const { parent: parentFiber } = getFiberFromComponent(component);
     this.parentSuspenseManager = getSuspenseManager(
       getClosestSuspense(parentFiber, true),
       transition,
@@ -103,7 +104,7 @@ class SuspenseManager {
   getPendingManagers() {
     const { component, transition } = this;
     const { transitionId } = transition;
-    const { pendingSuspenseMangers: allPendingManagers } = component[BRAHMOS_DATA_KEY].fiber.root;
+    const { pendingSuspenseMangers: allPendingManagers } = getFiberFromComponent(component).root;
 
     const pendingManagers = allPendingManagers[transitionId];
 
@@ -117,7 +118,7 @@ class SuspenseManager {
     if (!pendingManagers) {
       allPendingManagers[transition.transitionId] = pendingManagers = [];
     }
-    console.log('addRootToProcess', this.transition, allPendingManagers);
+    // console.log('addRootToProcess', this.transition, allPendingManagers);
 
     if (rootSuspenseManager && !pendingManagers.includes(rootSuspenseManager)) {
       pendingManagers.push(rootSuspenseManager);
@@ -136,12 +137,12 @@ class SuspenseManager {
     const { pendingManagers, allPendingManagers } = this.getPendingManagers();
 
     // if (resolvedWithSuspender !== suspender)
-    console.log(
-      'old resolver',
-      resolvedWithSuspender,
-      suspender,
-      resolvedWithSuspender === suspender,
-    );
+    // console.log(
+    //   'old resolver',
+    //   resolvedWithSuspender,
+    //   suspender,
+    //   resolvedWithSuspender === suspender,
+    // );
 
     // if suspense is resolved with stale suspender return from here
     if (resolvedWithSuspender !== suspender) return;
@@ -160,13 +161,13 @@ class SuspenseManager {
 
       // const rootManagerHasUnresolvedChild = this.rootHasSuspendedChild();
 
-      console.log(
-        'Inside resolve ----',
-        component.props.fallback.template.strings,
-        managerIndex,
-        pendingManagers,
-        allPendingManagers,
-      );
+      // console.log(
+      //   'Inside resolve ----',
+      //   component.props.fallback.template.strings,
+      //   managerIndex,
+      //   pendingManagers,
+      //   allPendingManagers,
+      // );
 
       /**
        * If there are no unresolved siblings, we can resolve the
@@ -183,11 +184,11 @@ class SuspenseManager {
 
       // if there are no pending managers we can delete the transition from pending manager list
       if (pendingManagers.length === 0 && transition !== PREDEFINED_TRANSITION_DEFERRED) {
-        console.log(
-          '-----deleting transition',
-          transition,
-          allPendingManagers[transition.transitionId],
-        );
+        // console.log(
+        //   '-----deleting transition',
+        //   transition,
+        //   allPendingManagers[transition.transitionId],
+        // );
         // if the transition is done with pending managers, remove the transition from pending transitions
         delete allPendingManagers[transition.transitionId];
       }
@@ -198,11 +199,11 @@ class SuspenseManager {
        * And non custom transitions are timed out by default
        */
       if (isTransitionCompleted(transition)) {
-        console.log(
-          'doing rerender',
-          transition.transitionState === 'timedOut' && Object.keys(allPendingManagers).length === 0,
-          allPendingManagers,
-        );
+        // console.log(
+        //   'doing rerender',
+        //   transition.transitionState === 'timedOut' && Object.keys(allPendingManagers).length === 0,
+        //   allPendingManagers,
+        // );
         deferredUpdates(() => reRender(component));
         /**
          * if the pendingManagers count for a transition becomes 0 it means we mark the transition as complete
@@ -229,10 +230,19 @@ class SuspenseManager {
   }
 
   suspend(suspender) {
+    const { component, transition } = this;
     this.resolved = false;
     this.suspender = suspender;
 
     this.addRootToProcess();
+
+    const {
+      root: { updateSource },
+    } = getFiberFromComponent(component);
+
+    // if (updateSource !== UPDATE_SOURCE_SUSPENSE_RESOLVE) {
+    //   transition.pendingSuspense;
+    // }
   }
 
   handleSuspense() {
@@ -244,7 +254,7 @@ class SuspenseManager {
       this.handleSuspenseList();
     } else {
       Promise.resolve(suspender).then((data) => {
-        console.log(data);
+        // console.log(data);
         this.resolve(suspender);
       });
     }
@@ -322,6 +332,56 @@ class SuspenseManager {
   }
 }
 
+export class SuspenseManager {
+  constructor(component, transition) {
+    this.component = component;
+    this.transition = transition;
+    this.suspender = null;
+    this.showFallback = true;
+  }
+
+  suspend(suspender) {
+    this.suspender = suspender;
+    // console.log('suspended times', suspender);
+    // TODO: If there is suspense we should wait for the render cycle to finish and then only resolve.
+    suspender.then(this.resolve.bind(this, suspender));
+  }
+
+  resolve = (resolvedWithSuspender, data) => {
+    const { component, transition, suspender } = this;
+
+    // console.log(resolvedWithSuspender, suspender, resolvedWithSuspender === suspender);
+
+    if (resolvedWithSuspender !== suspender) return;
+
+    // mark the suspense to be resolved and component as dirty
+    this.suspender = null;
+    component[BRAHMOS_DATA_KEY].isDirty = true;
+
+    const transitionTimedOut = transition.transitionState === TRANSITION_STATE_TIMED_OUT;
+
+    // set transition state as resolved if transition is not timed out
+    if (!transitionTimedOut) {
+      transition.transitionState = TRANSITION_STATE_RESOLVED;
+    }
+    /**
+     * If the transition is timed out or the suspense is not part of
+     * the transition pendingSuspense list we need to do normal deferred rendering
+     * Otherwise do re-render with the transition.
+     */
+    console.log(
+      'before rerender',
+      transition,
+      transitionTimedOut || !transition.pendingSuspense.includes(component),
+    );
+    if (transitionTimedOut || !transition.pendingSuspense.includes(component)) {
+      deferredUpdates(() => reRender(component));
+    } else {
+      withTransition(transition, () => reRender(component));
+    }
+  };
+}
+
 export class SuspenseList extends Component {
   render() {
     return this.props.children;
@@ -334,36 +394,71 @@ export class Suspense extends Component {
     this.suspenseManagers = {};
   }
 
+  getActiveTransition() {
+    const fiber = getFiberFromComponent(this);
+    let transition = getTransitionFromFiber(fiber);
+
+    /**
+     * If the transition is resolved and pendingSuspense does not include the instance
+     * then use the predefined deferred transition as transition
+     */
+    if (
+      transition.transitionState === TRANSITION_STATE_RESOLVED &&
+      !transition.pendingSuspense.includes(this)
+    ) {
+      transition = PREDEFINED_TRANSITION_DEFERRED;
+    }
+
+    return transition;
+  }
+
   handleSuspender(suspender) {
-    const transition = getActiveTransition(this);
+    const transition = this.getActiveTransition();
 
     const suspenseManager = getSuspenseManager(this, transition);
+
+    // console.log(
+    //   '++++++++++++',
+    //   transition.transitionState,
+    //   suspender,
+    //   this.props.fallback.template.strings,
+    // );
 
     /**
      * Mark current transition as suspended
      * only if transition is not completed or timed out.
      */
     if (!isTransitionCompleted(transition)) {
+      /**
+       * Add current suspense to pending suspense
+       */
+      if (!transition.pendingSuspense.includes(this)) {
+        transition.pendingSuspense.push(this);
+      }
+
+      // Mark the transition as suspended
       transition.transitionState = TRANSITION_STATE_SUSPENDED;
     }
 
     suspenseManager.suspend(suspender);
-
-    console.log(
-      'transition -------',
-      this.props.fallback.template.strings,
-      transition,
-      suspenseManager.rootSuspenseManager,
-    );
   }
 
   render() {
-    const transition = getActiveTransition(this);
+    const transition = this.getActiveTransition();
+    // console.log('render', transition);
 
-    const { resolved, showFallback } = getSuspenseManager(this, transition);
+    const { suspender, showFallback } = getSuspenseManager(this, transition);
+    const resolved = !suspender;
     const { fallback, children } = this.props;
 
-    console.log(fallback.template.strings, resolved, showFallback, Date.now());
+    // console.log(
+    //   'inside render',
+    //   fallback.template.strings,
+    //   transition.transitionState,
+    //   suspender,
+    //   showFallback,
+    //   Date.now(),
+    // );
     if (resolved) return children;
     else if (showFallback) return fallback;
     else return null;
@@ -378,6 +473,7 @@ export const lazy = (lazyCallback) => {
     return createElement(Component, { ...props, ref: ref }, props.children);
   });
 
+  // assign a method to lazy load to start loading during createElement call
   LazyComponent.__loadLazyComponent = () => {
     if (!componentPromise) componentPromise = lazyCallback();
   };

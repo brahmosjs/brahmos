@@ -1,5 +1,5 @@
 import { TAG_ELEMENT_NODE, ATTRIBUTE_NODE } from './brahmosNode';
-import { linkEffect, createCurrentAndLink } from './fiber';
+import { linkEffect, createAndLink } from './fiber';
 import getTagNode from './TagNode';
 import TemplateNode from './TemplateNode';
 import { loopEntries } from './utils';
@@ -21,6 +21,7 @@ export function attributeNode(attributes, ref) {
 
 export function partsToFiber(parts, values, parentFiber) {
   let refFiber = parentFiber;
+  let oldChildFiber = parentFiber.child;
 
   for (let i = 0, ln = parts.length; i < ln; i++) {
     let part = parts[i];
@@ -71,7 +72,12 @@ export function partsToFiber(parts, values, parentFiber) {
     /**
      * create a fiber from node and link it to reference fiber
      */
-    refFiber = createCurrentAndLink(node, part, refFiber, parentFiber);
+    // get the current old fiber
+
+    refFiber = createAndLink(node, part, oldChildFiber, refFiber, parentFiber);
+
+    // set the next old child to oldChildFiber
+    oldChildFiber = oldChildFiber && oldChildFiber.sibling;
   }
 }
 

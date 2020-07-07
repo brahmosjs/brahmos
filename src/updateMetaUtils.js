@@ -1,19 +1,20 @@
 import { afterCurrentStack } from './utils';
 import { PREDEFINED_TRANSITION_SYNC, getTransitionFromFiber } from './transitionUtils';
-import { BRAHMOS_DATA_KEY, UPDATE_TYPE_SYNC, UPDATE_TYPE_DEFERRED } from './configs';
+import {
+  UPDATE_SOURCE_DEFAULT,
+  UPDATE_SOURCE_TRANSITION,
+  UPDATE_SOURCE_EVENT,
+  UPDATE_SOURCE_FORCE_UPDATE,
+  UPDATE_SOURCE_UNSTABLE_DEFERRED,
+  BRAHMOS_DATA_KEY,
+  UPDATE_TYPE_SYNC,
+  UPDATE_TYPE_DEFERRED,
+} from './configs';
 
 export const deferredMeta = {
   initialized: false,
   timeout: 0,
 };
-
-/** Update source related constants */
-export const UPDATE_SOURCE_DEFAULT = 'js';
-export const UPDATE_SOURCE_EVENT = 'event';
-export const UPDATE_SOURCE_INITIAL_RENDER = 'initialRender';
-export const UPDATE_SOURCE_FORCE_UPDATE = 'forceUpdate';
-export const UPDATE_SOURCE_UNSTABLE_DEFERRED = 'deferredUpdate';
-export const UPDATE_SOURCE_TRANSITION = 'transition';
 
 let updateSource = 'js';
 let currentTransition = PREDEFINED_TRANSITION_SYNC;

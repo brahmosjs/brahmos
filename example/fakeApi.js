@@ -19,7 +19,7 @@ function wrapPromise(promise) {
   let result;
   const suspender = promise.then(
     (r) => {
-      console.log('promiseId on success ---', promiseId, r);
+      // console.log('promiseId on success ---', promiseId, r);
       status = 'success';
       result = r;
       return result;
@@ -32,7 +32,7 @@ function wrapPromise(promise) {
   return {
     read() {
       if (status === 'pending') {
-        console.log('promiseId on suspend ---', promiseId);
+        // console.log('promiseId on suspend ---', promiseId);
         throw suspender;
       } else if (status === 'error') {
         throw result;
@@ -44,10 +44,10 @@ function wrapPromise(promise) {
 }
 
 function fetchUser() {
-  console.log('fetch user...');
+  // console.log('fetch user...');
   return new Promise((resolve) => {
     setTimeout(() => {
-      console.log('fetched user');
+      // console.log('fetched user');
       resolve({
         name: 'Ringo Starr',
       });
@@ -72,10 +72,10 @@ const ringoPosts = [
 
 function fetchPosts() {
   const ringoPostsAtTheTime = ringoPosts;
-  console.log('fetch posts...');
+  // console.log('fetch posts...');
   return new Promise((resolve) => {
     setTimeout(() => {
-      console.log('fetched posts');
+      // console.log('fetched posts');
       resolve(ringoPostsAtTheTime);
     }, 2000);
   });
@@ -84,7 +84,7 @@ function fetchPosts() {
 function fetchTrivia() {
   return new Promise((resolve) => {
     setTimeout(() => {
-      console.log('fetched trivia');
+      // console.log('fetched trivia');
 
       resolve([
         {
@@ -98,6 +98,10 @@ function fetchTrivia() {
         {
           id: 3,
           text: 'Nominated for one Daytime Emmy Award, but did not win',
+        },
+        {
+          id: 4,
+          text: 'Nominated for one Daytime Emmy Award, and did win this time',
         },
       ]);
     }, 3000);

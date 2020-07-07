@@ -1,15 +1,9 @@
-import {
-  UPDATE_SOURCE_TRANSITION,
-  UPDATE_SOURCE_EVENT,
-  getCurrentUpdateSource,
-  getCurrentTransition,
-  getUpdateType,
-} from './updateMetaUtils';
+import { UPDATE_SOURCE_EVENT, UPDATE_SOURCE_TRANSITION } from './configs';
+import { getCurrentUpdateSource, getCurrentTransition, getUpdateType } from './updateMetaUtils';
 import { PREDEFINED_TRANSITION_DEFERRED } from './transitionUtils';
-import { setUpdateTime, getCurrentTreeFiber } from './fiber';
+import { setUpdateTime, getCurrentTreeFiber, getFiberFromComponent } from './fiber';
 import { doSyncProcessing, doDeferredProcessing } from './workLoop';
 import { afterCurrentStack } from './utils';
-import { BRAHMOS_DATA_KEY } from './configs';
 
 /**
  * Method to rerender a given component
@@ -18,7 +12,7 @@ import { BRAHMOS_DATA_KEY } from './configs';
  * to children of current tree.
  */
 export default function reRender(component) {
-  let { fiber } = component[BRAHMOS_DATA_KEY];
+  let fiber = getFiberFromComponent(component);
 
   const { root } = fiber;
 

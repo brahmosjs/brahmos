@@ -7,7 +7,7 @@ export default class TodoList extends Component {
 
   state = { todos: [], text: '' };
 
-  setText = e => {
+  setText = (e) => {
     this.setState({ text: e.target.value });
   };
 
@@ -21,11 +21,11 @@ export default class TodoList extends Component {
     this.setState({ todos, text: '' });
   };
 
-  componentDidMount () {
-    console.log('TODO List mounted');
+  componentDidMount() {
+    // console.log('TODO List mounted');
   }
 
-  render () {
+  render() {
     const { todos, text } = this.state;
     const { maxCount } = this.props;
     return (

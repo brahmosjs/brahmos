@@ -18,6 +18,7 @@ import { BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED } from './configs';
  */
 function updateTextNode(fiber) {
   const { part, node } = fiber;
+  // console.log('text node', node, part);
   const { parentNode, previousSibling, nextSibling } = part;
   /**
    * get the last text node
@@ -185,10 +186,14 @@ export function resetEffectList(root) {
   root.tearDownFibers = [];
   root.postCommitEffects = [];
   root.lastArrayDOM = null;
+
+  // reset after render callbacks
+  root.resetRenderCallbacks();
 }
 
 export default function effectLoop(root) {
   let { nextEffect: fiber, postCommitEffects } = root;
+  console.log('coming on effect loop', fiber);
   while (fiber) {
     const { node } = fiber;
     if (isPrimitiveNode(node)) {

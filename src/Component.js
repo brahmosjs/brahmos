@@ -1,12 +1,11 @@
 import reRender from './reRender';
 import {
-  UPDATE_SOURCE_FORCE_UPDATE,
   withUpdateSource,
   getUpdateType,
   getPendingUpdatesKey,
   getCurrentTransition,
 } from './updateMetaUtils';
-import { BRAHMOS_DATA_KEY } from './configs';
+import { UPDATE_SOURCE_FORCE_UPDATE, BRAHMOS_DATA_KEY } from './configs';
 
 export class Component {
   constructor(props) {

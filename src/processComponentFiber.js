@@ -1,4 +1,4 @@
-import { createCurrentAndLink, cloneChildrenFibers, linkEffect, fibers } from './fiber';
+import { cloneChildrenFibers, linkEffect, createAndLink } from './fiber';
 
 import functionalComponentInstance from './functionalComponentInstance';
 import { CLASS_COMPONENT_NODE } from './brahmosNode';
@@ -196,7 +196,8 @@ export default function processComponentFiber(fiber) {
   if (shouldUpdate) {
     try {
       const childNodes = componentInstance.__render(props);
-      createCurrentAndLink(childNodes, part, fiber, fiber);
+      // component will always return a single node so we can pass the previous child as current fiber
+      createAndLink(childNodes, part, fiber.child, fiber, fiber);
     } catch (err) {
       const { errorBoundary } = fiber;
       // TODO: handle error boundaries
@@ -206,7 +207,7 @@ export default function processComponentFiber(fiber) {
       if (typeof err.then === 'function') {
         const suspense = getClosestSuspense(fiber);
 
-        console.log(err, fiber.node.type, suspense.props.fallback.template.strings);
+        // console.log(err, fiber.node.type, suspense.props.fallback.template.strings);
 
         /**
          * if there is no suspense in parent hierarchy throw error that suspender can't be

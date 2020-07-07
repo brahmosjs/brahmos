@@ -5,18 +5,23 @@ export default class UnMountAtNode extends Component {
     setTimeout(() => {
       unmountComponentAtNode(document.getElementById('unmount-node'));
     }, 1000);
+  };
+
+  componentWillUnmount() {
+    // console.log('component will unmount life cycle called!!');
   }
 
-  componentWillUnmount () {
-    console.log('component will unmount life cycle called!!');
-  }
-
-  render () {
+  render() {
     return (
       <div>
-        <p> Remove a mounted Brahmos component from the DOM and clean up its event handlers and state. If no component was mounted in the container, calling this function does nothing. Returns true if a component was unmounted and false if there was no component to unmount. </p>
+        <p>
+          {' '}
+          Remove a mounted Brahmos component from the DOM and clean up its event handlers and state.
+          If no component was mounted in the container, calling this function does nothing. Returns
+          true if a component was unmounted and false if there was no component to unmount.{' '}
+        </p>
         <div>
-          <button onClick={ this.removeNode }> Remove node</button>
+          <button onClick={this.removeNode}> Remove node</button>
         </div>
       </div>
     );

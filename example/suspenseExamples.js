@@ -31,6 +31,10 @@ function HomePage({ showProfile }) {
   );
 }
 
+function Separator() {
+  return <div>Something Separator</div>;
+}
+
 function ProfilePage() {
   const [resource, setResource] = useState();
 
@@ -47,6 +51,7 @@ function ProfilePage() {
             <ProfileDetails resource={resource} />
           </>
         )}
+        {/* <Separator /> */}
         {/* <Suspense fallback={<h2>Loading timeline...</h2>}> */}
         {resource && (
           <>

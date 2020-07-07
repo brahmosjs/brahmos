@@ -58,11 +58,11 @@ export default class App extends Component {
   }
 
   componentDidUpdate() {
-    console.log(performance.now() - this.stateUpdateTime);
+    // console.log(performance.now() - this.stateUpdateTime);
   }
 
   shuffle = () => {
-    console.log('State update');
+    // console.log('State update');
     this.stateUpdateTime = performance.now();
 
     this.setState({ results: shuffle(this.state.results) });
@@ -80,7 +80,7 @@ export default class App extends Component {
         <input
           value={value}
           onChange={(e) => {
-            console.log('Event update');
+            // console.log('Event update');
 
             this.stateUpdateTime = performance.now();
             this.setState({ value: e.target.value.slice(0, 10) });

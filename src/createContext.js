@@ -1,6 +1,5 @@
 import { Component } from './circularDep';
-import { setUpdateTime } from './fiber';
-import { BRAHMOS_DATA_KEY } from './configs';
+import { setUpdateTime, getFiberFromComponent } from './fiber';
 
 let ctxId = 1;
 export function getConsumerCallback(component) {
@@ -9,7 +8,7 @@ export function getConsumerCallback(component) {
      * just set the correct update time on subscribed component,
      * and then workloop will take care of updating them.
      */
-    const { fiber } = component[BRAHMOS_DATA_KEY];
+    const fiber = getFiberFromComponent(component);
     const { updateType } = fiber.root;
 
     // update time only when context value has been changed

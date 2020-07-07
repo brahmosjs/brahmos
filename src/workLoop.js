@@ -6,18 +6,13 @@ import {
   ATTRIBUTE_NODE,
 } from './brahmosNode';
 
-import { UPDATE_TYPE_SYNC, BRAHMOS_DATA_KEY } from './configs';
+import { UPDATE_TYPE_SYNC, UPDATE_SOURCE_TRANSITION, BRAHMOS_DATA_KEY } from './configs';
 
 import processComponentFiber from './processComponentFiber';
 import { processTextFiber } from './processTextFiber';
 import processTagFiber from './processTagFiber';
 import effectLoop, { resetEffectList } from './effectLoop';
-import {
-  UPDATE_SOURCE_TRANSITION,
-  shouldPreventSchedule,
-  getPendingUpdates,
-  withUpdateSource,
-} from './updateMetaUtils';
+import { shouldPreventSchedule, getPendingUpdates, withUpdateSource } from './updateMetaUtils';
 import {
   TRANSITION_STATE_SUSPENDED,
   getFirstTransitionToProcess,
@@ -67,7 +62,7 @@ function fiberHasUnprocessedUpdates(fiber) {
  * Function to handle pending suspense managers, if transition is in suspended state
  */
 function handlePendingSuspenseManager(root) {
-  console.log('checking for pending managers...');
+  // console.log('checking for pending managers...');
   const { pendingSuspenseMangers } = root;
   window.pendingSuspenseMangers = pendingSuspenseMangers;
   loopEntries(pendingSuspenseMangers, (transitionId, pendingMangers) => {
@@ -191,7 +186,10 @@ export default function workLoop(fiber, topFiber, onComplete) {
       }
     }
 
-    console.log(currentTransition, currentTransition && currentTransition.transitionState);
+    // console.log(currentTransition, currentTransition && currentTransition.transitionState);
+
+    // call all the render callbacks
+    root.callRenderCallbacks();
 
     if (currentTransition) {
       // if the transition is suspended and there are pending suspense managers call this managers
@@ -226,9 +224,8 @@ export function doDeferredProcessing(root) {
   // reset the effect list before starting new one
   resetEffectList(root);
 
-  // if the update source is transition set the current transition
-  root.currentTransition =
-    root.updateSource === UPDATE_SOURCE_TRANSITION ? pendingTransition : null;
+  // set the pending transition as current transition
+  root.currentTransition = pendingTransition;
 
   root.wip = cloneCurrentFiber(root.current, root.wip, root, root);
   workLoop(root.wip, root, () => {

@@ -1,5 +1,5 @@
 import { getUniqueId } from './utils';
-import { UPDATE_TYPE_DEFERRED } from './configs';
+import { UPDATE_SOURCE_TRANSITION, UPDATE_TYPE_DEFERRED } from './configs';
 
 export const TRANSITION_STATE_INITIAL = 'initial';
 export const TRANSITION_STATE_START = 'start';
@@ -54,8 +54,9 @@ export function setTransitionComplete(transition) {
      * so that isPending and transition changes can be shown on one commit phase
      */
     if (transition.isPending) {
+      console.log('transition is pending');
       transition.clearTimeout();
-      transition.updatePendingState(false, false);
+      transition.updatePendingState(false, UPDATE_SOURCE_TRANSITION);
     } else {
       transition.transitionState = TRANSITION_STATE_COMPLETED;
     }
@@ -66,8 +67,8 @@ export function setTransitionComplete(transition) {
  * get current transition id from the current rendering
  */
 export function getTransitionFromFiber(fiber) {
-  const { currentTransition, updateType } = fiber.root;
-  return updateType === UPDATE_TYPE_DEFERRED ? currentTransition : PREDEFINED_TRANSITION_SYNC;
+  // if there is currentTransition return that or else return SYNC transition
+  return fiber.root.currentTransition || PREDEFINED_TRANSITION_SYNC;
 }
 
 /**

@@ -1,11 +1,6 @@
 import { getNodeName } from './utils';
-import {
-  UPDATE_SOURCE_EVENT,
-  withUpdateSource,
-  setUpdateSource,
-  resetUpdateSource,
-} from './updateMetaUtils';
-import { RENAMED_EVENTS } from './configs';
+import { withUpdateSource } from './updateMetaUtils';
+import { RENAMED_EVENTS, UPDATE_SOURCE_EVENT } from './configs';
 
 export function getEffectiveEventName(eventName, node) {
   const nodeName = getNodeName(node);

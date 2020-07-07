@@ -33,3 +33,10 @@ export const BRAHMOS_DATA_KEY = '__brahmosData';
 /** update type related constants */
 export const UPDATE_TYPE_SYNC = 'sync';
 export const UPDATE_TYPE_DEFERRED = 'deferred';
+
+/** Update source related constants */
+export const UPDATE_SOURCE_DEFAULT = 'js';
+export const UPDATE_SOURCE_EVENT = 'event';
+export const UPDATE_SOURCE_FORCE_UPDATE = 'forceUpdate';
+export const UPDATE_SOURCE_UNSTABLE_DEFERRED = 'deferredUpdate';
+export const UPDATE_SOURCE_TRANSITION = 'transition';

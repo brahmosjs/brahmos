@@ -1,5 +1,5 @@
 import { isComponentNode, isTagNode, isPrimitiveNode, ATTRIBUTE_NODE } from './brahmosNode';
-import { UPDATE_TYPE_DEFERRED, UPDATE_TYPE_SYNC } from './configs';
+import { UPDATE_TYPE_DEFERRED, UPDATE_TYPE_SYNC, BRAHMOS_DATA_KEY } from './configs';
 
 export const fibers = {
   workInProgress: null,
@@ -117,14 +117,15 @@ export function cloneChildrenFibers(fiber) {
      */
     const { alternate } = child;
 
-    cloneCurrentFiber(child, alternate, lastChild || fiber, fiber);
+    lastChild = cloneCurrentFiber(child, alternate, lastChild || fiber, fiber);
 
-    lastChild = child;
     child = child.sibling;
   }
 }
 
 export function createHostFiber(domNode) {
+  let afterRenderCallbacks = [];
+
   const rootFiber = {
     domNode,
     idleCallback: null,
@@ -145,6 +146,19 @@ export function createHostFiber(domNode) {
     lastCompleteTime: 0,
     deferredUpdateTime: 0,
     updateTime: 0,
+
+    /** After render utils */
+    afterRender(cb) {
+      afterRenderCallbacks.push(cb);
+    },
+    callRenderCallbacks() {
+      for (let i = 0, ln = afterRenderCallbacks.length; i < ln; i++) {
+        afterRenderCallbacks[i]();
+      }
+    },
+    resetRenderCallbacks() {
+      afterRenderCallbacks = [];
+    },
   };
 
   // check if this has any performance hit
@@ -198,6 +212,7 @@ export function createAndLink(node, part, currentFiber, refFiber, parentFiber) {
   const { root } = refFiber;
   const updateTimeKey = getUpdateTimeKey(root.updateType);
   let fiber;
+  if (currentFiber && currentFiber.node === undefined) console.trace();
   if (currentFiber && currentFiber.node && node && shouldClone(node, currentFiber.node)) {
     fiber = cloneCurrentFiber(currentFiber, currentFiber.alternate, refFiber, parentFiber);
 
@@ -224,11 +239,6 @@ export function createAndLink(node, part, currentFiber, refFiber, parentFiber) {
   fiber.errorBoundary = parentFiber.errorBoundary;
 
   return fiber;
-}
-
-export function createCurrentAndLink(node, part, refFiber, parentFiber) {
-  const currentFiber = getNextChildFiber(refFiber, parentFiber);
-  return createAndLink(node, part, currentFiber, refFiber, parentFiber);
 }
 
 function shouldClone(newNode, oldNode) {
@@ -294,4 +304,9 @@ export function getNextFiber(fiber, topFiber, lastCompleteTime, updateTimeKey) {
 
   // return fiber's sibling
   return sibling;
+}
+
+/** Function to get fiber from the component */
+export function getFiberFromComponent(component) {
+  return component[BRAHMOS_DATA_KEY].fiber;
 }
