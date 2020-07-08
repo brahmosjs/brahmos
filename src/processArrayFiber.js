@@ -34,9 +34,6 @@ export default function processArrayFiber(fiber) {
     const currentFiber = childKeyMap.get(key);
 
     if (currentFiber) {
-      // reset the sibling of current fiber as sibling has to be decided by loop on node
-      currentFiber.sibling = null;
-
       // delete the currentFiber from map, so we can use map to remove pending elements
       childKeyMap.delete(key);
     }

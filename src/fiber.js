@@ -71,10 +71,13 @@ export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
   }
 
   /**
-   * add the current child and sibling to wipFiber
+   * Add the current child to wipFiber.
+   * This is required so that new fiber is pointing to the existing child fiber
+   * Note: We don't need to copy sibling as it will be set by loop, from where ever
+   * the cloneMethod is called.
+   * So make sure clone method is not called for only a single child if there multiple child.
    * */
   wipFiber.child = child;
-  wipFiber.sibling = sibling;
 
   /**
    * We should add deferred update times from current fiber.
