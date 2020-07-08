@@ -6,15 +6,14 @@ import {
   ATTRIBUTE_NODE,
 } from './brahmosNode';
 
-import { UPDATE_TYPE_SYNC, UPDATE_SOURCE_TRANSITION, BRAHMOS_DATA_KEY } from './configs';
+import { UPDATE_SOURCE_TRANSITION, BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED } from './configs';
 
 import processComponentFiber from './processComponentFiber';
 import { processTextFiber } from './processTextFiber';
 import processTagFiber from './processTagFiber';
-import effectLoop, { resetEffectList } from './effectLoop';
+import effectLoop, { resetEffectList, removeTransitionFromRoot } from './effectLoop';
 import { shouldPreventSchedule, getPendingUpdates, withUpdateSource } from './updateMetaUtils';
 import {
-  TRANSITION_STATE_SUSPENDED,
   getFirstTransitionToProcess,
   setTransitionComplete,
   isTransitionCompleted,
@@ -112,13 +111,21 @@ export function processFiber(fiber) {
 }
 
 function shouldCommit(root) {
+  // if the update source is transition check if transition is completed
   if (root.updateSource === UPDATE_SOURCE_TRANSITION) {
-    // all sync changes should be committed before committing transition
+    /**
+     * all sync changes should be committed before committing transition,
+     * for a transition to be committed it should have any pending commits
+     * if not no need to run the commit phase
+     */
     return (
-      root.lastCompleteTime >= root.updateTime && isTransitionCompleted(root.currentTransition)
+      root.lastCompleteTime >= root.updateTime &&
+      root.nextEffect &&
+      isTransitionCompleted(root.currentTransition)
     );
   }
 
+  // otherwise return true for sync commits
   return true;
 }
 
@@ -149,7 +156,7 @@ export default function workLoop(fiber, topFiber, onComplete) {
   const { root } = fiber;
   const { updateType, currentTransition } = root;
   const lastCompleteTimeKey =
-    updateType === 'deferred' ? 'lastDeferredCompleteTime' : 'lastCompleteTime';
+    updateType === UPDATE_TYPE_DEFERRED ? 'lastDeferredCompleteTime' : 'lastCompleteTime';
   const updateTimeKey = getUpdateTimeKey(updateType);
   const lastCompleteTime = root[lastCompleteTimeKey];
 
@@ -197,6 +204,14 @@ export default function workLoop(fiber, topFiber, onComplete) {
 
       // set transition complete if it is not on suspended or timed out state
       setTransitionComplete(currentTransition);
+
+      /**
+       * if transition is completed and it does not have any effect to commit, we should remove the
+       * transition from pending transition
+       */
+      if (!root.nextEffect && isTransitionCompleted(currentTransition)) {
+        removeTransitionFromRoot(root);
+      }
     }
 
     if (shouldCommit(root)) {
@@ -217,7 +232,13 @@ export function doDeferredProcessing(root) {
   // if there is no deferred work or pending transition return
   const pendingTransition = getFirstTransitionToProcess(root);
 
-  if (root.lastDeferredCompleteTime >= root.deferredUpdateTime || !pendingTransition) return;
+  console.log(
+    'deferred reset',
+    pendingTransition,
+    root.lastDeferredCompleteTime >= root.deferredUpdateTime || !pendingTransition,
+  );
+
+  if (root.lastDeferredCompleteTime >= root.deferredUpdateTime && !pendingTransition) return;
 
   root.updateType = 'deferred';
 
@@ -245,6 +266,7 @@ export function doSyncProcessing(fiber) {
   root.currentTransition = null;
 
   // reset the effect list before starting new one
+  console.log('sync reset');
   resetEffectList(root);
 
   workLoop(fiber, parent);

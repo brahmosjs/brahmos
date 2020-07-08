@@ -181,6 +181,7 @@ function useStateBase(initialState, getNewState) {
           },
         };
         component[BRAHMOS_DATA_KEY][pendingUpdatesKey].push(stateMeta);
+        console.log('rerender if required', pendingUpdatesKey);
         reRenderComponentIfRequired(component, state, lastState);
       },
     ];
@@ -387,12 +388,15 @@ export function useTransition({ timeoutMs }) {
         },
         startTransition(cb) {
           const initialUpdateSource = getCurrentUpdateSource();
-          // console.log('started transition. *************');
+          console.log('started transition. *************');
           const { root } = getFiberFromComponent(component);
 
           // reset the transitionState and pending suspense
           hook.transitionState = TRANSITION_STATE_START;
           hook.pendingSuspense = [];
+
+          // clear pending timeout
+          hook.clearTimeout();
 
           // set the transitionId globally so that state updates can get the transition id
           withTransition(hook, cb);

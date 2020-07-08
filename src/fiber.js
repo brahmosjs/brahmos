@@ -59,7 +59,7 @@ function linkFiber(fiber, refFiber, parentFiber) {
 }
 
 export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
-  const { node, part, child, sibling, deferredUpdateTime } = fiber;
+  const { node, part, child, deferredUpdateTime } = fiber;
 
   if (!wipFiber) {
     wipFiber = createFiber(fiber.root, node, part);
@@ -68,6 +68,13 @@ export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
   } else {
     wipFiber.node = node;
     wipFiber.part = part;
+
+    /**
+     * reset the nextEffect prop from the wipFiber, when we are reusing wipFiber.
+     * alternate might have nextEffect prop intact if the wip tree was process but
+     * wasn't committed
+     */
+    wipFiber.nextEffect = null;
   }
 
   /**
@@ -215,7 +222,6 @@ export function createAndLink(node, part, currentFiber, refFiber, parentFiber) {
   const { root } = refFiber;
   const updateTimeKey = getUpdateTimeKey(root.updateType);
   let fiber;
-  if (currentFiber && currentFiber.node === undefined) console.trace();
   if (currentFiber && currentFiber.node && node && shouldClone(node, currentFiber.node)) {
     fiber = cloneCurrentFiber(currentFiber, currentFiber.alternate, refFiber, parentFiber);
 

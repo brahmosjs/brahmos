@@ -94,7 +94,7 @@ function updateTagNode(fiber) {
 
 function handleComponentEffect(fiber) {
   const { node, root } = fiber;
-  const { updateType, pendingTransitions } = root;
+  const { updateType } = root;
   const { componentInstance, nodeType } = node;
   const brahmosData = componentInstance[BRAHMOS_DATA_KEY];
 
@@ -107,22 +107,15 @@ function handleComponentEffect(fiber) {
     ]);
   }
 
-  // remove all the transitions with current transition id as its already flushed
-  const currentTransition = getTransitionFromFiber(brahmosData.fiber);
-  const currentTransitionId = currentTransition.transitionId;
+  // remove all the pending updates associated with current transition
+  const { transitionId } = getTransitionFromFiber(brahmosData.fiber);
   const pendingUpdatesKey = getPendingUpdatesKey(updateType);
   brahmosData[pendingUpdatesKey] = brahmosData[pendingUpdatesKey].filter(
-    (stateMeta) => stateMeta.transitionId !== currentTransitionId,
+    (stateMeta) => stateMeta.transitionId !== transitionId,
   );
 
   // reset isDirty flag
   brahmosData.isDirty = false;
-
-  // remove the currentTransition from the pending transition
-  const currentTransitionIndex = pendingTransitions.indexOf(currentTransition);
-  if (currentTransitionIndex !== -1) {
-    pendingTransitions.splice(currentTransitionIndex, 1);
-  }
 
   root.postCommitEffects.push(fiber);
 }
@@ -191,9 +184,17 @@ export function resetEffectList(root) {
   root.resetRenderCallbacks();
 }
 
+export function removeTransitionFromRoot(root) {
+  const { currentTransition, pendingTransitions } = root;
+  const currentTransitionIndex = pendingTransitions.indexOf(currentTransition);
+  if (currentTransitionIndex !== -1) {
+    pendingTransitions.splice(currentTransitionIndex, 1);
+  }
+}
+
 export default function effectLoop(root) {
   let { nextEffect: fiber, postCommitEffects } = root;
-  console.log('coming on effect loop', fiber);
+  console.log('coming on effect loop', fiber, root.updateType, postCommitEffects);
   while (fiber) {
     const { node } = fiber;
     if (isPrimitiveNode(node)) {
@@ -219,6 +220,9 @@ export default function effectLoop(root) {
   for (let i = postCommitEffects.length - 1; i >= 0; i--) {
     handleComponentPostCommitEffect(postCommitEffects[i]);
   }
+
+  // remove the current transition from pending transition
+  removeTransitionFromRoot(root);
 
   // once all effect has been processed update root's last effect node and reset lastArrayDOM and postCommitEffects
   resetEffectList(root);

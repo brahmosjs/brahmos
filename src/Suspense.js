@@ -350,7 +350,12 @@ export class SuspenseManager {
   resolve = (resolvedWithSuspender, data) => {
     const { component, transition, suspender } = this;
 
-    // console.log(resolvedWithSuspender, suspender, resolvedWithSuspender === suspender);
+    console.log(
+      'inside resolve',
+      resolvedWithSuspender,
+      suspender,
+      resolvedWithSuspender === suspender,
+    );
 
     if (resolvedWithSuspender !== suspender) return;
 
@@ -373,6 +378,7 @@ export class SuspenseManager {
       'before rerender',
       transition,
       transitionTimedOut || !transition.pendingSuspense.includes(component),
+      data,
     );
     if (transitionTimedOut || !transition.pendingSuspense.includes(component)) {
       deferredUpdates(() => reRender(component));
@@ -417,12 +423,12 @@ export class Suspense extends Component {
 
     const suspenseManager = getSuspenseManager(this, transition);
 
-    // console.log(
-    //   '++++++++++++',
-    //   transition.transitionState,
-    //   suspender,
-    //   this.props.fallback.template.strings,
-    // );
+    console.log(
+      '++++++++++++',
+      transition.transitionState,
+      suspender,
+      this.props.fallback.template.strings,
+    );
 
     /**
      * Mark current transition as suspended
