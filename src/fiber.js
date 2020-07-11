@@ -1,5 +1,5 @@
 import { isComponentNode, isTagNode, isPrimitiveNode, ATTRIBUTE_NODE } from './brahmosNode';
-import { UPDATE_TYPE_DEFERRED, UPDATE_TYPE_SYNC, BRAHMOS_DATA_KEY } from './configs';
+import { UPDATE_TYPE_DEFERRED, BRAHMOS_DATA_KEY } from './configs';
 
 export const fibers = {
   workInProgress: null,
@@ -149,7 +149,6 @@ export function createHostFiber(domNode) {
     tearDownFibers: [],
     postCommitEffects: [],
     batchUpdates: {},
-    pendingSuspenseMangers: {},
     nextEffect: null,
     alternate: null,
     lastDeferredCompleteTime: 0,
@@ -159,7 +158,10 @@ export function createHostFiber(domNode) {
 
     /** After render utils */
     afterRender(cb) {
-      afterRenderCallbacks.push(cb);
+      // if the callback is not already added add the callback
+      if (!afterRenderCallbacks.includes(cb)) {
+        afterRenderCallbacks.push(cb);
+      }
     },
     callRenderCallbacks() {
       for (let i = 0, ln = afterRenderCallbacks.length; i < ln; i++) {

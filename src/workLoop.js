@@ -57,20 +57,6 @@ function fiberHasUnprocessedUpdates(fiber) {
   );
 }
 
-/**
- * Function to handle pending suspense managers, if transition is in suspended state
- */
-function handlePendingSuspenseManager(root) {
-  // console.log('checking for pending managers...');
-  const { pendingSuspenseMangers } = root;
-  window.pendingSuspenseMangers = pendingSuspenseMangers;
-  loopEntries(pendingSuspenseMangers, (transitionId, pendingMangers) => {
-    pendingMangers.forEach((manager) => {
-      manager.handleSuspense();
-    });
-  });
-}
-
 export function processFiber(fiber) {
   const { node, root, alternate } = fiber;
 
@@ -199,9 +185,6 @@ export default function workLoop(fiber, topFiber, onComplete) {
     root.callRenderCallbacks();
 
     if (currentTransition) {
-      // if the transition is suspended and there are pending suspense managers call this managers
-      handlePendingSuspenseManager(root);
-
       // set transition complete if it is not on suspended or timed out state
       setTransitionComplete(currentTransition);
 
@@ -238,7 +221,7 @@ export function doDeferredProcessing(root) {
     root.lastDeferredCompleteTime >= root.deferredUpdateTime || !pendingTransition,
   );
 
-  if (root.lastDeferredCompleteTime >= root.deferredUpdateTime && !pendingTransition) return;
+  if (!pendingTransition) return;
 
   root.updateType = 'deferred';
 
