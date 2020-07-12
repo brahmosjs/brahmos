@@ -63,7 +63,7 @@ function ProfilePage() {
           )}
         </Suspense>
       </Suspense>
-      <Suspense fallback={<h2>Loading timeline...</h2>}>
+      {/* <Suspense fallback={<h2>Loading timeline...</h2>}>
         {resource && (
           <>
             <ProfileTimeline resource={resource} />
@@ -72,7 +72,7 @@ function ProfilePage() {
             </Suspense>
           </>
         )}
-      </Suspense>
+      </Suspense> */}
     </>
   );
 }
@@ -113,9 +113,11 @@ function Button({ children, onClick }) {
   });
 
   function handleClick() {
-    startTransition(() => {
-      onClick();
-    });
+    onClick();
+
+    // startTransition(() => {
+    //   onClick();
+    // });
   }
 
   const spinner = (

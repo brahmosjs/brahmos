@@ -289,10 +289,7 @@ function getSuspenseManager(component, transition) {
 
   let suspenseManager = suspenseManagers[transitionId];
   if (!suspenseManager) {
-    suspenseManager = suspenseManagers[transitionId] = new SuspenseManagerOld(
-      component,
-      transition,
-    );
+    suspenseManager = suspenseManagers[transitionId] = new SuspenseManager(component, transition);
   }
 
   return suspenseManager;
@@ -320,6 +317,7 @@ export class SuspenseManager {
   resolveHandler(resolvedWithSuspender, data) {
     const { component, transition, suspender } = this;
     const pendingSuspense = transition.pendingSuspense || [];
+    console.log(data, resolvedWithSuspender !== suspender);
 
     if (resolvedWithSuspender !== suspender) return;
 
@@ -495,7 +493,8 @@ export class Suspense extends Component {
     //   Date.now(),
     // );
     if (resolved) return children;
-    else if (suspenseManager.shouldShowFallback()) return fallback;
+    else if (suspenseManager.showFallback) return fallback;
+    // else if (suspenseManager.shouldShowFallback()) return fallback;
     else return null;
   }
 }

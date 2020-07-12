@@ -1,5 +1,5 @@
 import { TAG_ELEMENT_NODE, ATTRIBUTE_NODE } from './brahmosNode';
-import { linkEffect, createAndLink } from './fiber';
+import { linkEffect, createAndLink, cloneChildrenFibers } from './fiber';
 import getTagNode from './TagNode';
 import TemplateNode from './TemplateNode';
 import { loopEntries } from './utils';
@@ -73,7 +73,6 @@ export function partsToFiber(parts, values, parentFiber) {
      * create a fiber from node and link it to reference fiber
      */
     // get the current old fiber
-
     refFiber = createAndLink(node, part, oldChildFiber, refFiber, parentFiber);
 
     // set the next old child to oldChildFiber
@@ -85,8 +84,8 @@ export function partsToFiber(parts, values, parentFiber) {
  * Update tagged template node
  */
 export default function processTagFiber(fiber) {
+  let { node } = fiber;
   const {
-    node,
     part,
     alternate,
     parent: { context },
@@ -102,6 +101,16 @@ export default function processTagFiber(fiber) {
 
   // store isSvgPart info back to fiber, this will be forwarded to children
   fiber.isSvgPart = isSvgPart;
+
+  /**
+   * if the node already has templateNode, and node reference is different from oldNode,
+   * it means the node is already being used somewhere, so duplicate the node
+   */
+  if (node.templateNode && node !== oldNode) {
+    node = { ...node, templateNode: null };
+    // store the new node back to fiber
+    fiber.node = node;
+  }
 
   // if new node and old node share same template we can reuse the templateNode instance
   if (oldNode && oldNode.template === node.template) {
@@ -134,11 +143,14 @@ export default function processTagFiber(fiber) {
 
   /**
    * Associate parts to fiber.
-   * No need to perform this of node and oldNode are same
+   * No need to perform this if node and oldNode are same
    * This will only happen when we are just doing position change
+   * In which case just clone the children fibers
    */
   if (node !== oldNode) {
     partsToFiber(templateNode.parts, values, fiber);
+  } else {
+    cloneChildrenFibers(fiber);
   }
 
   // mark this node to be updated or to get appended as a effect

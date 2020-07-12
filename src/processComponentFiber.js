@@ -1,4 +1,4 @@
-import { cloneChildrenFibers, linkEffect, createAndLink } from './fiber';
+import { cloneChildrenFibers, linkEffect, createAndLink, resetToCommittedChild } from './fiber';
 
 import functionalComponentInstance from './functionalComponentInstance';
 import { CLASS_COMPONENT_NODE } from './brahmosNode';
@@ -9,7 +9,7 @@ import { callLifeCycle } from './utils';
 import { getPendingUpdates } from './updateMetaUtils';
 
 import shallowEqual from './helpers/shallowEqual';
-import { BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED } from './configs';
+import { BRAHMOS_DATA_KEY } from './configs';
 
 function getCurrentContext(fiber, isReused) {
   const {
@@ -50,30 +50,24 @@ function getUpdatedState(prevState, updates) {
 }
 
 // method to reset work loop to a fiber of given component
-function resetLoopToFiber(component) {
+function resetLoopToComponentsFiber(component) {
   const brahmosData = component[BRAHMOS_DATA_KEY];
   const { fiber } = brahmosData;
-  const { root, alternate } = fiber;
-  const { updateType } = root;
+  const { root } = fiber;
 
   // mark component as dirty, so it can be rendered again
   brahmosData.isDirty = true;
 
-  /**
-   * if updateType is deferred we should reset the child to current tree's child,
-   * so that the work loop in wip tree should behave as it should without reset.
-   */
-  if (updateType === UPDATE_TYPE_DEFERRED) {
-    fiber.child = alternate && alternate.child;
-  }
-
+  // set the alternate fiber as retry fiber, as
   root.retryFiber = fiber;
 }
 
 export default function processComponentFiber(fiber) {
-  const { node, part, alternate, root } = fiber;
+  const { node } = fiber;
+  const { part, alternate, root } = fiber;
   const { updateType } = root;
   const { type: Component, nodeType, props = {}, ref } = node;
+  const oldNode = alternate && alternate.node;
 
   const isFirstRender = false;
   const isReused = false;
@@ -81,16 +75,31 @@ export default function processComponentFiber(fiber) {
   const isClassComponent = nodeType === CLASS_COMPONENT_NODE;
 
   /**
-   * If an alternate fiber is present it means the parent is rendered,
+   * if the node already has componentInstance, and node reference is different from oldNode,
+   * it means the node is already being used somewhere, so duplicate the node
+   */
+  // if (node.componentInstance && node !== oldNode) {
+  //   node = { ...node, componentInstance: null };
+  //   // store the new node back to the fiber
+  //   fiber.node = node;
+  // }
+
+  /**
+   * If oldNode is present it means the parent is rendered,
    * but the fiber can reuse the previous instance
    *
    * Note: alternate fiber may not be present if parent never re-renders, but in which case
    * node will already have componentInstance and the processing of fiber is happening due to
    * state change and not parent render.
    */
-  if (alternate) {
-    node.componentInstance = alternate.node.componentInstance;
+  if (oldNode) {
+    node.componentInstance = oldNode.componentInstance;
   }
+
+  /**
+   * Reset the fiber children to a committed child
+   */
+  resetToCommittedChild(fiber);
 
   /** If Component instance is not present on node create a new instance */
   let { componentInstance } = node;
@@ -196,6 +205,7 @@ export default function processComponentFiber(fiber) {
   if (shouldUpdate) {
     try {
       const childNodes = componentInstance.__render(props);
+
       // component will always return a single node so we can pass the previous child as current fiber
       createAndLink(childNodes, part, fiber.child, fiber, fiber);
     } catch (err) {
@@ -221,14 +231,14 @@ export default function processComponentFiber(fiber) {
         suspense.handleSuspender(err);
 
         // reset the work loop to suspense fiber
-        resetLoopToFiber(suspense);
+        resetLoopToComponentsFiber(suspense);
 
         // else if there is any error boundary handle the error in error boundary
       } else if (errorBoundary) {
         errorBoundary.__handleError(err);
 
         // reset the work loop to errorBoundary fiber
-        resetLoopToFiber(errorBoundary);
+        resetLoopToComponentsFiber(errorBoundary);
 
         // else throw error
       } else {

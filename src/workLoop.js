@@ -23,6 +23,7 @@ import {
   getNextFiber,
   cloneChildrenFibers,
   getUpdateTimeKey,
+  getLastCompleteTimeKey,
   cloneCurrentFiber,
 } from './fiber';
 import processArrayFiber from './processArrayFiber';
@@ -101,7 +102,7 @@ function shouldCommit(root) {
   if (root.updateSource === UPDATE_SOURCE_TRANSITION) {
     /**
      * all sync changes should be committed before committing transition,
-     * for a transition to be committed it should have any pending commits
+     * for a transition to be committed it shouldn't have any pending commits
      * if not no need to run the commit phase
      */
     return (
@@ -120,8 +121,7 @@ function shouldCommit(root) {
  * It will also take care of tearing the old nodes down
  */
 function commitChanges(root, onComplete) {
-  const lastCompleteTimeKey =
-    root.updateType === 'deferred' ? 'lastDeferredCompleteTime' : 'lastCompleteTime';
+  const lastCompleteTimeKey = getLastCompleteTimeKey(root.updateType);
 
   // tearDown old nodes
   tearDown(root);
@@ -141,8 +141,7 @@ function commitChanges(root, onComplete) {
 export default function workLoop(fiber, topFiber, onComplete) {
   const { root } = fiber;
   const { updateType, currentTransition } = root;
-  const lastCompleteTimeKey =
-    updateType === UPDATE_TYPE_DEFERRED ? 'lastDeferredCompleteTime' : 'lastCompleteTime';
+  const lastCompleteTimeKey = getLastCompleteTimeKey(updateType);
   const updateTimeKey = getUpdateTimeKey(updateType);
   const lastCompleteTime = root[lastCompleteTimeKey];
 
@@ -237,6 +236,8 @@ export function doDeferredProcessing(root) {
     const { current } = root;
 
     root.current = root.wip;
+    root.lastCompleteTime = root.lastDeferredCompleteTime;
+
     root.wip = current;
   });
 }

@@ -17,6 +17,10 @@ export function getCurrentFiber() {
   return currentFiber;
 }
 
+export function getLastCompleteTimeKey(type) {
+  return type === UPDATE_TYPE_DEFERRED ? 'lastDeferredCompleteTime' : 'lastCompleteTime';
+}
+
 export function getUpdateTimeKey(type) {
   return type === UPDATE_TYPE_DEFERRED ? 'deferredUpdateTime' : 'updateTime';
 }
@@ -75,6 +79,10 @@ export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
      * wasn't committed
      */
     wipFiber.nextEffect = null;
+    /**
+     * As the cloned node is treated as new fiber, reset the createdAt time
+     */
+    wipFiber.createdAt = performance.now();
   }
 
   /**
@@ -88,7 +96,7 @@ export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
 
   /**
    * We should add deferred update times from current fiber.
-   * We don't need to add updateTime as cloneCurrentFiber called only
+   * We don't need to add updateTime as in sync mode cloneCurrentFiber called only
    * when a new fiber is created, in which case it will get the time from its parent
    * and the other case is when we clone current to deferred tree,
    * in which case we should add the deferredUpdateTime from the current fiber.
@@ -110,7 +118,6 @@ export function cloneChildrenFibers(fiber) {
 
   /**
    * No need to clone children if the updateType is sync,
-   * also do not clone children if the children are already newer fiber than the parent
    */
   if (root.updateType === 'sync') {
     return;
@@ -123,7 +130,7 @@ export function cloneChildrenFibers(fiber) {
      * use the alternate node as wip node, as its no longer used by current node,
      * so we can reuse the object instead of creating a new one.
      * If it doesn't have any alternate node it means this is a new node,
-     * so need to clone them again
+     * so need to create them again
      */
     const { alternate } = child;
 
@@ -195,6 +202,7 @@ export function createFiber(root, node, part) {
     deferredUpdateTime: 0,
     updateTime: 0,
     processedTime: 0, // processedTime 0 signifies it needs processing
+    createdAt: performance.now(),
   };
 }
 
@@ -321,3 +329,30 @@ export function getNextFiber(fiber, topFiber, lastCompleteTime, updateTimeKey) {
 export function getFiberFromComponent(component) {
   return component[BRAHMOS_DATA_KEY].fiber;
 }
+
+/**
+ * Function to reset child to committed fiber.
+ * This is a usual case when we interrupt workLoop, the fiber might be pointing to
+ * the wrong uncommitted fiber, in which case we reset it to the alternate
+ * (which points to the committed one)
+ */
+export function resetToCommittedChild(fiber) {
+  const { root, child, alternate } = fiber;
+  /**
+   * if the child fiber is created but not committed yet,
+   * reset the child fiber to alternate child
+   */
+  if (child && child.createdAt > root.lastCompleteTime) {
+    fiber.child = alternate && alternate.child;
+  }
+}
+
+// NOTE: Delete this function
+window.getBrokenLink = (fiber) => {
+  const current = fiber.root.current;
+  fiber = current;
+  while (fiber) {
+    if (fiber.child && fiber.child.parent !== fiber) return fiber;
+    fiber = fiber.child;
+  }
+};
