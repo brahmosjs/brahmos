@@ -189,7 +189,6 @@ export function removeTransitionFromRoot(root) {
 
 export default function effectLoop(root) {
   let { nextEffect: fiber, postCommitEffects } = root;
-  console.log('coming on effect loop', fiber, root.updateType, postCommitEffects);
   while (fiber) {
     const { node } = fiber;
     if (isPrimitiveNode(node)) {

@@ -52,7 +52,6 @@ export function getClosestSuspenseListManager(manager) {
 // function getActiveTransition(component) {
 //   const fiber = getFiberFromComponent(component);
 //   const currentTransition = getTransitionFromFiber(fiber);
-//   // console.log('+++++++++++++', currentTransition, isTransitionCompleted(currentTransition));
 //   return isTransitionResolved(currentTransition)
 //     ? PREDEFINED_TRANSITION_DEFERRED
 //     : currentTransition;
@@ -110,7 +109,6 @@ class SuspenseManagerOld {
       this.handleSuspenseList();
     } else {
       Promise.resolve(suspender).then((data) => {
-        // console.log(data);
         this.resolve(suspender);
       });
     }
@@ -307,7 +305,6 @@ export class SuspenseManager {
     const { root } = getFiberFromComponent(this.component);
 
     this.suspender = suspender;
-    // console.log('suspended times', suspender);
     // TODO: If there is suspense we should wait for the render cycle to finish and then only resolve.
     root.afterRender(() => {
       suspender.then(this.resolveHandler.bind(this, suspender));
@@ -317,7 +314,6 @@ export class SuspenseManager {
   resolveHandler(resolvedWithSuspender, data) {
     const { component, transition, suspender } = this;
     const pendingSuspense = transition.pendingSuspense || [];
-    console.log(data, resolvedWithSuspender !== suspender);
 
     if (resolvedWithSuspender !== suspender) return;
 
@@ -451,13 +447,6 @@ export class Suspense extends Component {
 
     const suspenseManager = getSuspenseManager(this);
 
-    console.log(
-      '++++++++++++',
-      transition.transitionState,
-      suspender,
-      this.props.fallback.template.strings,
-    );
-
     /**
      * Mark current transition as suspended
      * only if transition is not completed or timed out.
@@ -478,20 +467,11 @@ export class Suspense extends Component {
   }
 
   render() {
-    // console.log('render', transition);
     const suspenseManager = getSuspenseManager(this);
 
     const resolved = !suspenseManager.suspender;
     const { fallback, children } = this.props;
 
-    // console.log(
-    //   'inside render',
-    //   fallback.template.strings,
-    //   transition.transitionState,
-    //   suspender,
-    //   showFallback,
-    //   Date.now(),
-    // );
     if (resolved) return children;
     else if (suspenseManager.showFallback) return fallback;
     // else if (suspenseManager.shouldShowFallback()) return fallback;

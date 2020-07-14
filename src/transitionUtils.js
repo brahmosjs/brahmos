@@ -54,7 +54,6 @@ export function setTransitionComplete(transition) {
      * so that isPending and transition changes can be shown on one commit phase
      */
     if (transition.isPending) {
-      console.log('transition is pending');
       transition.clearTimeout();
       transition.updatePendingState(false, UPDATE_SOURCE_TRANSITION);
     } else {

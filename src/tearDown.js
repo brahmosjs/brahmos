@@ -8,6 +8,11 @@ import { cleanEffects } from './hooks';
 import { BRAHMOS_DATA_KEY } from './configs';
 
 function tearDownFiber(fiber) {
+  const { node, nodeInstance } = fiber;
+
+  // bail out shouldTearDown is false or if node is non-renderable node
+  if (!isRenderableNode(node)) return;
+
   // recurse to the children and tear them down first
   let { child } = fiber;
 
@@ -18,11 +23,6 @@ function tearDownFiber(fiber) {
       tearDownFiber(child);
     }
   }
-
-  const { node, nodeInstance } = fiber;
-
-  // bail out if node is non-renderable node
-  if (!isRenderableNode(node)) return;
 
   const { ref } = node;
   /**
@@ -71,7 +71,10 @@ function tearDownFiber(fiber) {
 export default function(root) {
   const { tearDownFibers } = root;
 
-  tearDownFibers.forEach(tearDownFiber);
+  tearDownFibers.forEach((fiber) => {
+    // only tear down those fibers which are marked for tear down
+    if (fiber.shouldTearDown) tearDownFiber(fiber);
+  });
 
   // rest the tear down fibers
   root.tearDownFibers = [];

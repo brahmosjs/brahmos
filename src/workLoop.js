@@ -25,6 +25,7 @@ import {
   getUpdateTimeKey,
   getLastCompleteTimeKey,
   cloneCurrentFiber,
+  markToTearDown,
 } from './fiber';
 import processArrayFiber from './processArrayFiber';
 import tearDown from './tearDown';
@@ -56,11 +57,11 @@ function fiberHasUnprocessedUpdates(fiber) {
 }
 
 export function processFiber(fiber) {
-  const { node, root, alternate } = fiber;
+  const { node, alternate } = fiber;
 
   // if new node is null mark old node to tear down
   if (!isRenderableNode(node)) {
-    if (alternate) root.tearDownFibers.push(alternate);
+    if (alternate) markToTearDown(alternate);
     return;
   }
 
@@ -175,8 +176,6 @@ export default function workLoop(fiber, topFiber, onComplete) {
       }
     }
 
-    // console.log(currentTransition, currentTransition && currentTransition.transitionState);
-
     // call all the render callbacks
     root.callRenderCallbacks();
 
@@ -211,12 +210,6 @@ export function doDeferredProcessing(root) {
   // if there is no deferred work or pending transition return
   const pendingTransition = getFirstTransitionToProcess(root);
 
-  console.log(
-    'deferred reset',
-    pendingTransition,
-    root.lastDeferredCompleteTime >= root.deferredUpdateTime || !pendingTransition,
-  );
-
   if (!pendingTransition) return;
 
   root.updateType = 'deferred';
@@ -247,7 +240,6 @@ export function doSyncProcessing(fiber) {
   root.currentTransition = null;
 
   // reset the effect list before starting new one
-  console.log('sync reset');
   resetEffectList(root);
 
   workLoop(fiber, parent);

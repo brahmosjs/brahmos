@@ -85,6 +85,13 @@ export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
     wipFiber.createdAt = performance.now();
   }
 
+  /**
+   * When we are cloning a fiber we should prevent the fiber to tear down
+   * A fiber can be marked for tearDown but after suspend (through suspense) / or error boundaries
+   * A fiber can again be used.
+   */
+  fiber.shouldTearDown = false;
+
   // add the nodeInstance to cloned fiber
   wipFiber.nodeInstance = nodeInstance;
 
@@ -207,6 +214,7 @@ export function createFiber(root, node, part) {
     updateTime: 0,
     processedTime: 0, // processedTime 0 signifies it needs processing
     createdAt: performance.now(),
+    shouldTearDown: false,
   };
 }
 
@@ -247,7 +255,7 @@ export function createAndLink(node, part, currentFiber, refFiber, parentFiber) {
 
     // if current fiber is there mark it to tear down
     if (currentFiber) {
-      root.tearDownFibers.push(currentFiber);
+      markToTearDown(currentFiber);
     }
   }
 
@@ -349,6 +357,14 @@ export function resetToCommittedChild(fiber) {
   if (child && child.createdAt > root.lastCompleteTime) {
     fiber.child = alternate && alternate.child;
   }
+}
+
+/**
+ * function to push a fiber for tearDown
+ */
+export function markToTearDown(fiber) {
+  fiber.shouldTearDown = true;
+  fiber.root.tearDownFibers.push(fiber);
 }
 
 // NOTE: Delete this function
