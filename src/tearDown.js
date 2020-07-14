@@ -1,128 +1,77 @@
-import { callLifeCycle, loopEntries, remove } from './utils';
+import { callLifeCycle, remove } from './utils';
 
 import { isComponentNode, isRenderableNode, isTagNode, CLASS_COMPONENT_NODE } from './brahmosNode';
-
-import { removeHandler } from './mountAndEffectQueue';
 
 import { setRef } from './refs';
 
 import { cleanEffects } from './hooks';
 import { BRAHMOS_DATA_KEY } from './configs';
 
-function handleUnmount(node) {
-  const { componentInstance, ref, mountHandler } = node;
-  /**
-   * If node is mounted and
-   * if node is classComponent We may have to call componentWillUnmount lifecycle method
-   * In case of functional component we have to clean all the effects for that component
-   */
-  if (componentInstance && componentInstance[BRAHMOS_DATA_KEY].mounted) {
-    if (node.nodeType === CLASS_COMPONENT_NODE) {
-      callLifeCycle(componentInstance, 'componentWillUnmount');
+function tearDownFiber(fiber) {
+  // recurse to the children and tear them down first
+  let { child } = fiber;
 
-      // set the ref as null of a class component
-      setRef(ref, null);
-
-      // and for functional component remove effects
-    } else {
-      cleanEffects(componentInstance, true);
+  if (child) {
+    tearDownFiber(child);
+    while (child.sibling) {
+      child = child.sibling;
+      tearDownFiber(child);
     }
-  } else if (mountHandler) {
-    /**
-     * If node is not mounted remove the mount handlers from the mount queue
-     */
-    removeHandler(node.mountHandler);
   }
 
-  /**
-   * loop over child nodes and tear it down as well
-   */
+  const { node, nodeInstance } = fiber;
 
-  if (Array.isArray(node)) {
-    for (let i = 0, ln = node.length; i < ln; i++) {
-      tearDownNode(node[i]);
-    }
-  } else if (isTagNode(node)) {
-    const {
-      values,
-      templateNode: { parts, domNodes },
-    } = node;
-    for (let i = 0, ln = parts.length; i < ln; i++) {
-      const part = parts[i];
-      const value = values[i];
-
-      // if part is node than tear down the node value
-      if (part.isNode) {
-        tearDownNode(value);
-      }
-
-      // if part is attribute type look for ref attribute and set the ref as null
-      if (part.isAttribute) {
-        loopEntries(value, (attrName, attrValue) => {
-          if (attrName === 'ref') {
-            setRef(attrValue, null);
-          }
-        });
-      }
-    }
-
-    // remove all the elements of templateNode
-    remove(domNodes);
-
-    // remove the template node
-    node.templateNode = null;
-
-    // call the ref methods of attribute parts
-  } else if (isComponentNode(node) && componentInstance) {
-    const brahmosData = componentInstance[BRAHMOS_DATA_KEY];
-    // if component is not mounted, we can skip the teardown
-    if (!brahmosData.mounted) return;
-
-    tearDownNode(brahmosData.nodes);
-    // mark componentInstance as unmounted
-    brahmosData.mounted = false;
-
-    // remove the componentInstance from node;
-    node.componentInstance = null;
-  }
-}
-
-function tearDownNode(node, part) {
   // bail out if node is non-renderable node
   if (!isRenderableNode(node)) return;
 
+  const { ref } = node;
   /**
-   * in case of portal nodes the passed part information will be incorrect
-   * as the node is ported to a different dom node.
-   * In such case take create part information based on portalContainer
+   * We have to only handle tag, component and attributes,
+   * as tag has elements to remove, attribute fiber can have ref to unset
+   * and component can have ref and lifecycle method to call.
+   *
+   * Text nodes will be remove by removing its parent tag node. So no
+   * need to handle text node separately
    */
 
-  const { portalContainer } = node;
-
-  if (portalContainer) {
-    part = {
-      parentNode: portalContainer,
-      isNode: true,
-    };
+  /**
+   * This will cover ATTRIBUTE_NODE as well, so no need to handle them separately
+   */
+  if (ref) {
+    setRef(ref, null);
   }
 
-  // call componentWillUnmount Lifecycle
-  handleUnmount(node);
+  // if there is no nodeInstance it means its not rendered yet so no need do anything on that
+  // NOTE: This has to be after ref logic as attribute nodes do not have nodeInstance but setRef has to be done
+  if (!nodeInstance) return;
 
-  // // if part is defined it means we need to delete all nodes on a given part
-  // if (part) {
-  //   const { parentNode, previousSibling, nextSibling } = part;
-  //   deleteNodesBetween(parentNode, previousSibling, nextSibling);
-  // }
+  // reset the nodeInstance property in fiber
+  fiber.nodeInstance = null;
+
+  // if it is a tag node remove the dom elements added by tag node
+  if (isTagNode(node)) {
+    const { domNodes } = nodeInstance;
+
+    // remove all the elements of nodeInstance
+    remove(domNodes);
+  } else if (isComponentNode(node)) {
+    const { mounted } = nodeInstance[BRAHMOS_DATA_KEY];
+    // if component node is not mounted yet, no need to do anything
+    if (!mounted) return;
+
+    // for class component call componentWillUnmount and for functional comp clean effects
+    if (node.nodeType === CLASS_COMPONENT_NODE) {
+      callLifeCycle(nodeInstance, 'componentWillUnmount');
+    } else {
+      cleanEffects(nodeInstance, true);
+    }
+  }
 }
 
 export default function(root) {
   const { tearDownFibers } = root;
 
-  for (let i = 0, ln = tearDownFibers.length; i < ln; i++) {
-    const { node, part } = tearDownFibers[i];
-    tearDownNode(node, part);
-  }
+  tearDownFibers.forEach(tearDownFiber);
 
   // rest the tear down fibers
   root.tearDownFibers = [];

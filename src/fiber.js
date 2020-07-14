@@ -63,7 +63,7 @@ function linkFiber(fiber, refFiber, parentFiber) {
 }
 
 export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
-  const { node, part, child, deferredUpdateTime } = fiber;
+  const { node, part, nodeInstance, child, deferredUpdateTime } = fiber;
 
   if (!wipFiber) {
     wipFiber = createFiber(fiber.root, node, part);
@@ -84,6 +84,9 @@ export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
      */
     wipFiber.createdAt = performance.now();
   }
+
+  // add the nodeInstance to cloned fiber
+  wipFiber.nodeInstance = nodeInstance;
 
   /**
    * Add the current child to wipFiber.
@@ -189,6 +192,7 @@ export function createHostFiber(domNode) {
 export function createFiber(root, node, part) {
   return {
     node,
+    nodeInstance: null,
     root,
     parent: null,
     child: null,

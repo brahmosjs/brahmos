@@ -20,22 +20,22 @@ import { getFiberFromComponent } from './fiber';
 
 export function getClosestSuspense(fiber, includeSuspenseList) {
   const { root } = fiber;
-  let { componentInstance } = fiber.node;
+  let { nodeInstance } = fiber;
   while (
     !(
-      componentInstance instanceof Suspense ||
+      nodeInstance instanceof Suspense ||
       /* eslint-disable no-unmodified-loop-condition */
-      (includeSuspenseList && componentInstance instanceof SuspenseList)
+      (includeSuspenseList && nodeInstance instanceof SuspenseList)
     )
   ) {
     fiber = fiber.parent;
 
     if (fiber === root) return null;
 
-    componentInstance = fiber.node.componentInstance;
+    nodeInstance = fiber.nodeInstance;
   }
 
-  return componentInstance;
+  return nodeInstance;
 }
 
 export function getClosestSuspenseList(fiber) {

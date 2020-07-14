@@ -77,9 +77,7 @@ export function brahmosNode(props, values, key) {
     /** Component specific properties */
     type: null,
     props,
-    componentInstance: null,
     portalContainer: null,
-    mountHandler: null,
     prevProps: null,
     prevState: null,
     lastSnapshot: undefined,
@@ -87,7 +85,6 @@ export function brahmosNode(props, values, key) {
     /** tag node specific properties */
     element: '',
     values,
-    templateNode: null,
     template: null,
   };
 }

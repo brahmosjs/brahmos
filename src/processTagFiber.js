@@ -84,7 +84,7 @@ export function partsToFiber(parts, values, parentFiber) {
  * Update tagged template node
  */
 export default function processTagFiber(fiber) {
-  let { node } = fiber;
+  const { node } = fiber;
   const {
     part,
     alternate,
@@ -102,43 +102,28 @@ export default function processTagFiber(fiber) {
   // store isSvgPart info back to fiber, this will be forwarded to children
   fiber.isSvgPart = isSvgPart;
 
-  /**
-   * if the node already has templateNode, and node reference is different from oldNode,
-   * it means the node is already being used somewhere, so duplicate the node
-   */
-  if (node.templateNode && node !== oldNode) {
-    node = { ...node, templateNode: null };
-    // store the new node back to fiber
-    fiber.node = node;
-  }
-
-  // if new node and old node share same template we can reuse the templateNode instance
-  if (oldNode && oldNode.template === node.template) {
-    node.templateNode = oldNode.templateNode;
-  }
-
-  let { templateNode } = node;
+  let { nodeInstance } = fiber;
 
   /**
    * if you don't get the old template node it means you have to render the node first time
    * in such cases delete the nodes where the template node is supposed to be present.
    */
-  if (!templateNode) {
-    templateNode = isTagElement
+  if (!nodeInstance) {
+    nodeInstance = isTagElement
       ? getTagNode(node, isSvgPart)
       : new TemplateNode(node.template, isSvgPart);
 
-    // add templateNode to node so we can access it on next updates
-    node.templateNode = templateNode;
+    // add nodeInstance to node so we can access it on next updates
+    fiber.nodeInstance = nodeInstance;
   }
 
   /**
-   * if any of templateNode part does not have proper parent node and its not first render
+   * if any of nodeInstance part does not have proper parent node and its not first render
    * patch the part information using the current node's part
    * This can happen if the parent node is fragment, or it is the first or last item
    */
   if (!isTagElement) {
-    templateNode.patchParts(part);
+    nodeInstance.patchParts(part);
   }
 
   /**
@@ -148,7 +133,7 @@ export default function processTagFiber(fiber) {
    * In which case just clone the children fibers
    */
   if (node !== oldNode) {
-    partsToFiber(templateNode.parts, values, fiber);
+    partsToFiber(nodeInstance.parts, values, fiber);
   } else {
     cloneChildrenFibers(fiber);
   }

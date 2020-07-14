@@ -41,20 +41,17 @@ export function schedule(shouldSchedule, cb) {
 }
 
 function fiberHasUnprocessedUpdates(fiber) {
-  const { node, root } = fiber;
+  const { root, node, nodeInstance } = fiber;
   const { updateType } = root;
-
-  const { componentInstance } = node;
 
   /**
    * Return if node is not component type or if it is component
-   * which is yet to mount (componentInstance will be null in such case)
+   * which is yet to mount (nodeInstance will be null in such case)
    */
-  if (!componentInstance) return false;
+  if (!(isComponentNode(node) && nodeInstance)) return false;
 
   return (
-    !!getPendingUpdates(updateType, componentInstance).length ||
-    componentInstance[BRAHMOS_DATA_KEY].isDirty
+    !!getPendingUpdates(updateType, nodeInstance).length || nodeInstance[BRAHMOS_DATA_KEY].isDirty
   );
 }
 

@@ -13,7 +13,8 @@ import { BRAHMOS_DATA_KEY } from './configs';
 
 function getCurrentContext(fiber, isReused) {
   const {
-    node: { type: Component, componentInstance },
+    node: { type: Component },
+    nodeInstance,
     parent,
     context: currentContext,
   } = fiber;
@@ -26,18 +27,18 @@ function getCurrentContext(fiber, isReused) {
   if (!__ccId) return context;
 
   /**
-   * if there is a context on fiber node and the componentInstance
+   * if there is a context on fiber node and the nodeInstance
    * is reused we can always return that context,
    * if provider in parent hierarchy is changed, the whole child hierarchy will
-   * be different and componentInstance are not reused.
+   * be different and nodeInstance are not reused.
    */
   if (currentContext && isReused) return currentContext;
 
   // for new provider instance create a new context extending the parent context
   const newContext = Object.create(context);
 
-  // store the componentInstance
-  newContext[__ccId] = componentInstance;
+  // store the nodeInstance
+  newContext[__ccId] = nodeInstance;
 
   return newContext;
 }
@@ -64,10 +65,9 @@ function resetLoopToComponentsFiber(component) {
 
 export default function processComponentFiber(fiber) {
   const { node } = fiber;
-  const { part, alternate, root } = fiber;
+  const { part, root } = fiber;
   const { updateType } = root;
   const { type: Component, nodeType, props = {}, ref } = node;
-  const oldNode = alternate && alternate.node;
 
   const isFirstRender = false;
   const isReused = false;
@@ -75,48 +75,24 @@ export default function processComponentFiber(fiber) {
   const isClassComponent = nodeType === CLASS_COMPONENT_NODE;
 
   /**
-   * if the node already has componentInstance, and node reference is different from oldNode,
-   * it means the node is already being used somewhere, so duplicate the node
-   */
-  // if (node.componentInstance && node !== oldNode) {
-  //   node = { ...node, componentInstance: null };
-  //   // store the new node back to the fiber
-  //   fiber.node = node;
-  // }
-
-  /**
-   * If oldNode is present it means the parent is rendered,
-   * but the fiber can reuse the previous instance
-   *
-   * Note: alternate fiber may not be present if parent never re-renders, but in which case
-   * node will already have componentInstance and the processing of fiber is happening due to
-   * state change and not parent render.
-   */
-  if (oldNode) {
-    node.componentInstance = oldNode.componentInstance;
-  }
-
-  /**
    * Reset the fiber children to a committed child
    */
   resetToCommittedChild(fiber);
 
   /** If Component instance is not present on node create a new instance */
-  let { componentInstance } = node;
+  let { nodeInstance } = fiber;
   let firstRender;
-  if (!componentInstance) {
+  if (!nodeInstance) {
     // create an instance of the component
-    componentInstance = isClassComponent
-      ? new Component(props)
-      : functionalComponentInstance(Component);
+    nodeInstance = isClassComponent ? new Component(props) : functionalComponentInstance(Component);
 
     // keep the reference of instance to the node.
-    node.componentInstance = componentInstance;
+    fiber.nodeInstance = nodeInstance;
 
     firstRender = true;
   }
 
-  const brahmosData = componentInstance[BRAHMOS_DATA_KEY];
+  const brahmosData = nodeInstance[BRAHMOS_DATA_KEY];
 
   // add fiber reference on component instance, so the component is aware of its fiber
   brahmosData.fiber = fiber;
@@ -135,14 +111,14 @@ export default function processComponentFiber(fiber) {
   if (isClassComponent) {
     const { props: prevProps, state: prevState } = brahmosData.committedValues;
 
-    const { shouldComponentUpdate } = componentInstance;
+    const { shouldComponentUpdate } = nodeInstance;
 
     // if component is of Suspense type add it in fiber
-    if (componentInstance instanceof Suspense) {
-      fiber.suspense = componentInstance;
+    if (nodeInstance instanceof Suspense) {
+      fiber.suspense = nodeInstance;
     }
 
-    const pendingUpdates = getPendingUpdates(updateType, componentInstance);
+    const pendingUpdates = getPendingUpdates(updateType, nodeInstance);
 
     let state = getUpdatedState(prevState, pendingUpdates);
 
@@ -161,7 +137,7 @@ export default function processComponentFiber(fiber) {
      * do shallow check for props and states
      */
 
-    if (componentInstance instanceof PureComponent && checkShouldUpdate) {
+    if (nodeInstance instanceof PureComponent && checkShouldUpdate) {
       shouldUpdate = !shallowEqual(state, prevState) || !shallowEqual(props, prevProps);
     }
 
@@ -171,7 +147,7 @@ export default function processComponentFiber(fiber) {
      * Also we shouldn't call shouldComponentUpdate on first render
      */
     if (shouldComponentUpdate && shouldUpdate && checkShouldUpdate) {
-      shouldUpdate = shouldComponentUpdate.call(componentInstance, props, state);
+      shouldUpdate = shouldComponentUpdate.call(nodeInstance, props, state);
     }
 
     /**
@@ -186,25 +162,25 @@ export default function processComponentFiber(fiber) {
 
       // if it is a first render subscribe component for provider value change
       if (provider && isFirstRender) {
-        provider.sub(componentInstance);
+        provider.sub(nodeInstance);
       }
     }
 
     // set the new state, props, context and reset uncommitted state
-    componentInstance.state = state;
-    componentInstance.props = props;
-    componentInstance.context = contextValue;
+    nodeInstance.state = state;
+    nodeInstance.props = props;
+    nodeInstance.context = contextValue;
   } else if (!firstRender) {
     // for functional component call cleanEffect only on second render
     // alternate will be set on second render
     // NOTE: This is buggy, cleanEffects should be called before commit phase, check the behavior of react.
-    cleanEffects(componentInstance);
+    cleanEffects(nodeInstance);
   }
 
   // render the nodes
   if (shouldUpdate) {
     try {
-      const childNodes = componentInstance.__render(props);
+      const childNodes = nodeInstance.__render(props);
 
       // component will always return a single node so we can pass the previous child as current fiber
       createAndLink(childNodes, part, fiber.child, fiber, fiber);

@@ -40,11 +40,11 @@ function updateTextNode(fiber) {
   return textNode;
 }
 
-function updateExistingNode(templateNode, part, oldPart, root) {
+function updateExistingNode(nodeInstance, part, oldPart, root) {
   // if it is not a part of array item, no need to rearrange
   if (!part.isArrayNode) return;
 
-  const { domNodes } = templateNode;
+  const { domNodes } = nodeInstance;
   const { nodeIndex, parentNode, previousSibling } = part;
   const { nodeIndex: oldNodeIndex } = oldPart;
 
@@ -69,39 +69,34 @@ function updateExistingNode(templateNode, part, oldPart, root) {
 }
 
 function updateTagNode(fiber) {
-  const {
-    part,
-    node: { templateNode },
-    alternate,
-    root,
-  } = fiber;
+  const { part, nodeInstance, alternate, root } = fiber;
   const { parentNode, nextSibling } = part;
 
   // if the alternate node is there rearrange the element if required, or else just add the new node
   if (alternate) {
-    updateExistingNode(templateNode, part, alternate.part, root);
+    updateExistingNode(nodeInstance, part, alternate.part, root);
   } else {
     /**
      * when we add nodes first time
      * and we are rendering as fragment it means the fragment might have childNodes
-     * which templateNode does not have, so for such cases we should reset nodeList on templateNode;
+     * which nodeInstance does not have, so for such cases we should reset nodeList on nodeInstance;
      */
-    templateNode.domNodes = insertBefore(parentNode, nextSibling, templateNode.fragment);
+    nodeInstance.domNodes = insertBefore(parentNode, nextSibling, nodeInstance.fragment);
   }
 
-  root.lastArrayDOM = templateNode.domNodes[templateNode.domNodes.length - 1];
+  root.lastArrayDOM = nodeInstance.domNodes[nodeInstance.domNodes.length - 1];
 }
 
 function handleComponentEffect(fiber) {
-  const { node, root } = fiber;
+  const { node, nodeInstance, root } = fiber;
   const { updateType } = root;
-  const { componentInstance, nodeType } = node;
-  const brahmosData = componentInstance[BRAHMOS_DATA_KEY];
+  const { nodeType } = node;
+  const brahmosData = nodeInstance[BRAHMOS_DATA_KEY];
 
   if (nodeType === CLASS_COMPONENT_NODE) {
     const { props: prevProps, state: prevState } = brahmosData.committedValues;
 
-    node.lastSnapshot = callLifeCycle(componentInstance, 'getSnapshotBeforeUpdate', [
+    node.lastSnapshot = callLifeCycle(nodeInstance, 'getSnapshotBeforeUpdate', [
       prevProps,
       prevState,
     ]);
@@ -121,14 +116,14 @@ function handleComponentEffect(fiber) {
 }
 
 function handleComponentPostCommitEffect(fiber) {
-  const { node, root } = fiber;
+  const { node, nodeInstance, root } = fiber;
   const { updateType } = root;
 
-  const { componentInstance, nodeType, lastSnapshot } = node;
-  const brahmosData = componentInstance[BRAHMOS_DATA_KEY];
+  const { nodeType, lastSnapshot } = node;
+  const brahmosData = nodeInstance[BRAHMOS_DATA_KEY];
 
   if (nodeType === CLASS_COMPONENT_NODE) {
-    const { props, state } = componentInstance;
+    const { props, state } = nodeInstance;
     const { committedValues } = brahmosData;
     // get the previous state and prevProps
     const { props: prevProps, state: prevState } = committedValues;
@@ -137,9 +132,9 @@ function handleComponentPostCommitEffect(fiber) {
      * prevProps will not be available for first time render
      */
     if (!prevProps) {
-      callLifeCycle(componentInstance, 'componentDidMount');
+      callLifeCycle(nodeInstance, 'componentDidMount');
     } else {
-      callLifeCycle(componentInstance, 'componentDidUpdate', [prevProps, prevState, lastSnapshot]);
+      callLifeCycle(nodeInstance, 'componentDidUpdate', [prevProps, prevState, lastSnapshot]);
     }
 
     // after commit is done set the current prop and state on committed values
@@ -147,13 +142,13 @@ function handleComponentPostCommitEffect(fiber) {
     committedValues.state = state;
   } else {
     // call effects of functional component
-    runEffects(componentInstance);
+    runEffects(nodeInstance);
 
     // switch deferred hooks array and syncHooks hooks array, if it is deferred state update
     if (updateType === UPDATE_TYPE_DEFERRED) {
-      const { syncHooks, deferredHooks } = componentInstance;
-      componentInstance.deferredHooks = syncHooks;
-      componentInstance.syncHooks = deferredHooks;
+      const { syncHooks, deferredHooks } = nodeInstance;
+      nodeInstance.deferredHooks = syncHooks;
+      nodeInstance.syncHooks = deferredHooks;
     }
   }
 
