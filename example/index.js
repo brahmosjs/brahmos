@@ -3,7 +3,8 @@ import UnMountAtNode from './UnMountAtNode';
 import Brahmos, { render } from '../src';
 import ConcurrentApp from './concurrentApp';
 import SuspenseApp from './suspenseExamples';
+import SuspenseListApp from './suspenseListExample';
 
-render(<SuspenseApp />, document.getElementById('app'));
+render(<SuspenseListApp />, document.getElementById('app'));
 
 // render(<UnMountAtNode/>, document.getElementById('unmount-node'));
