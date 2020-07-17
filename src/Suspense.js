@@ -8,11 +8,9 @@ import {
   TRANSITION_STATE_RESOLVED,
   PREDEFINED_TRANSITION_DEFERRED,
   getTransitionFromFiber,
-  TRANSITION_STATE_START,
   isTransitionCompleted,
-  isTransitionResolved,
 } from './transitionUtils';
-import { withTransition, withUpdateSource } from './updateMetaUtils';
+import { withTransition } from './updateMetaUtils';
 import { deferredUpdates } from './deferredUpdates';
 import reRender from './reRender';
 import { BRAHMOS_DATA_KEY } from './configs';
@@ -38,26 +36,14 @@ export function getClosestSuspense(fiber, includeSuspenseList) {
   return nodeInstance;
 }
 
-export function getClosestSuspenseList(fiber) {
-  const closestSuspense = getClosestSuspense(fiber, true);
-
-  return closestSuspense instanceof SuspenseList ? closestSuspense : null;
-}
-
 export function getClosestSuspenseListManager(manager) {
   const { parentSuspenseManager } = manager;
-  return parentSuspenseManager.isSuspenseList ? parentSuspenseManager : null;
+  return parentSuspenseManager && parentSuspenseManager.isSuspenseList
+    ? parentSuspenseManager
+    : null;
 }
 
-// function getActiveTransition(component) {
-//   const fiber = getFiberFromComponent(component);
-//   const currentTransition = getTransitionFromFiber(fiber);
-//   return isTransitionResolved(currentTransition)
-//     ? PREDEFINED_TRANSITION_DEFERRED
-//     : currentTransition;
-// }
-
-class SuspenseManagerOld {
+class SuspenseManager {
   constructor(component, transition) {
     this.component = component;
     this.transition = transition;
@@ -106,11 +92,19 @@ class SuspenseManagerOld {
     const isSuspenseList = component instanceof SuspenseList;
 
     if (isSuspenseList) {
-      this.handleSuspenseList();
+      return this.handleSuspenseList();
+    }
+
+    return Promise.resolve(suspender).then(this.resolve.bind(this, suspender));
+  }
+
+  isUnresolved() {
+    // if the manager is a suspense list, check if any of the child is unresolved
+    // or in case of suspense if has a suspender it means its unresolved.
+    if (this.isSuspenseList) {
+      return this.childManagers.some((manager) => manager.isUnresolved());
     } else {
-      Promise.resolve(suspender).then((data) => {
-        this.resolve(suspender);
-      });
+      return this.suspender;
     }
   }
 
@@ -132,7 +126,7 @@ class SuspenseManagerOld {
      *
      * Or else in case of collapsed show the fallback on the first unresolved suspense.
      */
-    if (parentSuspenseListManager && !suspenseListManager.showFallback()) {
+    if (parentSuspenseListManager && !suspenseListManager.shouldShowFallback()) {
       return false;
     } else if (tail === 'collapsed') {
       for (let i = 0, ln = siblingManagers.length; i < ln; i++) {
@@ -142,7 +136,7 @@ class SuspenseManagerOld {
          * If any of previous manager is suspended and which is not same as the manager
          * we are testing then return false
          */
-        if (tail === 'collapsed' && manager.suspender) {
+        if (tail === 'collapsed' && manager.isUnresolved()) {
           return manager === this;
         }
       }
@@ -174,7 +168,7 @@ class SuspenseManagerOld {
 
     // mark the suspense to be resolved and component as dirty
     this.suspender = null;
-    component[BRAHMOS_DATA_KEY].isDirty = true;
+    this.component[BRAHMOS_DATA_KEY].isDirty = true;
 
     const transitionTimedOut = transition.transitionState === TRANSITION_STATE_TIMED_OUT;
 
@@ -202,31 +196,34 @@ class SuspenseManagerOld {
     }
   }
 
+  getChildrenSuspenders() {
+    let childSuspenders = [];
+    this.childManagers.forEach((manager) => {
+      if (manager.isSuspenseList) {
+        childSuspenders = childSuspenders.concat(manager.getChildrenSuspenders());
+      } else if (manager.suspender) {
+        childSuspenders.push(manager.suspender);
+      }
+    });
+
+    return childSuspenders;
+  }
+
   handleSuspenseList() {
     const { component, childManagers } = this;
     const { revealOrder = 'together' } = component.props;
 
-    /**
-     * get binded resolvers for child managers,
-     * so manager know, with which suspender its resolved
-     */
-    const getChildResolver = (manager, suspender) => manager.resolve.bind(manager, suspender);
-
     // resolve the child managers based on reveal order
     const handleManagerInOrder = (promise, manager) => {
-      const { suspender } = manager;
-      /**
-       * get binded resolvers for child managers,
-       * so manager know, with which suspender its resolved
-       */
-      const resolver = getChildResolver(manager, suspender);
-
       return promise.then(() => {
-        return suspender.then(() => {
-          resolver();
-        });
+        return manager.handleSuspense();
       });
     };
+
+    /**
+     * Create a promise which resolves after all the child managers are resolved
+     */
+    const allSuspenderPromise = Promise.all(this.getChildrenSuspenders());
 
     /**
      * If reveal order is together we resolve all the manager only
@@ -236,12 +233,8 @@ class SuspenseManagerOld {
      * in the provided order event the promise resolves concurrently
      */
     if (revealOrder === 'together') {
-      const suspenders = childManagers.map((manager) => manager.suspender);
-      Promise.all(suspenders).then(() => {
-        childManagers.forEach((manager, index) => {
-          const resolver = getChildResolver(manager, suspenders[index]);
-          resolver();
-        });
+      allSuspenderPromise.then(() => {
+        childManagers.forEach((manager) => manager.handleSuspense());
       });
     } else if (revealOrder === 'forwards') {
       let promise = Promise.resolve();
@@ -254,12 +247,14 @@ class SuspenseManagerOld {
         promise = handleManagerInOrder(promise, childManagers[i]);
       }
     }
+
+    return allSuspenderPromise;
   }
 }
 
 function getActiveTransition(component) {
   const fiber = getFiberFromComponent(component);
-  let transition = getTransitionFromFiber(fiber);
+  let transition = getTransitionFromFiber(fiber, PREDEFINED_TRANSITION_DEFERRED);
 
   /**
    * If the transition is resolved and pendingSuspense does not include the instance
@@ -293,142 +288,10 @@ function getSuspenseManager(component, transition) {
   return suspenseManager;
 }
 
-export class SuspenseManager {
-  constructor(component, transition) {
-    this.component = component;
-    this.transition = transition;
-    this.suspender = null;
-    this.showFallback = true;
-  }
-
-  suspend(suspender) {
-    const { root } = getFiberFromComponent(this.component);
-
-    this.suspender = suspender;
-    // TODO: If there is suspense we should wait for the render cycle to finish and then only resolve.
-    root.afterRender(() => {
-      suspender.then(this.resolveHandler.bind(this, suspender));
-    });
-  }
-
-  resolveHandler(resolvedWithSuspender, data) {
-    const { component, transition, suspender } = this;
-    const pendingSuspense = transition.pendingSuspense || [];
-
-    if (resolvedWithSuspender !== suspender) return;
-
-    // mark the suspense to be resolved and component as dirty
-    this.suspender = null;
-    component[BRAHMOS_DATA_KEY].isDirty = true;
-
-    const transitionTimedOut = transition.transitionState === TRANSITION_STATE_TIMED_OUT;
-
-    // Get the unresolved suspense for the transition.
-    const transitionHasUnresolvedSuspense = pendingSuspense.filter(
-      (suspense) => getSuspenseManager(suspense, transition).suspender,
-    ).length;
-
-    /**
-     * set transition state as resolved if transition is not timed out and it doesn't
-     * have any unresolved sibling
-     */
-    if (!transitionTimedOut && !transitionHasUnresolvedSuspense) {
-      transition.transitionState = TRANSITION_STATE_RESOLVED;
-    }
-    /**
-     * If the transition is timed out or the suspense is not part of
-     * the transition pendingSuspense list we need to do normal deferred rendering
-     * Otherwise do re-render with the transition.
-     */
-    if (transitionTimedOut || !pendingSuspense.includes(component)) {
-      deferredUpdates(() => reRender(component));
-    } else {
-      withTransition(transition, () => reRender(component));
-    }
-  }
-}
-
 export class SuspenseList extends Component {
   constructor(props) {
     super(props);
-    this.managers = {};
-    this.orchestrators = {};
-  }
-
-  getOrchestratorForTransition(transitionId) {
-    const { orchestrators } = this;
-
-    if (!orchestrators[transitionId]) {
-      orchestrators[transitionId] = this.orchestrateManagers.bind(this, transitionId);
-    }
-
-    return orchestrators[transitionId];
-  }
-
-  getChildManagers(transitionId) {
-    const { managers } = this;
-    if (!managers[transitionId]) managers[transitionId] = [];
-
-    return managers[transitionId];
-  }
-
-  orchestrateFallback(transitionId) {
-    const {
-      props: { tail },
-      managers,
-    } = this;
-    const childManagers = managers[transitionId] || [];
-
-    const parentSuspenseList = getClosestSuspenseList(getFiberFromComponent(this));
-    /**
-     *  set show fallback of all child managers based on tail prop
-     *  by default all fallbacks will be shown.
-     *  In collapsed mode only one unresolved suspense's fallback will be shown
-     *
-     *  As SuspenseList can be composed we need to check parent SuspenseList as well to
-     *  to get the initial value of showFallback
-     */
-    let showFallback = parentSuspenseList
-      ? parentSuspenseList.orchestrateFallback(transitionId)
-      : tail !== 'hidden';
-
-    childManagers.forEach((manager) => {
-      if (tail === 'collapsed' && !manager.resolved) {
-        showFallback = false;
-      }
-
-      manager.showFallback = showFallback;
-    });
-
-    return showFallback;
-  }
-
-  orchestrateManagers(transitionId) {
-    const childManagers = this.getChildManagers(transitionId);
-
-    const parentSuspenseList = getClosestSuspenseList(getFiberFromComponent(this));
-    return new Promise((resolve, reject) => {
-      const parentPromise = parentSuspenseList
-        ? parentSuspenseList.orchestrateManagers()
-        : Promise.resolve();
-    });
-  }
-
-  getOrchestratedSuspender(suspenseManager) {
-    const { transition } = suspenseManager;
-    const { transitionId } = transition;
-    const childManagers = this.getChildManagers(transitionId);
-    const suspenseListFiber = getFiberFromComponent(this);
-    const { root } = suspenseListFiber;
-    const orchestrator = this.getOrchestratorForTransition(transitionId);
-
-    // push the suspenseManager to manager list for the transition
-    childManagers.push(suspenseManager);
-
-    return new Promise((resolve, reject) => {
-      suspenseManager.resolve = resolve;
-      root.afterRender(orchestrator);
-    });
+    this.suspenseManagers = {};
   }
 
   render() {
@@ -473,8 +336,7 @@ export class Suspense extends Component {
     const { fallback, children } = this.props;
 
     if (resolved) return children;
-    else if (suspenseManager.showFallback) return fallback;
-    // else if (suspenseManager.shouldShowFallback()) return fallback;
+    else if (suspenseManager.shouldShowFallback()) return fallback;
     else return null;
   }
 }

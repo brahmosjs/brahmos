@@ -1,5 +1,12 @@
 /** Component classes,  Suspense and lazy */
-import { Component, PureComponent, createElement, Suspense, lazy } from './circularDep';
+import {
+  Component,
+  PureComponent,
+  createElement,
+  Suspense,
+  SuspenseList,
+  lazy,
+} from './circularDep';
 
 /** render methods */
 import render from './render';
@@ -56,6 +63,7 @@ const Brahmos = {
   createPortal,
   unmountComponentAtNode,
   Suspense,
+  SuspenseList,
   lazy,
   unstable_deferredUpdates: deferredUpdates,
 };
@@ -81,6 +89,7 @@ export {
   createPortal,
   unmountComponentAtNode,
   Suspense,
+  SuspenseList,
   lazy,
   deferredUpdates as unstable_deferredUpdates,
 };

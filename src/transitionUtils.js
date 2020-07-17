@@ -65,9 +65,10 @@ export function setTransitionComplete(transition) {
 /**
  * get current transition id from the current rendering
  */
-export function getTransitionFromFiber(fiber) {
+export function getTransitionFromFiber(fiber, defaultTransition) {
+  defaultTransition = defaultTransition || PREDEFINED_TRANSITION_SYNC;
   // if there is currentTransition return that or else return SYNC transition
-  return fiber.root.currentTransition || PREDEFINED_TRANSITION_SYNC;
+  return fiber.root.currentTransition || defaultTransition;
 }
 
 /**
