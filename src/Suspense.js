@@ -62,6 +62,7 @@ function getSuspenseManager(fiber, transition) {
 class SuspenseManager {
   constructor(fiber, transition) {
     const { nodeInstance } = fiber;
+    this.fiber = fiber; // this is just for reference for suspense which gets resolved before committed
     this.component = nodeInstance;
     this.transition = transition;
     this.childManagers = [];
@@ -204,10 +205,21 @@ class SuspenseManager {
      * the transition pendingSuspense list we need to do normal deferred rendering
      * Otherwise do re-render with the transition.
      */
+    const doSuspenseRerender = () => {
+      let targetComponent = component;
+      /**
+       * If there is no fiber reference on the component, it means suspense is resolved before commit.
+       * In which case there must be some parent which has pending update.
+       * So we just need to restart deferred workLoop, which we can do by rerendering from wip fiber.
+       */
+      if (!component[BRAHMOS_DATA_KEY].fiber) targetComponent = this.fiber.root.wip.nodeInstance;
+
+      reRender(targetComponent);
+    };
     if (transitionTimedOut || !pendingSuspense.includes(component)) {
-      deferredUpdates(() => reRender(component));
+      deferredUpdates(doSuspenseRerender);
     } else {
-      withTransition(transition, () => reRender(component));
+      withTransition(transition, doSuspenseRerender);
     }
   }
 

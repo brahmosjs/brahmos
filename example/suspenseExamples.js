@@ -113,11 +113,11 @@ function Button({ children, onClick }) {
   });
 
   function handleClick() {
-    // onClick();
+    onClick();
 
-    startTransition(() => {
-      onClick();
-    });
+    // startTransition(() => {
+    //   onClick();
+    // });
   }
 
   const spinner = (

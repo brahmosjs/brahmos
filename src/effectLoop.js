@@ -18,7 +18,6 @@ import { BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED, UPDATE_TYPE_SYNC } from './conf
  */
 function updateTextNode(fiber) {
   const { part, node } = fiber;
-  // console.log('text node', node, part);
   const { parentNode, previousSibling, nextSibling } = part;
   /**
    * get the last text node
@@ -218,7 +217,6 @@ function handleFiberEffect(fiber) {
 }
 
 export default function effectLoop(root, newFibers) {
-  console.log(newFibers);
   // loop on new fibers hand call if effect needs to be called
   newFibers.forEach(handleFiberEffect);
 

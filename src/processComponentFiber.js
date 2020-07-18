@@ -193,8 +193,6 @@ export default function processComponentFiber(fiber) {
       if (typeof err.then === 'function') {
         const suspenseFiber = getClosestSuspenseFiber(fiber);
 
-        // console.log(err, fiber.node.type, suspense.props.fallback.template.strings);
-
         /**
          * if there is no suspense in parent hierarchy throw error that suspender can't be
          * used outside of suspense

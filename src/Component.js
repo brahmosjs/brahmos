@@ -52,7 +52,7 @@ export class Component {
   forceUpdate(callback) {
     withUpdateSource(UPDATE_SOURCE_FORCE_UPDATE, () => {
       this[BRAHMOS_DATA_KEY].isDirty = true;
-      reRender();
+      reRender(this);
       if (callback) callback(this.state);
     });
   }
