@@ -11,7 +11,7 @@ import { getPendingUpdatesKey } from './updateMetaUtils';
 import { runEffects } from './hooks';
 
 import updateNodeAttributes from './updateAttribute';
-import { BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED } from './configs';
+import { BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED, UPDATE_TYPE_SYNC } from './configs';
 
 /**
  * Updater to handle text node
@@ -103,7 +103,7 @@ function handleComponentEffect(fiber) {
   }
 
   // remove all the pending updates associated with current transition
-  const { transitionId } = getTransitionFromFiber(brahmosData.fiber);
+  const { transitionId } = getTransitionFromFiber(fiber);
   const pendingUpdatesKey = getPendingUpdatesKey(updateType);
   brahmosData[pendingUpdatesKey] = brahmosData[pendingUpdatesKey].filter(
     (stateMeta) => stateMeta.transitionId !== transitionId,
@@ -142,7 +142,7 @@ function handleComponentPostCommitEffect(fiber) {
     committedValues.state = state;
   } else {
     // call effects of functional component
-    runEffects(nodeInstance);
+    runEffects(fiber);
 
     // switch deferred hooks array and syncHooks hooks array, if it is deferred state update
     if (updateType === UPDATE_TYPE_DEFERRED) {
@@ -154,6 +154,9 @@ function handleComponentPostCommitEffect(fiber) {
 
   // mark component as mounted
   brahmosData.mounted = true;
+
+  // add fiber reference on component instance, so the component is aware of its fiber
+  brahmosData.fiber = fiber;
 }
 
 function handleAttributeEffect(fiber) {
@@ -170,10 +173,10 @@ function handleAttributeEffect(fiber) {
 
 export function resetEffectList(root) {
   root.lastEffectFiber = root;
-  root.nextEffect = null;
   root.tearDownFibers = [];
   root.postCommitEffects = [];
   root.lastArrayDOM = null;
+  root.hasUncommittedEffect = false;
 
   // reset after render callbacks
   root.resetRenderCallbacks();
@@ -187,28 +190,39 @@ export function removeTransitionFromRoot(root) {
   }
 }
 
-export default function effectLoop(root) {
-  let { nextEffect: fiber, postCommitEffects } = root;
-  while (fiber) {
-    const { node } = fiber;
+function handleFiberEffect(fiber) {
+  const { node } = fiber;
+  const _isComponentNode = node && isComponentNode(node);
+
+  // if fiber is a component fiber, update the fiber reference in nodeInstance
+  if (_isComponentNode) {
+    fiber.nodeInstance[BRAHMOS_DATA_KEY].fiber = fiber;
+  }
+
+  // if node has uncommitted effect, handle the effect
+  if (fiber.hasUncommittedEffect) {
     if (isPrimitiveNode(node)) {
       updateTextNode(fiber);
     } else if (isTagNode(node)) {
       updateTagNode(fiber);
       // TODO: Handle rearrange type of effect
-    } else if (isComponentNode(node)) {
+    } else if (_isComponentNode) {
       handleComponentEffect(fiber);
     } else if (node.nodeType === ATTRIBUTE_NODE) {
       handleAttributeEffect(fiber);
     }
 
-    const nextEffect = fiber.nextEffect;
-
-    // reset effect key of that fiber.
-    fiber.nextEffect = null;
-
-    fiber = nextEffect;
+    // reset the hasUncommittedEffect flag
+    fiber.hasUncommittedEffect = false;
   }
+}
+
+export default function effectLoop(root, newFibers) {
+  console.log(newFibers);
+  // loop on new fibers hand call if effect needs to be called
+  newFibers.forEach(handleFiberEffect);
+
+  const { postCommitEffects } = root;
 
   // after applying the effects run all the post effects
   for (let i = postCommitEffects.length - 1; i >= 0; i--) {

@@ -1,8 +1,13 @@
-import { cloneChildrenFibers, linkEffect, createAndLink, resetToCommittedChild } from './fiber';
+import {
+  cloneChildrenFibers,
+  createAndLink,
+  resetToCommittedChild,
+  markPendingEffect,
+} from './fiber';
 
 import functionalComponentInstance from './functionalComponentInstance';
 import { CLASS_COMPONENT_NODE } from './brahmosNode';
-import { PureComponent, Suspense, getClosestSuspense } from './circularDep';
+import { PureComponent, Suspense, getClosestSuspenseFiber } from './circularDep';
 
 import { cleanEffects } from './hooks';
 import { callLifeCycle } from './utils';
@@ -51,16 +56,14 @@ function getUpdatedState(prevState, updates) {
 }
 
 // method to reset work loop to a fiber of given component
-function resetLoopToComponentsFiber(component) {
-  const brahmosData = component[BRAHMOS_DATA_KEY];
-  const { fiber } = brahmosData;
-  const { root } = fiber;
+function resetLoopToComponentsFiber(suspenseFiber) {
+  const { root, nodeInstance } = suspenseFiber;
 
   // mark component as dirty, so it can be rendered again
-  brahmosData.isDirty = true;
+  nodeInstance[BRAHMOS_DATA_KEY].isDirty = true;
 
   // set the alternate fiber as retry fiber, as
-  root.retryFiber = fiber;
+  root.retryFiber = suspenseFiber;
 }
 
 export default function processComponentFiber(fiber) {
@@ -94,9 +97,6 @@ export default function processComponentFiber(fiber) {
 
   const brahmosData = nodeInstance[BRAHMOS_DATA_KEY];
 
-  // add fiber reference on component instance, so the component is aware of its fiber
-  brahmosData.fiber = fiber;
-
   // get current context
   const context = getCurrentContext(fiber, isReused);
 
@@ -118,7 +118,7 @@ export default function processComponentFiber(fiber) {
       fiber.suspense = nodeInstance;
     }
 
-    const pendingUpdates = getPendingUpdates(updateType, nodeInstance);
+    const pendingUpdates = getPendingUpdates(fiber);
 
     let state = getUpdatedState(prevState, pendingUpdates);
 
@@ -174,7 +174,7 @@ export default function processComponentFiber(fiber) {
     // for functional component call cleanEffect only on second render
     // alternate will be set on second render
     // NOTE: This is buggy, cleanEffects should be called before commit phase, check the behavior of react.
-    cleanEffects(nodeInstance);
+    cleanEffects(fiber);
   }
 
   // render the nodes
@@ -191,7 +191,7 @@ export default function processComponentFiber(fiber) {
       // if error is a suspender, handle the suspender in suspense component
       // TODO: this is very basic case for suspender, add better code to check if it is a suspender
       if (typeof err.then === 'function') {
-        const suspense = getClosestSuspense(fiber);
+        const suspenseFiber = getClosestSuspenseFiber(fiber);
 
         // console.log(err, fiber.node.type, suspense.props.fallback.template.strings);
 
@@ -200,14 +200,14 @@ export default function processComponentFiber(fiber) {
          * used outside of suspense
          * TODO: think for better message
          */
-        if (!suspense) {
+        if (!suspenseFiber) {
           throw new Error(`Rendering which got suspended can't be used outside of suspense.`);
         }
 
-        suspense.handleSuspender(err);
+        suspenseFiber.nodeInstance.handleSuspender(err, suspenseFiber);
 
         // reset the work loop to suspense fiber
-        resetLoopToComponentsFiber(suspense);
+        resetLoopToComponentsFiber(suspenseFiber);
 
         // else if there is any error boundary handle the error in error boundary
       } else if (errorBoundary) {
@@ -224,7 +224,8 @@ export default function processComponentFiber(fiber) {
       return;
     }
 
-    linkEffect(fiber);
+    // mark that the fiber has uncommitted effects
+    markPendingEffect(fiber);
   } else {
     // clone the existing nodes
     cloneChildrenFibers(fiber);

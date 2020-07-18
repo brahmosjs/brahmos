@@ -45,27 +45,25 @@ function tearDownFiber(fiber) {
   // NOTE: This has to be after ref logic as attribute nodes do not have nodeInstance but setRef has to be done
   if (!nodeInstance) return;
 
-  // reset the nodeInstance property in fiber
-  fiber.nodeInstance = null;
-
   // if it is a tag node remove the dom elements added by tag node
   if (isTagNode(node)) {
     const { domNodes } = nodeInstance;
 
     // remove all the elements of nodeInstance
     remove(domNodes);
-  } else if (isComponentNode(node)) {
-    const { mounted } = nodeInstance[BRAHMOS_DATA_KEY];
-    // if component node is not mounted yet, no need to do anything
-    if (!mounted) return;
-
+  }
+  // if its a component node and is mounted then call lifecycle methods
+  else if (isComponentNode(node) && nodeInstance[BRAHMOS_DATA_KEY].mounted) {
     // for class component call componentWillUnmount and for functional comp clean effects
     if (node.nodeType === CLASS_COMPONENT_NODE) {
       callLifeCycle(nodeInstance, 'componentWillUnmount');
     } else {
-      cleanEffects(nodeInstance, true);
+      cleanEffects(fiber, true);
     }
   }
+
+  // reset the nodeInstance property in fiber
+  fiber.nodeInstance = null;
 }
 
 export default function(root) {

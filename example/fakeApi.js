@@ -47,7 +47,7 @@ function fetchUser() {
   // console.log('fetch user...');
   return new Promise((resolve) => {
     setTimeout(() => {
-      // console.log('fetched user');
+      console.log('fetched user');
       resolve({
         name: 'Ringo Starr',
       });
@@ -75,7 +75,7 @@ function fetchPosts() {
   // console.log('fetch posts...');
   return new Promise((resolve) => {
     setTimeout(() => {
-      // console.log('fetched posts');
+      console.log('fetched posts');
       resolve(ringoPostsAtTheTime);
     }, 2000);
   });
@@ -84,7 +84,7 @@ function fetchPosts() {
 function fetchTrivia() {
   return new Promise((resolve) => {
     setTimeout(() => {
-      // console.log('fetched trivia');
+      console.log('fetched trivia');
 
       resolve([
         {

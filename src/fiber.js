@@ -1,5 +1,5 @@
 import { isComponentNode, isTagNode, isPrimitiveNode, ATTRIBUTE_NODE } from './brahmosNode';
-import { UPDATE_TYPE_DEFERRED, BRAHMOS_DATA_KEY } from './configs';
+import { UPDATE_TYPE_DEFERRED, BRAHMOS_DATA_KEY, UPDATE_TYPE_SYNC } from './configs';
 
 export const fibers = {
   workInProgress: null,
@@ -17,28 +17,21 @@ export function getCurrentFiber() {
   return currentFiber;
 }
 
+function updateNodeInstanceFiber(fiber) {
+  fiber.root.afterRender((fiber) => {
+    const { nodeInstance } = fiber;
+    if (nodeInstance && isComponentNode(fiber.node)) {
+      nodeInstance[BRAHMOS_DATA_KEY].fiber = fiber;
+    }
+  });
+}
+
 export function getLastCompleteTimeKey(type) {
   return type === UPDATE_TYPE_DEFERRED ? 'lastDeferredCompleteTime' : 'lastCompleteTime';
 }
 
 export function getUpdateTimeKey(type) {
   return type === UPDATE_TYPE_DEFERRED ? 'deferredUpdateTime' : 'updateTime';
-}
-
-export function getCurrentTreeFiber(componentFiber, type) {
-  const { wip } = componentFiber.root;
-  let fiber = componentFiber;
-
-  while (fiber) {
-    // fiber is from wip tree return the alternate of the fiber
-    if (fiber === wip) {
-      return componentFiber.alternate;
-    }
-
-    fiber = fiber.parent;
-  }
-
-  return componentFiber;
 }
 
 export function setUpdateTime(fiber, type) {
@@ -62,8 +55,14 @@ function linkFiber(fiber, refFiber, parentFiber) {
   fiber.parent = parentFiber;
 }
 
+// function to mark pending effects on the fiber and root
+export function markPendingEffect(fiber) {
+  fiber.hasUncommittedEffect = true;
+  fiber.root.hasUncommittedEffect = true;
+}
+
 export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
-  const { node, part, nodeInstance, child, deferredUpdateTime } = fiber;
+  const { root, node, part, nodeInstance, child, deferredUpdateTime } = fiber;
 
   if (!wipFiber) {
     wipFiber = createFiber(fiber.root, node, part);
@@ -74,12 +73,6 @@ export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
     wipFiber.part = part;
 
     /**
-     * reset the nextEffect prop from the wipFiber, when we are reusing wipFiber.
-     * alternate might have nextEffect prop intact if the wip tree was process but
-     * wasn't committed
-     */
-    wipFiber.nextEffect = null;
-    /**
      * As the cloned node is treated as new fiber, reset the createdAt time
      */
     wipFiber.createdAt = performance.now();
@@ -88,7 +81,7 @@ export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
   /**
    * When we are cloning a fiber we should prevent the fiber to tear down
    * A fiber can be marked for tearDown but after suspend (through suspense) / or error boundaries
-   * A fiber can again be used.
+   * it can be used again making the tear down stale.
    */
   fiber.shouldTearDown = false;
 
@@ -162,6 +155,7 @@ export function createHostFiber(domNode) {
     lastSuspenseFiber: null,
     preventSchedule: false,
     currentTransition: null,
+    hasUncommittedEffect: false,
     pendingTransitions: [],
     tearDownFibers: [],
     postCommitEffects: [],
@@ -215,19 +209,8 @@ export function createFiber(root, node, part) {
     processedTime: 0, // processedTime 0 signifies it needs processing
     createdAt: performance.now(),
     shouldTearDown: false,
+    hasUncommittedEffect: false,
   };
-}
-
-/**
- * link fibers with effect
- */
-export function linkEffect(fiber) {
-  const { root } = fiber;
-  // to the last effect fiber link the fiber as next effect
-  root.lastEffectFiber.nextEffect = fiber;
-
-  // store fiber as last fiber with effect
-  root.lastEffectFiber = fiber;
 }
 
 /**
@@ -367,6 +350,51 @@ export function markToTearDown(fiber) {
   fiber.root.tearDownFibers.push(fiber);
 }
 
+/**
+ * Get all the new fibers which are created during the
+ */
+export function getNewFibers(root) {
+  const { updateType, wip, current, lastCompleteTime } = root;
+  const updateTimeKey = getUpdateTimeKey(updateType);
+  const newFibers = [];
+
+  let fiber = updateType === UPDATE_TYPE_SYNC ? current : wip;
+
+  while (fiber) {
+    const { createdAt, child } = fiber;
+    const updateTime = fiber[updateTimeKey];
+    const fiberIsNew = createdAt > lastCompleteTime;
+    const hierarchyHasUpdates = fiberIsNew || updateTime > lastCompleteTime;
+
+    if (fiberIsNew) {
+      // push fiber in new fiber list
+      newFibers.push(fiber);
+
+      /**
+       * if child is there and it does not point back to correct parent
+       * set the pointer back to parent. This can happen if the fiber is new
+       * but the child is an existing fiber. This can happen when we haven't
+       * processed fiber and just cloned from the current tree
+       * We don't do this during rendering phase to not disturb the current tree
+       */
+      if (child && child.parent !== fiber) child.parent = fiber;
+    }
+
+    /**
+     * do a depth first traversal,
+     * go to child fiber only if the fiber is new, if its not
+     * it means no child has updates
+     */
+    if (child && hierarchyHasUpdates) fiber = child;
+    else {
+      while (fiber !== root && !fiber.sibling) fiber = fiber.parent;
+      fiber = fiber.sibling;
+    }
+  }
+
+  return newFibers;
+}
+
 // NOTE: Delete this function
 window.getBrokenLink = (fiber) => {
   const current = fiber.root.current;
@@ -374,5 +402,17 @@ window.getBrokenLink = (fiber) => {
   while (fiber) {
     if (fiber.child && fiber.child.parent !== fiber) return fiber;
     fiber = fiber.child;
+  }
+};
+
+window.belongsTo = (fiber) => {
+  while (fiber) {
+    if (fiber.parent === fiber.root.wip) {
+      return 'wip';
+    } else if (fiber.parent === fiber.root.current) {
+      return 'current';
+    }
+
+    fiber = fiber.parent;
   }
 };

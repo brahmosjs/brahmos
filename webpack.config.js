@@ -8,9 +8,15 @@ module.exports = {
     path: path.resolve(__dirname, './dist'),
     filename: 'bundle.js',
   },
-  plugins: [new HtmlWebpackPlugin({
-    template: './example/index.html',
-  })],
+  devServer: {
+    compress: true,
+    port: 8081,
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: './example/index.html',
+    }),
+  ],
   module: {
     rules: [
       {

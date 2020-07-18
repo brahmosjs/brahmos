@@ -1,7 +1,7 @@
 import { UPDATE_SOURCE_EVENT, UPDATE_SOURCE_TRANSITION } from './configs';
 import { getCurrentUpdateSource, getCurrentTransition, getUpdateType } from './updateMetaUtils';
 import { PREDEFINED_TRANSITION_DEFERRED } from './transitionUtils';
-import { setUpdateTime, getCurrentTreeFiber, getFiberFromComponent } from './fiber';
+import { setUpdateTime, getFiberFromComponent } from './fiber';
 import { doSyncProcessing, doDeferredProcessing } from './workLoop';
 import { afterCurrentStack } from './utils';
 
@@ -12,7 +12,7 @@ import { afterCurrentStack } from './utils';
  * to children of current tree.
  */
 export default function reRender(component) {
-  let fiber = getFiberFromComponent(component);
+  const fiber = getFiberFromComponent(component);
 
   const { root } = fiber;
 
@@ -20,9 +20,6 @@ export default function reRender(component) {
   const currentTransition = getCurrentTransition();
 
   const updateType = getUpdateType();
-
-  // get current tree fiber if the fiber is from wip tree
-  fiber = getCurrentTreeFiber(fiber, updateType);
 
   // set updateTime on fiber parent hierarchy based on updateType
   setUpdateTime(fiber, updateType);

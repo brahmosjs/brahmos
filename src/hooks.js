@@ -20,20 +20,10 @@ import {
 } from './updateMetaUtils';
 
 import { TRANSITION_STATE_INITIAL, TRANSITION_STATE_START } from './transitionUtils';
-import { getFiberFromComponent } from './fiber';
+import { getFiberFromComponent, getCurrentFiber } from './fiber';
 
-/**
- * TODO: Rename currentComponent to currentComponentInstance
- * and component to component
- */
-
-let currentComponent;
-
-/**
- * get updateType from component
- */
-function getUpdateTypeFromComponent(component) {
-  return getFiberFromComponent(component).root.updateType;
+function getCurrentComponent() {
+  return getCurrentFiber().nodeInstance;
 }
 
 /**
@@ -108,9 +98,13 @@ function reRenderComponentIfRequired(component, state, lastState) {
  * Plus a method to check if hook has to be updated
  */
 function getHook(createHook, shouldUpdate = (hook) => false, reduce = (hook) => hook) {
-  const { pointer } = currentComponent;
-  const updateType = getUpdateTypeFromComponent(currentComponent);
-  const hooks = getHooksList(updateType, currentComponent);
+  const {
+    nodeInstance: component,
+    root: { updateType },
+  } = getCurrentFiber();
+
+  const { pointer } = component;
+  const hooks = getHooksList(updateType, component);
   let hook = hooks[pointer];
 
   // if hook is not there initialize and add it to the pointer
@@ -120,25 +114,25 @@ function getHook(createHook, shouldUpdate = (hook) => false, reduce = (hook) => 
   }
 
   // increment the hook pointer
-  currentComponent.pointer += 1;
+  component.pointer += 1;
   return reduce(hook);
 }
 
-/**
- * Method to set the current component while rendering the components
- */
-export function setCurrentComponent(component) {
-  currentComponent = component;
+export function prepareHooksForRender() {
+  const fiber = getCurrentFiber();
+  const {
+    nodeInstance: component,
+    root: { updateType },
+  } = fiber;
   component.pointer = 0;
 
   // based on update type clone the hooks to deferred hooks
-  const updateType = getUpdateTypeFromComponent(component);
   if (updateType === UPDATE_TYPE_DEFERRED) {
     cloneHooks(component);
   }
 
   // call all the pending update before trying to render,
-  const pendingUpdates = getPendingUpdates(updateType, component);
+  const pendingUpdates = getPendingUpdates(fiber);
   pendingUpdates.forEach((task) => task.updater());
 }
 
@@ -147,7 +141,7 @@ export function setCurrentComponent(component) {
  */
 
 function useStateBase(initialState, getNewState) {
-  const component = currentComponent;
+  const component = getCurrentComponent();
   const { pointer: hookIndex } = component;
   return getHook(() => {
     /**
@@ -259,7 +253,8 @@ export function useCallback(callback, dependencies) {
  * Base module to create effect hooks
  */
 function useEffectBase(effectHandler, dependencies) {
-  const { pointer, hooks } = currentComponent;
+  const component = getCurrentComponent();
+  const { pointer, hooks } = component;
   const lastHook = hooks[pointer] || {
     animationFrame: null,
     cleanEffect: null,
@@ -278,7 +273,7 @@ function useEffectBase(effectHandler, dependencies) {
   };
 
   hooks[pointer] = hook;
-  currentComponent.pointer += 1;
+  component.pointer += 1;
 }
 
 /**
@@ -321,8 +316,9 @@ export function useDebugValue() {
  * Create context hook
  */
 export function useContext(Context) {
+  const component = getCurrentComponent();
   const { id, defaultValue } = Context;
-  const { __context: context } = currentComponent;
+  const { __context: context } = component;
   const provider = context[id];
 
   const value = provider ? provider.props.value : defaultValue;
@@ -332,7 +328,7 @@ export function useContext(Context) {
     if (provider) {
       const { subs } = provider;
 
-      const callback = getConsumerCallback(currentComponent);
+      const callback = getConsumerCallback(component);
 
       subs.push(callback);
 
@@ -343,7 +339,7 @@ export function useContext(Context) {
   }, []);
 
   // store the context value in current component so we can check if value is changed on subscribed callback
-  currentComponent.context = value;
+  component.context = value;
 
   return value;
 }
@@ -352,7 +348,7 @@ export function useContext(Context) {
  * Transition hook
  */
 export function useTransition({ timeoutMs }) {
-  const component = currentComponent;
+  const component = getCurrentComponent();
 
   return getHook(
     () => {
@@ -430,9 +426,12 @@ export function useTransition({ timeoutMs }) {
 /**
  * Method to run all the effects of a component
  */
-export function runEffects(component) {
-  const updateType = getUpdateTypeFromComponent(component);
-  const hooks = getHooksList(updateType, component);
+export function runEffects(fiber) {
+  const {
+    nodeInstance,
+    root: { updateType },
+  } = fiber;
+  const hooks = getHooksList(updateType, nodeInstance);
 
   for (let i = 0, ln = hooks.length; i < ln; i++) {
     const hook = hooks[i];
@@ -445,9 +444,13 @@ export function runEffects(component) {
 /**
  * Method to run cleanup all the effects of a component
  */
-export function cleanEffects(component, unmount) {
-  const updateType = getUpdateTypeFromComponent(component);
-  const hooks = getHooksList(updateType, component);
+export function cleanEffects(fiber, unmount) {
+  const {
+    nodeInstance,
+    root: { updateType },
+  } = fiber;
+
+  const hooks = getHooksList(updateType, nodeInstance);
 
   for (let i = 0, ln = hooks.length; i < ln; i++) {
     const hook = hooks[i];

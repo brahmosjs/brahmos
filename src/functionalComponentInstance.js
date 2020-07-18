@@ -1,4 +1,4 @@
-import { setCurrentComponent } from './hooks';
+import { prepareHooksForRender } from './hooks';
 import { BRAHMOS_DATA_KEY } from './configs';
 
 export default function functionalComponentInstance(FuncComponent) {
@@ -6,7 +6,7 @@ export default function functionalComponentInstance(FuncComponent) {
     syncHooks: [],
     deferredHooks: [],
     __render(props) {
-      setCurrentComponent(this);
+      prepareHooksForRender(this);
       const nodes = FuncComponent(props);
 
       this[BRAHMOS_DATA_KEY].nodes = nodes;

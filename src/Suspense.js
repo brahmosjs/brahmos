@@ -14,9 +14,9 @@ import { withTransition } from './updateMetaUtils';
 import { deferredUpdates } from './deferredUpdates';
 import reRender from './reRender';
 import { BRAHMOS_DATA_KEY } from './configs';
-import { getFiberFromComponent } from './fiber';
+import { getCurrentFiber } from './fiber';
 
-export function getClosestSuspense(fiber, includeSuspenseList) {
+export function getClosestSuspenseFiber(fiber, includeSuspenseList) {
   const { root } = fiber;
   let { nodeInstance } = fiber;
   while (
@@ -33,7 +33,7 @@ export function getClosestSuspense(fiber, includeSuspenseList) {
     nodeInstance = fiber.nodeInstance;
   }
 
-  return nodeInstance;
+  return fiber;
 }
 
 export function getClosestSuspenseListManager(manager) {
@@ -43,19 +43,34 @@ export function getClosestSuspenseListManager(manager) {
     : null;
 }
 
+function getSuspenseManager(fiber, transition) {
+  const { nodeInstance: component } = fiber;
+  if (!component) return null;
+
+  const { suspenseManagers } = component;
+
+  const { transitionId } = transition;
+
+  let suspenseManager = suspenseManagers[transitionId];
+  if (!suspenseManager) {
+    suspenseManager = suspenseManagers[transitionId] = new SuspenseManager(fiber, transition);
+  }
+
+  return suspenseManager;
+}
+
 class SuspenseManager {
-  constructor(component, transition) {
-    this.component = component;
+  constructor(fiber, transition) {
+    const { nodeInstance } = fiber;
+    this.component = nodeInstance;
     this.transition = transition;
     this.childManagers = [];
     this.suspender = null;
-    this.isSuspenseList = component instanceof SuspenseList;
+    this.isSuspenseList = nodeInstance instanceof SuspenseList;
 
-    const { parent: parentFiber } = getFiberFromComponent(component);
-    this.parentSuspenseManager = getSuspenseManager(
-      getClosestSuspense(parentFiber, true),
-      transition,
-    );
+    const parentSuspenseFiber = getClosestSuspenseFiber(fiber.parent, true);
+    this.parentSuspenseManager =
+      parentSuspenseFiber && getSuspenseManager(parentSuspenseFiber, transition);
     this.rootSuspenseManager = null;
     this.recordChildSuspense();
 
@@ -74,8 +89,8 @@ class SuspenseManager {
   }
 
   addRootToProcess() {
-    const { rootSuspenseManager, component } = this;
-    const { root } = getFiberFromComponent(component);
+    const { rootSuspenseManager } = this;
+    const { root } = getCurrentFiber();
     root.afterRender(rootSuspenseManager.handleSuspense);
   }
 
@@ -174,7 +189,7 @@ class SuspenseManager {
 
     // Get the unresolved suspense for the transition.
     const transitionHasUnresolvedSuspense = pendingSuspense.filter(
-      (suspense) => getSuspenseManager(suspense, transition).suspender,
+      (suspense) => suspense.suspenseManagers[transition.transitionId].suspender,
     ).length;
 
     /**
@@ -253,7 +268,7 @@ class SuspenseManager {
 }
 
 function getActiveTransition(component) {
-  const fiber = getFiberFromComponent(component);
+  const fiber = getCurrentFiber();
   let transition = getTransitionFromFiber(fiber, PREDEFINED_TRANSITION_DEFERRED);
 
   /**
@@ -269,23 +284,6 @@ function getActiveTransition(component) {
   }
 
   return transition;
-}
-
-function getSuspenseManager(component, transition) {
-  if (!component) return null;
-
-  transition = transition || getActiveTransition(component);
-
-  const { suspenseManagers } = component;
-
-  const { transitionId } = transition;
-
-  let suspenseManager = suspenseManagers[transitionId];
-  if (!suspenseManager) {
-    suspenseManager = suspenseManagers[transitionId] = new SuspenseManager(component, transition);
-  }
-
-  return suspenseManager;
 }
 
 export class SuspenseList extends Component {
@@ -305,10 +303,10 @@ export class Suspense extends Component {
     this.suspenseManagers = {};
   }
 
-  handleSuspender(suspender) {
+  handleSuspender(suspender, suspenseFiber) {
     const transition = getActiveTransition(this);
 
-    const suspenseManager = getSuspenseManager(this);
+    const suspenseManager = getSuspenseManager(suspenseFiber, transition);
 
     /**
      * Mark current transition as suspended
@@ -330,7 +328,10 @@ export class Suspense extends Component {
   }
 
   render() {
-    const suspenseManager = getSuspenseManager(this);
+    const transition = getActiveTransition(this);
+    const fiber = getCurrentFiber();
+
+    const suspenseManager = getSuspenseManager(fiber, transition);
 
     const resolved = !suspenseManager.suspender;
     const { fallback, children } = this.props;

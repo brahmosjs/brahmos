@@ -1,5 +1,5 @@
 import { TAG_ELEMENT_NODE, ATTRIBUTE_NODE } from './brahmosNode';
-import { linkEffect, createAndLink, cloneChildrenFibers } from './fiber';
+import { createAndLink, cloneChildrenFibers, markPendingEffect } from './fiber';
 import getTagNode from './TagNode';
 import TemplateNode from './TemplateNode';
 import { loopEntries } from './utils';
@@ -138,8 +138,8 @@ export default function processTagFiber(fiber) {
     cloneChildrenFibers(fiber);
   }
 
-  // mark this node to be updated or to get appended as a effect
-  linkEffect(fiber);
+  // mark that the fiber has uncommitted effects
+  markPendingEffect(fiber);
 
   // attach context on fiber
   fiber.context = context;

@@ -19,17 +19,18 @@ import {
   isTransitionCompleted,
 } from './transitionUtils';
 import {
-  linkEffect,
+  setCurrentFiber,
   getNextFiber,
   cloneChildrenFibers,
   getUpdateTimeKey,
   getLastCompleteTimeKey,
   cloneCurrentFiber,
   markToTearDown,
+  markPendingEffect,
+  getNewFibers,
 } from './fiber';
 import processArrayFiber from './processArrayFiber';
 import tearDown from './tearDown';
-import { loopEntries } from './utils';
 
 const TIME_REQUIRE_TO_PROCESS_FIBER = 2;
 
@@ -42,8 +43,7 @@ export function schedule(shouldSchedule, cb) {
 }
 
 function fiberHasUnprocessedUpdates(fiber) {
-  const { root, node, nodeInstance } = fiber;
-  const { updateType } = root;
+  const { node, nodeInstance } = fiber;
 
   /**
    * Return if node is not component type or if it is component
@@ -51,9 +51,7 @@ function fiberHasUnprocessedUpdates(fiber) {
    */
   if (!(isComponentNode(node) && nodeInstance)) return false;
 
-  return (
-    !!getPendingUpdates(updateType, nodeInstance).length || nodeInstance[BRAHMOS_DATA_KEY].isDirty
-  );
+  return !!getPendingUpdates(fiber).length || nodeInstance[BRAHMOS_DATA_KEY].isDirty;
 }
 
 export function processFiber(fiber) {
@@ -79,6 +77,9 @@ export function processFiber(fiber) {
     return;
   }
 
+  // set the current fiber we are processing
+  setCurrentFiber(fiber);
+
   if (isPrimitiveNode(node)) {
     processTextFiber(fiber);
   } else if (Array.isArray(node)) {
@@ -88,7 +89,8 @@ export function processFiber(fiber) {
   } else if (isComponentNode(node)) {
     processComponentFiber(fiber);
   } else if (node.nodeType === ATTRIBUTE_NODE) {
-    linkEffect(fiber);
+    // nothing to on process phase, just mark that the fiber has uncommitted effects
+    markPendingEffect(fiber);
   }
 
   // after processing, set the processedTime to the fiber
@@ -105,7 +107,7 @@ function shouldCommit(root) {
      */
     return (
       root.lastCompleteTime >= root.updateTime &&
-      root.nextEffect &&
+      root.hasUncommittedEffect &&
       isTransitionCompleted(root.currentTransition)
     );
   }
@@ -118,25 +120,38 @@ function shouldCommit(root) {
  * This is the part where all the changes are flushed on dom,
  * It will also take care of tearing the old nodes down
  */
-function commitChanges(root, onComplete) {
-  const lastCompleteTimeKey = getLastCompleteTimeKey(root.updateType);
+function commitChanges(root) {
+  const { updateType, current } = root;
+  const lastCompleteTimeKey = getLastCompleteTimeKey(updateType);
 
   // tearDown old nodes
   tearDown(root);
 
+  // get new fibers before setting update time
+  const newFibers = getNewFibers(root);
+
   /**
    * set the last updated time for render
-   * NOTE: We do it before effect loop so setStates in effect are aware of last render finish
+   * NOTE: We do it before effect loop so if there is
+   * setStates in effect updateTime for setState should not
+   * fall behind the complete time
+   *
+   * Also, lastCompleteTime should be marked always
+   * weather its deferred or sync updates
    */
-  root[lastCompleteTimeKey] = performance.now();
+  root[lastCompleteTimeKey] = root.lastCompleteTime = performance.now();
 
-  // when we are done with processing all fiber run effect loop
-  effectLoop(root);
+  // if it deferred swap the wip and current tree
+  if (updateType === UPDATE_TYPE_DEFERRED) {
+    root.current = root.wip;
+    root.wip = current;
+  }
 
-  if (onComplete) onComplete();
+  // After correcting the tree flush the effects on new fibers
+  effectLoop(root, newFibers);
 }
 
-export default function workLoop(fiber, topFiber, onComplete) {
+export default function workLoop(fiber, topFiber) {
   const { root } = fiber;
   const { updateType, currentTransition } = root;
   const lastCompleteTimeKey = getLastCompleteTimeKey(updateType);
@@ -170,7 +185,7 @@ export default function workLoop(fiber, topFiber, onComplete) {
         fiber = getNextFiber(fiber, topFiber, lastCompleteTime, updateTimeKey);
       } else {
         // if we are out of time schedule work for next fiber
-        workLoop(fiber, topFiber, onComplete);
+        workLoop(fiber, topFiber);
 
         return;
       }
@@ -187,13 +202,13 @@ export default function workLoop(fiber, topFiber, onComplete) {
        * if transition is completed and it does not have any effect to commit, we should remove the
        * transition from pending transition
        */
-      if (!root.nextEffect && isTransitionCompleted(currentTransition)) {
+      if (!root.hasUncommittedEffect && isTransitionCompleted(currentTransition)) {
         removeTransitionFromRoot(root);
       }
     }
 
     if (shouldCommit(root)) {
-      commitChanges(root, onComplete);
+      commitChanges(root);
     }
 
     // check if there are any pending transition, if yes try rendering them
@@ -221,15 +236,7 @@ export function doDeferredProcessing(root) {
   root.currentTransition = pendingTransition;
 
   root.wip = cloneCurrentFiber(root.current, root.wip, root, root);
-  workLoop(root.wip, root, () => {
-    // after flushing effects (onComplete) swap wip and current
-    const { current } = root;
-
-    root.current = root.wip;
-    root.lastCompleteTime = root.lastDeferredCompleteTime;
-
-    root.wip = current;
-  });
+  workLoop(root.wip, root);
 }
 
 export function doSyncProcessing(fiber) {

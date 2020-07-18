@@ -99,9 +99,13 @@ export function getPendingUpdatesKey(updateType) {
 /**
  * Get pending states based on update type and current transition
  */
-export function getPendingUpdates(updateType, component) {
+export function getPendingUpdates(fiber) {
+  const {
+    root: { updateType },
+    nodeInstance: component,
+  } = fiber;
   const brahmosData = component[BRAHMOS_DATA_KEY];
-  const currentTransitionId = getTransitionFromFiber(brahmosData.fiber).transitionId;
+  const currentTransitionId = getTransitionFromFiber(fiber).transitionId;
   const pendingUpdatesKey = getPendingUpdatesKey(updateType);
 
   return brahmosData[pendingUpdatesKey].filter(
