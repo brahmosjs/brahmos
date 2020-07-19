@@ -361,9 +361,9 @@ export function getNewFibers(root) {
   let fiber = updateType === UPDATE_TYPE_SYNC ? current : wip;
 
   while (fiber) {
-    const { createdAt, child } = fiber;
+    const { createdAt, child, hasUncommittedEffect } = fiber;
     const updateTime = fiber[updateTimeKey];
-    const fiberIsNew = createdAt > lastCompleteTime;
+    const fiberIsNew = createdAt > lastCompleteTime || hasUncommittedEffect;
     const hierarchyHasUpdates = fiberIsNew || updateTime > lastCompleteTime;
 
     if (fiberIsNew) {
