@@ -15,6 +15,8 @@ export const RENAMED_EVENTS = {
   doubleclick: 'dblclick',
 };
 
+export const SUSPENSE_REVEAL_INTERVAL = 100; // in ms
+
 /**
  * Regex taken from Preact. (https://github.com/preactjs/preact/blob/master/src/constants.js)
  */

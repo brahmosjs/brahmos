@@ -1,7 +1,7 @@
 import { createElement, Component } from './circularDep';
 
 import { forwardRef } from './refs';
-import { getPromiseSuspendedValue } from './utils';
+import { getPromiseSuspendedValue, afterCurrentStack, now } from './utils';
 import {
   TRANSITION_STATE_SUSPENDED,
   TRANSITION_STATE_TIMED_OUT,
@@ -13,8 +13,8 @@ import {
 import { withTransition } from './updateMetaUtils';
 import { deferredUpdates } from './deferredUpdates';
 import reRender from './reRender';
-import { BRAHMOS_DATA_KEY } from './configs';
-import { getCurrentFiber } from './fiber';
+import { BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED, SUSPENSE_REVEAL_INTERVAL } from './configs';
+import { getCurrentFiber, getFiberFromComponent, setUpdateTime } from './fiber';
 
 export function getClosestSuspenseFiber(fiber, includeSuspenseList) {
   const { root } = fiber;
@@ -57,6 +57,18 @@ function getSuspenseManager(fiber, transition) {
   }
 
   return suspenseManager;
+}
+
+function markComponentDirty(component) {
+  component[BRAHMOS_DATA_KEY].isDirty = true;
+}
+
+function markManagerDirty(manager) {
+  const fiber = getFiberFromComponent(manager.component);
+  if (manager.isUnresolved() && fiber) {
+    markComponentDirty(manager.component);
+    setUpdateTime(fiber, UPDATE_TYPE_DEFERRED);
+  }
 }
 
 class SuspenseManager {
@@ -184,7 +196,7 @@ class SuspenseManager {
 
     // mark the suspense to be resolved and component as dirty
     this.suspender = null;
-    this.component[BRAHMOS_DATA_KEY].isDirty = true;
+    markComponentDirty(this.component);
 
     const transitionTimedOut = transition.transitionState === TRANSITION_STATE_TIMED_OUT;
 
@@ -212,15 +224,19 @@ class SuspenseManager {
        * In which case there must be some parent which has pending update.
        * So we just need to restart deferred workLoop, which we can do by rerendering from wip fiber.
        */
-      if (!component[BRAHMOS_DATA_KEY].fiber) targetComponent = this.fiber.root.wip.nodeInstance;
+      if (!getFiberFromComponent(component)) targetComponent = this.fiber.root.wip.nodeInstance;
 
       reRender(targetComponent);
     };
-    if (transitionTimedOut || !pendingSuspense.includes(component)) {
-      deferredUpdates(doSuspenseRerender);
-    } else {
-      withTransition(transition, doSuspenseRerender);
-    }
+
+    // trigger rerender on specific intervals
+    setTimeout(() => {
+      if (transitionTimedOut || !pendingSuspense.includes(component)) {
+        deferredUpdates(doSuspenseRerender);
+      } else {
+        withTransition(transition, doSuspenseRerender);
+      }
+    }, now() % SUSPENSE_REVEAL_INTERVAL);
   }
 
   getChildrenSuspenders() {
@@ -238,11 +254,20 @@ class SuspenseManager {
 
   handleSuspenseList() {
     const { component, childManagers } = this;
-    const { revealOrder = 'together' } = component.props;
+    const { revealOrder = 'together', tail } = component.props;
 
     // resolve the child managers based on reveal order
     const handleManagerInOrder = (promise, manager) => {
       return promise.then(() => {
+        /**
+         * If we are doing forward reveal order and have mentioned
+         * tail to be collapsed we need to mark the next manager as dirty
+         * so that the next component can show loading state
+         */
+        if (revealOrder === 'forwards' && tail === 'collapsed') {
+          markManagerDirty(manager);
+        }
+
         return manager.handleSuspense();
       });
     };
@@ -347,7 +372,6 @@ export class Suspense extends Component {
 
     const resolved = !suspenseManager.suspender;
     const { fallback, children } = this.props;
-
     if (resolved) return children;
     else if (suspenseManager.shouldShowFallback()) return fallback;
     else return null;

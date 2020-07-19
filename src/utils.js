@@ -32,6 +32,11 @@ export function isNil(val) {
   return val === undefined || val === null;
 }
 
+// function to return current time
+export function now() {
+  return performance.now();
+}
+
 // add brahmos data container to domNode
 export function addDataContainer(domNode) {
   // add brahmos data container
@@ -239,7 +244,7 @@ export function afterCurrentStack(cb) {
  */
 
 export function getUniqueId() {
-  return performance.now() + '-' + Math.random() * 1000000;
+  return now() + '-' + Math.random() * 1000000;
 }
 
 /**

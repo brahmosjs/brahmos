@@ -10,7 +10,7 @@ export default function App() {
 
 function ProfilePage({ resource }) {
   return (
-    <SuspenseList revealOrder="forwards" tail="collapsed">
+    <SuspenseList revealOrder="forwards">
       <Suspense fallback={<h1>Loading...</h1>}>
         <ProfileDetails resource={resource} />
       </Suspense>

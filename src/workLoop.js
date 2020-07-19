@@ -31,6 +31,7 @@ import {
 } from './fiber';
 import processArrayFiber from './processArrayFiber';
 import tearDown from './tearDown';
+import { now } from './utils';
 
 const TIME_REQUIRE_TO_PROCESS_FIBER = 2;
 
@@ -94,7 +95,7 @@ export function processFiber(fiber) {
   }
 
   // after processing, set the processedTime to the fiber
-  fiber.processedTime = performance.now();
+  fiber.processedTime = now();
 }
 
 function shouldCommit(root) {
@@ -139,7 +140,7 @@ function commitChanges(root) {
    * Also, lastCompleteTime should be marked always
    * weather its deferred or sync updates
    */
-  root[lastCompleteTimeKey] = root.lastCompleteTime = performance.now();
+  root[lastCompleteTimeKey] = root.lastCompleteTime = now();
 
   // if it deferred swap the wip and current tree
   if (updateType === UPDATE_TYPE_DEFERRED) {

@@ -1,5 +1,6 @@
 import { isComponentNode, isTagNode, isPrimitiveNode, ATTRIBUTE_NODE } from './brahmosNode';
 import { UPDATE_TYPE_DEFERRED, BRAHMOS_DATA_KEY, UPDATE_TYPE_SYNC } from './configs';
+import { now } from './utils';
 
 export const fibers = {
   workInProgress: null,
@@ -36,7 +37,7 @@ export function getUpdateTimeKey(type) {
 
 export function setUpdateTime(fiber, type) {
   const key = getUpdateTimeKey(type);
-  const time = performance.now();
+  const time = now();
 
   while (fiber) {
     fiber[key] = time;
@@ -75,7 +76,7 @@ export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
     /**
      * As the cloned node is treated as new fiber, reset the createdAt time
      */
-    wipFiber.createdAt = performance.now();
+    wipFiber.createdAt = now();
   }
 
   /**
@@ -207,7 +208,7 @@ export function createFiber(root, node, part) {
     deferredUpdateTime: 0,
     updateTime: 0,
     processedTime: 0, // processedTime 0 signifies it needs processing
-    createdAt: performance.now(),
+    createdAt: now(),
     shouldTearDown: false,
     hasUncommittedEffect: false,
   };
