@@ -399,23 +399,23 @@ export function getNewFibers(root) {
 }
 
 // NOTE: Delete this function
-window.getBrokenLink = (fiber) => {
-  const current = fiber.root.current;
-  fiber = current;
-  while (fiber) {
-    if (fiber.child && fiber.child.parent !== fiber) return fiber;
-    fiber = fiber.child;
-  }
-};
+// window.getBrokenLink = (fiber) => {
+//   const current = fiber.root.current;
+//   fiber = current;
+//   while (fiber) {
+//     if (fiber.child && fiber.child.parent !== fiber) return fiber;
+//     fiber = fiber.child;
+//   }
+// };
 
-window.belongsTo = (fiber) => {
-  while (fiber) {
-    if (fiber.parent === fiber.root.wip) {
-      return 'wip';
-    } else if (fiber.parent === fiber.root.current) {
-      return 'current';
-    }
+// window.belongsTo = (fiber) => {
+//   while (fiber) {
+//     if (fiber.parent === fiber.root.wip) {
+//       return 'wip';
+//     } else if (fiber.parent === fiber.root.current) {
+//       return 'current';
+//     }
 
-    fiber = fiber.parent;
-  }
-};
+//     fiber = fiber.parent;
+//   }
+// };
