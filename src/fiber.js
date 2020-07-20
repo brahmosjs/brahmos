@@ -148,6 +148,8 @@ export function createHostFiber(domNode) {
   let afterRenderCallbacks = [];
 
   const rootFiber = {
+    updateType: 'sync',
+    updateSource: 'js',
     domNode,
     idleCallback: null,
     current: null,
