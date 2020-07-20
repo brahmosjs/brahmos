@@ -4,9 +4,10 @@ import render from './render';
  *  Render children outside the main DOM hierarchy of
  *  the parent component without losing the context
  */
-function createPortal (child, container) {
+function createPortal(child, container) {
   // mark the child node as ported node
-  child.portalContainer = container;
+  // TODO: Work on portal container logic with fiber
+  // child.portalContainer = container;
 
   render(child, container);
 

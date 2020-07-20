@@ -77,10 +77,6 @@ export function brahmosNode(props, values, key) {
     /** Component specific properties */
     type: null,
     props,
-    portalContainer: null,
-    prevProps: null,
-    prevState: null,
-    lastSnapshot: undefined,
 
     /** tag node specific properties */
     element: '',

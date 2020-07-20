@@ -7,7 +7,7 @@ import {
 
 import functionalComponentInstance from './functionalComponentInstance';
 import { CLASS_COMPONENT_NODE } from './brahmosNode';
-import { PureComponent, Suspense, getClosestSuspenseFiber } from './circularDep';
+import { PureComponent, getClosestSuspenseFiber } from './circularDep';
 
 import { cleanEffects } from './hooks';
 import { callLifeCycle } from './utils';
@@ -68,8 +68,7 @@ function resetLoopToComponentsFiber(suspenseFiber) {
 
 export default function processComponentFiber(fiber) {
   const { node } = fiber;
-  const { part, root } = fiber;
-  const { updateType } = root;
+  const { part } = fiber;
   const { type: Component, nodeType, props = {}, ref } = node;
 
   const isFirstRender = false;
@@ -112,11 +111,6 @@ export default function processComponentFiber(fiber) {
     const { props: prevProps, state: prevState } = brahmosData.committedValues;
 
     const { shouldComponentUpdate } = nodeInstance;
-
-    // if component is of Suspense type add it in fiber
-    if (nodeInstance instanceof Suspense) {
-      fiber.suspense = nodeInstance;
-    }
 
     const pendingUpdates = getPendingUpdates(fiber);
 

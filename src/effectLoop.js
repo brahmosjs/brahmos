@@ -95,7 +95,7 @@ function handleComponentEffect(fiber) {
   if (nodeType === CLASS_COMPONENT_NODE) {
     const { props: prevProps, state: prevState } = brahmosData.committedValues;
 
-    node.lastSnapshot = callLifeCycle(nodeInstance, 'getSnapshotBeforeUpdate', [
+    brahmosData.lastSnapshot = callLifeCycle(nodeInstance, 'getSnapshotBeforeUpdate', [
       prevProps,
       prevState,
     ]);
@@ -118,12 +118,12 @@ function handleComponentPostCommitEffect(fiber) {
   const { node, nodeInstance, root } = fiber;
   const { updateType } = root;
 
-  const { nodeType, lastSnapshot } = node;
+  const { nodeType } = node;
   const brahmosData = nodeInstance[BRAHMOS_DATA_KEY];
 
   if (nodeType === CLASS_COMPONENT_NODE) {
     const { props, state } = nodeInstance;
-    const { committedValues } = brahmosData;
+    const { committedValues, lastSnapshot } = brahmosData;
     // get the previous state and prevProps
     const { props: prevProps, state: prevState } = committedValues;
     /**
@@ -171,7 +171,6 @@ function handleAttributeEffect(fiber) {
 }
 
 export function resetEffectList(root) {
-  root.lastEffectFiber = root;
   root.tearDownFibers = [];
   root.postCommitEffects = [];
   root.lastArrayDOM = null;

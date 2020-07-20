@@ -13,6 +13,7 @@ export class Component {
 
     this.state = undefined;
     this[BRAHMOS_DATA_KEY] = {
+      lastSnapshot: null,
       pendingSyncUpdates: [],
       pendingDeferredUpdates: [],
       fiber: null,

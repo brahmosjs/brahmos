@@ -18,15 +18,6 @@ export function getCurrentFiber() {
   return currentFiber;
 }
 
-function updateNodeInstanceFiber(fiber) {
-  fiber.root.afterRender((fiber) => {
-    const { nodeInstance } = fiber;
-    if (nodeInstance && isComponentNode(fiber.node)) {
-      nodeInstance[BRAHMOS_DATA_KEY].fiber = fiber;
-    }
-  });
-}
-
 export function getLastCompleteTimeKey(type) {
   return type === UPDATE_TYPE_DEFERRED ? 'lastDeferredCompleteTime' : 'lastCompleteTime';
 }
@@ -66,7 +57,7 @@ export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
   const { root, node, part, nodeInstance, child, deferredUpdateTime } = fiber;
 
   if (!wipFiber) {
-    wipFiber = createFiber(fiber.root, node, part);
+    wipFiber = createFiber(root, node, part);
     // add fibers as each others alternate
     addAlternates(fiber, wipFiber);
   } else {
@@ -147,15 +138,17 @@ export function cloneChildrenFibers(fiber) {
 export function createHostFiber(domNode) {
   let afterRenderCallbacks = [];
 
-  const rootFiber = {
+  return {
     updateType: 'sync',
     updateSource: 'js',
+    requestIdleHandle: null,
     domNode,
     idleCallback: null,
     current: null,
     wip: null,
-    lastEffectFiber: null,
-    lastSuspenseFiber: null,
+    child: null,
+    retryFiber: null,
+    lastArrayDOM: null,
     preventSchedule: false,
     currentTransition: null,
     hasUncommittedEffect: false,
@@ -163,7 +156,6 @@ export function createHostFiber(domNode) {
     tearDownFibers: [],
     postCommitEffects: [],
     batchUpdates: {},
-    nextEffect: null,
     alternate: null,
     lastDeferredCompleteTime: 0,
     lastCompleteTime: 0,
@@ -186,11 +178,6 @@ export function createHostFiber(domNode) {
       afterRenderCallbacks = [];
     },
   };
-
-  // check if this has any performance hit
-  rootFiber.lastEffectFiber = rootFiber;
-
-  return rootFiber;
 }
 
 export function createFiber(root, node, part) {
@@ -206,7 +193,6 @@ export function createFiber(root, node, part) {
     context: null, // Points to the context applicable for that fiber
     errorBoundary: null,
     isSvgPart: false,
-    nextEffect: null,
     deferredUpdateTime: 0,
     updateTime: 0,
     processedTime: 0, // processedTime 0 signifies it needs processing
