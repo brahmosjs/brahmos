@@ -33,7 +33,7 @@ function updateTextNode(fiber) {
     textNode = insertBefore(parentNode, nextSibling, node);
   } else {
     // if we have text node just update the text node
-    textNode.textContent = node;
+    textNode.nodeValue = node;
   }
 
   return textNode;

@@ -32,9 +32,15 @@ export function isNil(val) {
   return val === undefined || val === null;
 }
 
-// function to return current time
+/**
+ * function to return artificial time, we are using counter
+ * instead of time as Date.now or performance.now is little slower than just a counter
+ * Note: when we add support for SSR, we should have a way to reset the initial time to
+ * not let this initialTime grow infinitely
+ */
+let initialTime = 0;
 export function now() {
-  return performance.now();
+  return initialTime++;
 }
 
 // add brahmos data container to domNode

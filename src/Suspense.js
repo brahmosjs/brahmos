@@ -236,7 +236,7 @@ class SuspenseManager {
       } else {
         withTransition(transition, doSuspenseRerender);
       }
-    }, now() % SUSPENSE_REVEAL_INTERVAL);
+    }, Date.now() % SUSPENSE_REVEAL_INTERVAL);
   }
 
   getChildrenSuspenders() {
