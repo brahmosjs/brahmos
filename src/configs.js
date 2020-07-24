@@ -31,6 +31,7 @@ export const XLINK_NS = 'http://www.w3.org/1999/xlink';
  * Brahmos data key which shouldn't be touched
  */
 export const BRAHMOS_DATA_KEY = '__brahmosData';
+export const LAST_ARRAY_DOM_KEY = '__brahmosLastArrayDom';
 
 /** update type related constants */
 export const UPDATE_TYPE_SYNC = 'sync';
@@ -39,6 +40,5 @@ export const UPDATE_TYPE_DEFERRED = 'deferred';
 /** Update source related constants */
 export const UPDATE_SOURCE_DEFAULT = 'js';
 export const UPDATE_SOURCE_EVENT = 'event';
-export const UPDATE_SOURCE_FORCE_UPDATE = 'forceUpdate';
 export const UPDATE_SOURCE_UNSTABLE_DEFERRED = 'deferredUpdate';
 export const UPDATE_SOURCE_TRANSITION = 'transition';

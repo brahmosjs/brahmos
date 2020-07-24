@@ -1,11 +1,6 @@
 import reRender from './reRender';
-import {
-  withUpdateSource,
-  getUpdateType,
-  getPendingUpdatesKey,
-  getCurrentTransition,
-} from './updateMetaUtils';
-import { UPDATE_SOURCE_FORCE_UPDATE, BRAHMOS_DATA_KEY } from './configs';
+import { getUpdateType, getPendingUpdatesKey, getCurrentTransition } from './updateMetaUtils';
+import { BRAHMOS_DATA_KEY } from './configs';
 
 export class Component {
   constructor(props) {
@@ -51,11 +46,18 @@ export class Component {
   }
 
   forceUpdate(callback) {
-    withUpdateSource(UPDATE_SOURCE_FORCE_UPDATE, () => {
-      this[BRAHMOS_DATA_KEY].isDirty = true;
-      reRender(this);
-      if (callback) callback(this.state);
-    });
+    const brahmosData = this[BRAHMOS_DATA_KEY];
+
+    // if there is no fiber (when component is not mounted) we don't need to do anything
+    const { fiber } = brahmosData;
+    if (!fiber) return;
+
+    // keep the track of component through which force update is started
+    fiber.root.forcedUpdateWith = this;
+
+    this[BRAHMOS_DATA_KEY].isDirty = true;
+    reRender(this);
+    if (callback) callback(this.state);
   }
 
   __handleError() {}

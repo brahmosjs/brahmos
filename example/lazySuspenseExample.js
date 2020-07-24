@@ -11,12 +11,12 @@ const LazyToDo = lazy(() => {
 
 const LazyUseStateExample = lazy(() => import('./UseStateExample'));
 
-export default function LazySuspenseExample () {
+export default function LazySuspenseExample() {
   const message = 'Hello world';
 
   return (
-    <Suspense fallback = {<h2>LOADING !!!</h2>}>
-      <section className = "">
+    <Suspense fallback={<h2>LOADING !!!</h2>}>
+      <section className="">
         <h2> Hurray !! </h2>
         <p>{message}</p>
         <LazyToDo />

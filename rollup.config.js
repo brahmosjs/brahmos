@@ -11,19 +11,24 @@ const fullYear = new Date().getFullYear();
 
 const banner = `${PACKAGE.name} - ${PACKAGE.version}
   Author : ${PACKAGE.author}
-  Copyright (c) ${(fullYear !== 2016 ? '2016,' : '')} ${fullYear} to ${PACKAGE.author}, released under the ${PACKAGE.license} license.
+  Copyright (c) ${fullYear !== 2016 ? '2016,' : ''} ${fullYear} to ${
+  PACKAGE.author
+}, released under the ${PACKAGE.license} license.
   ${PACKAGE.repository.url}`;
 
 const defaultConfig = {
   input: './src/index.js',
-  output: [{
-    file: 'dist/brahmos.mjs',
-    format: 'esm',
-  }, {
-    file: 'dist/brahmos.js',
-    format: 'umd',
-    name: 'Brahmos',
-  }],
+  output: [
+    {
+      file: 'dist/brahmos.es.js',
+      format: 'esm',
+    },
+    {
+      file: 'dist/brahmos.js',
+      format: 'umd',
+      name: 'Brahmos',
+    },
+  ],
   plugins: [
     buble({
       objectAssign: true,
@@ -49,10 +54,7 @@ const minConfig = {
     format: 'umd',
     name: 'Brahmos',
   },
-  plugins: [
-    ...defaultConfig.plugins,
-    uglify(),
-  ],
+  plugins: [...defaultConfig.plugins, uglify()],
 };
 
 export default [defaultConfig, minConfig];

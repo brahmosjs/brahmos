@@ -11,7 +11,7 @@ import { getPendingUpdatesKey } from './updateMetaUtils';
 import { runEffects } from './hooks';
 
 import updateNodeAttributes from './updateAttribute';
-import { BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED, UPDATE_TYPE_SYNC } from './configs';
+import { BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED, LAST_ARRAY_DOM_KEY } from './configs';
 
 /**
  * Updater to handle text node
@@ -39,55 +39,94 @@ function updateTextNode(fiber) {
   return textNode;
 }
 
-function updateExistingNode(nodeInstance, part, oldPart, root) {
-  // if it is not a part of array item, no need to rearrange
+function getTagChild(fiber) {
+  while (fiber.node && !isTagNode(fiber.node)) fiber = fiber.child;
+
+  return fiber;
+}
+
+function setLastItemInParentDOM(parentNode, nodeInstance) {
+  const { domNodes } = nodeInstance;
+  parentNode[LAST_ARRAY_DOM_KEY] = domNodes[domNodes.length - 1];
+}
+
+function getCorrectPreviousSibling(part) {
+  let { previousSibling } = part;
+  if (part.isArrayNode) {
+    previousSibling = part.nodeIndex === 0 ? previousSibling : part.parentNode[LAST_ARRAY_DOM_KEY];
+  }
+
+  return previousSibling;
+}
+
+function getNextSibling(parentNode, previousSibling) {
+  return previousSibling ? previousSibling.nextSibling : parentNode.firstChild;
+}
+
+function reArrangeExistingNode(fiber, alternate) {
+  const { part } = fiber;
+
   if (!part.isArrayNode) return;
 
-  const { domNodes } = nodeInstance;
-  const { nodeIndex, parentNode, previousSibling } = part;
-  const { nodeIndex: oldNodeIndex } = oldPart;
+  const { nodeIndex, parentNode } = part;
+  const {
+    part: { nodeIndex: oldNodeIndex },
+  } = alternate;
 
-  // if the item position on last render and current render is same, no need to rearrange
-  if (nodeIndex === oldNodeIndex) return;
+  const tagChild = getTagChild(fiber);
+  const { nodeInstance } = tagChild;
 
-  // if it is first item append it after the previous sibling or else append it after last rendered element.
-  const appendAfter = nodeIndex === 0 ? previousSibling : root.lastArrayDOM;
+  // if there is no nodeInstance or if tagChild has pendingEffects bail out from rearrange in component level
+  const componentChildHasEffect = tagChild !== fiber && tagChild.hasUncommittedEffect;
+  if (!nodeInstance || componentChildHasEffect) return;
 
-  // get the element before which we have to add the new node
-  const appendBefore = appendAfter ? appendAfter.nextSibling : parentNode.firstChild;
+  // if the item position on last render and current render is not same, then do a rearrange
+  if (nodeIndex !== oldNodeIndex) {
+    const { domNodes } = nodeInstance;
 
-  // if there is dom node and it isn't in correct place rearrange the nodes
-  const firstDOMNode = domNodes[0];
-  if (
-    firstDOMNode &&
-    firstDOMNode.previousSibling !== appendAfter &&
-    firstDOMNode !== appendBefore
-  ) {
-    insertBefore(parentNode, appendBefore, domNodes);
+    const previousSibling = getCorrectPreviousSibling(part);
+    const nextSibling = getNextSibling(parentNode, previousSibling);
+
+    // if there is dom node and it isn't in correct place rearrange the nodes
+    const firstDOMNode = domNodes[0];
+    if (
+      firstDOMNode &&
+      firstDOMNode.previousSibling !== previousSibling &&
+      firstDOMNode !== nextSibling
+    ) {
+      insertBefore(parentNode, nextSibling, domNodes);
+    }
   }
+
+  // set the last item of domNodes in parentNode
+  setLastItemInParentDOM(parentNode, nodeInstance);
 }
 
 function updateTagNode(fiber) {
   const { part, nodeInstance, alternate, root } = fiber;
-  const { parentNode, nextSibling } = part;
+  const { parentNode } = part;
 
   // if the alternate node is there rearrange the element if required, or else just add the new node
   if (alternate) {
-    updateExistingNode(nodeInstance, part, alternate.part, root);
+    reArrangeExistingNode(fiber, alternate);
   } else {
+    const previousSibling = getCorrectPreviousSibling(part);
+    const nextSibling = getNextSibling(parentNode, previousSibling);
+
     /**
      * when we add nodes first time
      * and we are rendering as fragment it means the fragment might have childNodes
      * which nodeInstance does not have, so for such cases we should reset nodeList on nodeInstance;
      */
     nodeInstance.domNodes = insertBefore(parentNode, nextSibling, nodeInstance.fragment);
-  }
 
-  root.lastArrayDOM = nodeInstance.domNodes[nodeInstance.domNodes.length - 1];
+    // set the last item of domNodes in parentNode
+    setLastItemInParentDOM(parentNode, nodeInstance);
+  }
 }
 
 function handleComponentEffect(fiber) {
-  const { node, nodeInstance, root } = fiber;
+  const { node, nodeInstance, root, alternate } = fiber;
   const { updateType } = root;
   const { nodeType } = node;
   const brahmosData = nodeInstance[BRAHMOS_DATA_KEY];
@@ -99,6 +138,11 @@ function handleComponentEffect(fiber) {
       prevProps,
       prevState,
     ]);
+  }
+
+  // if the fiber is part of an array and requires rearrange then do it
+  if (alternate) {
+    reArrangeExistingNode(fiber, alternate);
   }
 
   // remove all the pending updates associated with current transition
@@ -170,10 +214,9 @@ function handleAttributeEffect(fiber) {
   // Handle value resets
 }
 
-export function resetEffectList(root) {
+export function resetEffectProperties(root) {
   root.tearDownFibers = [];
   root.postCommitEffects = [];
-  root.lastArrayDOM = null;
   root.hasUncommittedEffect = false;
 
   // reset after render callbacks
@@ -229,6 +272,10 @@ export default function effectLoop(root, newFibers) {
   // remove the current transition from pending transition
   removeTransitionFromRoot(root);
 
-  // once all effect has been processed update root's last effect node and reset lastArrayDOM and postCommitEffects
-  resetEffectList(root);
+  // once all effect has been processed update root's last effect node and postCommitEffects
+  resetEffectProperties(root);
+
+  // clear the requestIdleHandle abd force update node from root only after the effect
+  root.requestIdleHandle = null;
+  root.forcedUpdateWith = null;
 }

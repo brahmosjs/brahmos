@@ -4,30 +4,24 @@ const BrahmosContext = createContext('Brahmos');
 
 // context as static property
 class ContextStaticProperty extends Component {
-  render () {
+  render() {
     const name = this.context;
-    return (<div>
-      Hello {name}
-    </div>);
+    return <div>Hello {name}</div>;
   }
 }
 ContextStaticProperty.contextType = BrahmosContext;
 
-function ContextConsumer () {
-  return (<BrahmosContext.Consumer>
-    {(name) => <div>Hello {name}</div>}
-  </BrahmosContext.Consumer>);
+function ContextConsumer() {
+  return <BrahmosContext.Consumer>{(name) => <div>Hello {name}</div>}</BrahmosContext.Consumer>;
 }
 
-function UseContext () {
+function UseContext() {
   const name = useContext(BrahmosContext);
 
-  return (<div>
-    Hello {name}
-  </div>);
+  return <div>Hello {name}</div>;
 }
 
-export default function ContextExample () {
+export default function ContextExample() {
   const [name, setName] = useState();
 
   return (

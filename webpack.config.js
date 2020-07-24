@@ -10,7 +10,7 @@ module.exports = {
   },
   devServer: {
     compress: true,
-    port: 8081,
+    port: 8083,
   },
   plugins: [
     new HtmlWebpackPlugin({

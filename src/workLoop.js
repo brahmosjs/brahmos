@@ -11,7 +11,7 @@ import { UPDATE_SOURCE_TRANSITION, BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED } from
 import processComponentFiber from './processComponentFiber';
 import { processTextFiber } from './processTextFiber';
 import processTagFiber from './processTagFiber';
-import effectLoop, { resetEffectList, removeTransitionFromRoot } from './effectLoop';
+import effectLoop, { resetEffectProperties, removeTransitionFromRoot } from './effectLoop';
 import { shouldPreventSchedule, getPendingUpdates, withUpdateSource } from './updateMetaUtils';
 import {
   getFirstTransitionToProcess,
@@ -231,7 +231,7 @@ export function doDeferredProcessing(root) {
   root.updateType = 'deferred';
 
   // reset the effect list before starting new one
-  resetEffectList(root);
+  resetEffectProperties(root);
 
   // set the pending transition as current transition
   root.currentTransition = pendingTransition;
@@ -248,7 +248,7 @@ export function doSyncProcessing(fiber) {
   root.currentTransition = null;
 
   // reset the effect list before starting new one
-  resetEffectList(root);
+  resetEffectProperties(root);
 
   workLoop(fiber, parent);
 }

@@ -1,4 +1,4 @@
-import { getNextChildFiber, createAndLink } from './fiber';
+import { getNextChildFiber, createAndLink, markToTearDown } from './fiber';
 import { getKey } from './brahmosNode';
 
 // handle array nodes
@@ -52,10 +52,13 @@ export default function processArrayFiber(fiber) {
       refFiber,
       fiber,
     );
+
+    // reset the sibling fiber on the ref fiber. This will be set on next iteration of loop.
+    refFiber.sibling = null;
   }
 
   // mark non used node to tear down
   childKeyMap.forEach((fiber) => {
-    root.tearDownFibers.push(fiber);
+    markToTearDown(fiber);
   });
 }

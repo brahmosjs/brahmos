@@ -4,7 +4,6 @@ import {
   UPDATE_SOURCE_DEFAULT,
   UPDATE_SOURCE_TRANSITION,
   UPDATE_SOURCE_EVENT,
-  UPDATE_SOURCE_FORCE_UPDATE,
   UPDATE_SOURCE_UNSTABLE_DEFERRED,
   BRAHMOS_DATA_KEY,
   UPDATE_TYPE_SYNC,
@@ -67,15 +66,11 @@ export function shouldPreventSchedule(root) {
   const { updateSource, preventSchedule } = root;
   /**
    * In case we explicity prevent schedule or
-   * set state triggered from event, or force update
+   * set state triggered from event
    * we don't want to do things synchronously
    * as it needs to be flushed synchronously
    */
-  return (
-    preventSchedule ||
-    updateSource === UPDATE_SOURCE_EVENT ||
-    updateSource === UPDATE_SOURCE_FORCE_UPDATE
-  );
+  return preventSchedule || updateSource === UPDATE_SOURCE_EVENT;
 }
 
 export function isDeferredUpdate() {

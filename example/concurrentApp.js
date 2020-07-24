@@ -1,5 +1,9 @@
-import Brahmos, { Component } from '../src';
+import _Brahmos from '../src';
 import data from './data.json';
+
+// Doing this to check performance
+const Brahmos = _Brahmos;
+const { Component, PureComponent } = Brahmos;
 
 function shuffle(array) {
   array = [...array];
@@ -22,24 +26,58 @@ function shuffle(array) {
   return array;
 }
 
-export const Result = ({ result }) => {
-  // let i = 0;
-
-  // while (i < 100000000) i++;
-
-  return (
-    <div className="result">
-      <div>
-        <a href={result.html_url} target="_blank">
-          {result.full_name}
-        </a>
-        <button>OK</button>
-        🌟<strong>{result.stargazers_count}</strong>
+class Result extends Component {
+  render() {
+    const { result } = this.props;
+    return (
+      <div className="result">
+        <div>
+          <a href={result.html_url} target="_blank">
+            {result.full_name}
+          </a>
+          <button>OK</button>
+          🌟<strong>{result.stargazers_count}</strong>
+        </div>
+        <p>{result.description}</p>
       </div>
-      <p>{result.description}</p>
-    </div>
-  );
-};
+    );
+  }
+}
+
+// function Result(props) {
+//   const { result } = props;
+//   return (
+//     <div className="result">
+//       <div>
+//         <a href={result.html_url} target="_blank">
+//           {result.full_name}
+//         </a>
+//         <button>OK</button>
+//         🌟<strong>{result.stargazers_count}</strong>
+//       </div>
+//       <p>{result.description}</p>
+//     </div>
+//   );
+// }
+
+// export const Result = ({ result }) => {
+//   // let i = 0;
+
+//   // while (i < 100000000) i++;
+
+//   return (
+//     <div className="result">
+//       <div>
+//         <a href={result.html_url} target="_blank">
+//           {result.full_name}
+//         </a>
+//         <button>OK</button>
+//         🌟<strong>{result.stargazers_count}</strong>
+//       </div>
+//       <p>{result.description}</p>
+//     </div>
+//   );
+// };
 
 const initialTime = performance.now();
 
@@ -50,26 +88,63 @@ export default class App extends Component {
 
   componentDidMount() {
     this.setState({
-      results: (data && data.items) || [],
+      results: [
+        ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+        // ...data.items,
+      ],
     });
-    setInterval(() => {
-      this.shuffle();
-    }, 10000);
+    // setInterval(() => {
+    //   this.shuffle();
+    // }, 10000);
+
+    // document.querySelector('#shuffle-btn').addEventListener('click', this.shuffle);
   }
 
   componentDidUpdate() {
-    // console.log(performance.now() - this.stateUpdateTime);
+    console.log(performance.now() - this.stateUpdateTime);
   }
 
   shuffle = () => {
     // console.log('State update');
     this.stateUpdateTime = performance.now();
+    // this.state.results.reverse();
+
+    // this.forceUpdate();
 
     this.setState({ results: shuffle(this.state.results) });
   };
 
+  clear = () => {
+    this.stateUpdateTime = performance.now();
+
+    this.setState({ results: [] });
+  };
+
   render(props) {
-    const { results = [], value = '' } = this.state || {};
+    const { results, value = '' } = this.state || {};
     // let i = 0;
 
     // while (i < 10000000) i++;
@@ -86,10 +161,13 @@ export default class App extends Component {
             this.setState({ value: e.target.value.slice(0, 10) });
           }}
         />
-        <button onClick={this.shuffle}>Shuffle</button>
+        <button id="shuffle-btn" onClick={this.shuffle}>
+          Shuffle
+        </button>
+        <button onClick={this.clear}>Clear</button>
         <div className="list">
           {results.map((result) => (
-            <Result result={result} />
+            <Result key={result.html_url} result={result} />
           ))}
         </div>
       </div>

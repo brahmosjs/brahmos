@@ -133,31 +133,6 @@ export function changeToNode(value) {
 }
 
 /**
- * Function to delete all child nodes of a parent between start and end node
- */
-export function deleteNodesBetween(parent, start, end) {
-  // If both start and end is null, it means we want to clear all the children
-  if (!start && !end) {
-    parent.innerHTML = '';
-    return;
-  }
-
-  let node;
-
-  if (!start) {
-    node = parent.firstChild;
-  } else {
-    node = start.nextSibling;
-  }
-
-  while (node && node !== end) {
-    const { nextSibling } = node;
-    parent.removeChild(node);
-    node = nextSibling;
-  }
-}
-
-/**
  * Function to add child nodes before endNode, if it is not defined or null
  * It will add nodes on the last
  */

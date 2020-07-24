@@ -67,11 +67,9 @@ function resetLoopToComponentsFiber(suspenseFiber) {
 }
 
 export default function processComponentFiber(fiber) {
-  const { node } = fiber;
-  const { part } = fiber;
+  const { node, part, root } = fiber;
   const { type: Component, nodeType, props = {}, ref } = node;
 
-  const isFirstRender = false;
   const isReused = false;
   let shouldUpdate = true;
   const isClassComponent = nodeType === CLASS_COMPONENT_NODE;
@@ -83,7 +81,7 @@ export default function processComponentFiber(fiber) {
 
   /** If Component instance is not present on node create a new instance */
   let { nodeInstance } = fiber;
-  let firstRender;
+  let isFirstRender = false;
   if (!nodeInstance) {
     // create an instance of the component
     nodeInstance = isClassComponent ? new Component(props) : functionalComponentInstance(Component);
@@ -91,7 +89,7 @@ export default function processComponentFiber(fiber) {
     // keep the reference of instance to the node.
     fiber.nodeInstance = nodeInstance;
 
-    firstRender = true;
+    isFirstRender = true;
   }
 
   const brahmosData = nodeInstance[BRAHMOS_DATA_KEY];
@@ -108,7 +106,12 @@ export default function processComponentFiber(fiber) {
    * and call all the life cycle method which comes before rendering.
    */
   if (isClassComponent) {
-    const { props: prevProps, state: prevState } = brahmosData.committedValues;
+    const { committedValues } = brahmosData;
+
+    // if it is first render we should store the initial state on committedValues
+    if (isFirstRender) committedValues.state = nodeInstance.state;
+
+    const { props: prevProps, state: prevState } = committedValues;
 
     const { shouldComponentUpdate } = nodeInstance;
 
@@ -116,7 +119,7 @@ export default function processComponentFiber(fiber) {
 
     let state = getUpdatedState(prevState, pendingUpdates);
 
-    const checkShouldUpdate = !isFirstRender;
+    const checkShouldUpdate = !isFirstRender && root.forcedUpdateWith !== nodeInstance;
 
     // call getDerivedStateFromProps hook with the unCommitted state
     state = { ...state, ...callLifeCycle(Component, 'getDerivedStateFromProps', [props, state]) };
@@ -164,7 +167,7 @@ export default function processComponentFiber(fiber) {
     nodeInstance.state = state;
     nodeInstance.props = props;
     nodeInstance.context = contextValue;
-  } else if (!firstRender) {
+  } else if (!isFirstRender) {
     // for functional component call cleanEffect only on second render
     // alternate will be set on second render
     // NOTE: This is buggy, cleanEffects should be called before commit phase, check the behavior of react.
@@ -215,11 +218,11 @@ export default function processComponentFiber(fiber) {
 
       return;
     }
-
-    // mark that the fiber has uncommitted effects
-    markPendingEffect(fiber);
   } else {
     // clone the existing nodes
     cloneChildrenFibers(fiber);
   }
+
+  // mark that the fiber has uncommitted effects
+  markPendingEffect(fiber);
 }

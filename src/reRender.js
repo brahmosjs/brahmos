@@ -1,4 +1,4 @@
-import { UPDATE_SOURCE_EVENT, UPDATE_SOURCE_TRANSITION } from './configs';
+import { UPDATE_SOURCE_EVENT, UPDATE_SOURCE_TRANSITION, UPDATE_TYPE_SYNC } from './configs';
 import { getCurrentUpdateSource, getCurrentTransition, getUpdateType } from './updateMetaUtils';
 import { PREDEFINED_TRANSITION_DEFERRED } from './transitionUtils';
 import { setUpdateTime, getFiberFromComponent } from './fiber';
@@ -56,7 +56,15 @@ export default function reRender(component) {
 
     // if there is any work to done, perform the work else do deferred processing
     if (root.lastCompleteTime < root.updateTime) {
-      doSyncProcessing(currentUpdateSource === UPDATE_SOURCE_EVENT ? fiber : root.current);
+      /**
+       * if the update source is event and we don't have any ongoing sync update
+       * which we can figure out based on last updateType and if there is any requestIdleHandle
+       * Start the processing from the fiber which cause the update.
+       */
+      const hasOngoingSyncUpdates = root.updateType === UPDATE_TYPE_SYNC && root.requestIdleHandle;
+      const startFromFiber = currentUpdateSource === UPDATE_SOURCE_EVENT && !hasOngoingSyncUpdates;
+
+      doSyncProcessing(startFromFiber ? fiber : root.current);
     } else {
       doDeferredProcessing(root);
     }
