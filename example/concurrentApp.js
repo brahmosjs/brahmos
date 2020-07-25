@@ -26,6 +26,16 @@ function shuffle(array) {
   return array;
 }
 
+function duplicateData(data, count) {
+  const newData = [];
+  const ln = data.length;
+  for (let i = 0; i < count; i++) {
+    newData.push({ ...data[i % ln], id: i });
+  }
+
+  return newData;
+}
+
 class Result extends PureComponent {
   render() {
     const { result } = this.props;
@@ -88,33 +98,7 @@ export default class App extends Component {
 
   componentDidMount() {
     this.setState({
-      results: [
-        ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-        // ...data.items,
-      ],
+      results: duplicateData(data.items, 1000),
     });
     // setInterval(() => {
     //   this.shuffle();
@@ -167,7 +151,7 @@ export default class App extends Component {
         <button onClick={this.clear}>Clear</button>
         <div className="list">
           {results.map((result) => (
-            <Result key={result.html_url} result={result} />
+            <Result key={result.id} result={result} />
           ))}
         </div>
       </div>
