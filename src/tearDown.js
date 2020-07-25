@@ -1,6 +1,12 @@
-import { callLifeCycle, remove } from './utils';
+import { callLifeCycle, remove, getNextSibling } from './utils';
 
-import { isComponentNode, isRenderableNode, isTagNode, CLASS_COMPONENT_NODE } from './brahmosNode';
+import {
+  isComponentNode,
+  isRenderableNode,
+  isTagNode,
+  CLASS_COMPONENT_NODE,
+  isPrimitiveNode,
+} from './brahmosNode';
 
 import { setRef } from './refs';
 
@@ -8,10 +14,17 @@ import { cleanEffects } from './hooks';
 import { BRAHMOS_DATA_KEY } from './configs';
 
 function tearDownFiber(fiber) {
-  const { node, nodeInstance } = fiber;
+  const { node, part, nodeInstance } = fiber;
 
   // bail out shouldTearDown is false or if node is non-renderable node
   if (!isRenderableNode(node)) return;
+
+  // if it is primitive node we need to delete the text node associated with it
+  if (isPrimitiveNode(node)) {
+    const textNode = getNextSibling(part.parentNode, part.previousSibling);
+    remove(textNode);
+    return;
+  }
 
   // recurse to the children and tear them down first
   let { child } = fiber;
