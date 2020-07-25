@@ -26,7 +26,7 @@ function shuffle(array) {
   return array;
 }
 
-class Result extends Component {
+class Result extends PureComponent {
   render() {
     const { result } = this.props;
     return (

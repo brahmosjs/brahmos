@@ -35,9 +35,12 @@ import { now } from './utils';
 
 const TIME_REQUIRE_TO_PROCESS_FIBER = 2;
 
-export function schedule(shouldSchedule, cb) {
+export function schedule(root, shouldSchedule, cb) {
+  // cancel the previous requestIdle handle
+  if (root.requestIdleHandle) cancelIdleCallback(root.requestIdleHandle);
+
   if (shouldSchedule) {
-    return requestIdleCallback(cb, { timeout: 1000 });
+    root.requestIdleHandle = requestIdleCallback(cb, { timeout: 1000 });
   }
 
   cb();
@@ -166,10 +169,7 @@ export default function workLoop(fiber, topFiber) {
    */
   const shouldSchedule = !shouldPreventSchedule(root);
 
-  // cancel the previous requestIdle handle
-  if (root.requestIdleHandle) cancelIdleCallback(root.requestIdleHandle);
-
-  root.requestIdleHandle = schedule(shouldSchedule, (deadline) => {
+  schedule(root, shouldSchedule, (deadline) => {
     while (fiber !== topFiber) {
       // process the current fiber which will return the next fiber
       /**

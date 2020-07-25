@@ -115,20 +115,22 @@ export default function processComponentFiber(fiber) {
 
     const { shouldComponentUpdate } = nodeInstance;
 
-    const pendingUpdates = getPendingUpdates(fiber);
+    let state = prevState;
 
-    let state = getUpdatedState(prevState, pendingUpdates);
+    // apply the pending updates in state if
+    const pendingUpdates = getPendingUpdates(fiber);
+    if (pendingUpdates.length) state = getUpdatedState(prevState, pendingUpdates);
 
     const checkShouldUpdate = !isFirstRender && root.forcedUpdateWith !== nodeInstance;
 
-    // call getDerivedStateFromProps hook with the unCommitted state
-    state = { ...state, ...callLifeCycle(Component, 'getDerivedStateFromProps', [props, state]) };
+    // call getDerivedStateFromProps lifecycle with the unCommitted state and apply the derivedState on state
+    const derivedState = callLifeCycle(Component, 'getDerivedStateFromProps', [props, state]);
+    if (derivedState) state = { ...state, ...derivedState };
 
     // call callbacks of setState with new state
     pendingUpdates.forEach(({ callback }) => {
       if (callback) callback(state);
     });
-
     /**
      * check if component is instance of PureComponent, if yes then,
      * do shallow check for props and states
@@ -218,11 +220,10 @@ export default function processComponentFiber(fiber) {
 
       return;
     }
+    // mark that the fiber has uncommitted effects
+    markPendingEffect(fiber);
   } else {
     // clone the existing nodes
     cloneChildrenFibers(fiber);
   }
-
-  // mark that the fiber has uncommitted effects
-  markPendingEffect(fiber);
 }

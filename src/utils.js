@@ -52,14 +52,13 @@ export function addDataContainer(domNode) {
 }
 
 /**
- * A smaller utility to omit keys from objects
+ * function to separate props, key and ref
  */
-export function omit(obj, keys) {
+export function getNormalizedProps(props, includeRef) {
   const newObj = {};
-  const objKeys = Object.keys(obj);
-  for (let i = 0, l = objKeys.length; i < l; i++) {
-    const key = objKeys[i];
-    if (!keys[key]) newObj[key] = obj[key];
+  let key;
+  for (key in props) {
+    if (key !== 'key' && (key !== 'ref' || includeRef)) newObj[key] = props[key];
   }
   return newObj;
 }

@@ -126,7 +126,7 @@ function updateTagNode(fiber) {
 }
 
 function handleComponentEffect(fiber) {
-  const { node, nodeInstance, root, alternate } = fiber;
+  const { node, nodeInstance, root } = fiber;
   const { updateType } = root;
   const { nodeType } = node;
   const brahmosData = nodeInstance[BRAHMOS_DATA_KEY];
@@ -138,11 +138,6 @@ function handleComponentEffect(fiber) {
       prevProps,
       prevState,
     ]);
-  }
-
-  // if the fiber is part of an array and requires rearrange then do it
-  if (alternate) {
-    reArrangeExistingNode(fiber, alternate);
   }
 
   // remove all the pending updates associated with current transition
@@ -232,12 +227,18 @@ export function removeTransitionFromRoot(root) {
 }
 
 function handleFiberEffect(fiber) {
-  const { node } = fiber;
+  const { node, alternate } = fiber;
   const _isComponentNode = node && isComponentNode(node);
 
-  // if fiber is a component fiber, update the fiber reference in nodeInstance
   if (_isComponentNode) {
+    // if fiber is a component fiber, update the fiber reference in nodeInstance
+
     fiber.nodeInstance[BRAHMOS_DATA_KEY].fiber = fiber;
+
+    // if the fiber is part of an array and requires rearrange then do it
+    if (alternate) {
+      reArrangeExistingNode(fiber, alternate);
+    }
   }
 
   // if node has uncommitted effect, handle the effect
@@ -260,7 +261,9 @@ function handleFiberEffect(fiber) {
 
 export default function effectLoop(root, newFibers) {
   // loop on new fibers hand call if effect needs to be called
-  newFibers.forEach(handleFiberEffect);
+  for (let i = 0, ln = newFibers.length; i < ln; i++) {
+    handleFiberEffect(newFibers[i]);
+  }
 
   const { postCommitEffects } = root;
 

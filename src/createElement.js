@@ -1,4 +1,4 @@
-import { omit } from './utils';
+import { getNormalizedProps } from './utils';
 import { isClassComponent } from './circularDep';
 import {
   brahmosNode,
@@ -31,7 +31,7 @@ export function createElement(element, configs, children) {
   // create a prop object excluding the key and ref prop and adding children prop
   const props = {
     ...element.defaultProps,
-    ...omit(configs, { key: 1, ref: !element.__isForwardRef }),
+    ...getNormalizedProps(configs, element.__isForwardRef),
     children,
   };
 
