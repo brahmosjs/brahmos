@@ -5,7 +5,7 @@ import {
   ATTRIBUTE_NODE,
   CLASS_COMPONENT_NODE,
 } from './brahmosNode';
-import { callLifeCycle, insertBefore, getCurrentNode } from './utils';
+import { callLifeCycle, insertBefore, getNextSibling } from './utils';
 import { getTransitionFromFiber } from './transitionUtils';
 import { getPendingUpdatesKey } from './updateMetaUtils';
 import { runEffects } from './hooks';
@@ -17,26 +17,24 @@ import { BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED, LAST_ARRAY_DOM_KEY } from './co
  * Updater to handle text node
  */
 function updateTextNode(fiber) {
-  const { part, node } = fiber;
-  const { parentNode, previousSibling, nextSibling } = part;
+  const { part, node, alternate } = fiber;
+  const { parentNode, previousSibling } = part;
   /**
-   * get the last text node
-   * As we always override the text node and don't change the position of
-   * text node, Always send nextSibling as null to getCurrentNode
-   * So we always pick the text node based on previousSibling
-   * or parentNode (if prevSibling is null).
+   * Get the next sibling before which we need to append the text node.
    */
-  let textNode = getCurrentNode(parentNode, previousSibling, null);
+  const nextSibling = getNextSibling(parentNode, previousSibling);
 
-  if (!textNode) {
-    // add nodes at the right location
-    textNode = insertBefore(parentNode, nextSibling, node);
-  } else {
+  /**
+   * The nextSibling will point to text node if the tag fiber is already rendered
+   * In which case we just have to update the node value of the nextSibling
+   */
+  if (alternate) {
     // if we have text node just update the text node
-    textNode.nodeValue = node;
+    nextSibling.nodeValue = node;
+  } else {
+    // add nodes at the right location
+    insertBefore(parentNode, nextSibling, node);
   }
-
-  return textNode;
 }
 
 function getTagChild(fiber) {
@@ -57,10 +55,6 @@ function getCorrectPreviousSibling(part) {
   }
 
   return previousSibling;
-}
-
-function getNextSibling(parentNode, previousSibling) {
-  return previousSibling ? previousSibling.nextSibling : parentNode.firstChild;
 }
 
 function reArrangeExistingNode(fiber, alternate) {
@@ -103,7 +97,7 @@ function reArrangeExistingNode(fiber, alternate) {
 }
 
 function updateTagNode(fiber) {
-  const { part, nodeInstance, alternate, root } = fiber;
+  const { part, nodeInstance, alternate } = fiber;
   const { parentNode } = part;
 
   // if the alternate node is there rearrange the element if required, or else just add the new node

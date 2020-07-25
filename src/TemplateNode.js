@@ -1,13 +1,8 @@
 import { attrMarker, marker } from './TemplateTag';
-import {
-  remove,
-  toArray,
-  createEmptyTextNode,
-  addDataContainer,
-} from './utils';
+import { remove, toArray, createEmptyTextNode, addDataContainer } from './utils';
 
 export default class TemplateNode {
-  constructor (templateResult, isSvgPart) {
+  constructor(templateResult, isSvgPart) {
     this.templateResult = templateResult;
 
     // create the template first time the element is used
@@ -25,13 +20,13 @@ export default class TemplateNode {
     this.patched = false;
   }
 
-  createNode (isSvgPart) {
+  createNode(isSvgPart) {
     const { template, svgTemplate } = this.templateResult;
     const templateElement = isSvgPart ? svgTemplate : template;
     return document.importNode(templateElement.content, true);
   }
 
-  createWalker (node) {
+  createWalker(node) {
     /**
      * Only walk through elements and comment node,
      * as we add attribute markers on elements and node maker as comment
@@ -40,15 +35,15 @@ export default class TemplateNode {
       node,
       129, // NodeFilter.SHOW_ELEMENT + NodeFilter.COMMENT
       null, // Don't use tree walker filter function. Its painfully slow, try to find better filter code instead. You can add multiple filter type to form a number
-      false
+      false,
     );
   }
 
-  isBrahmosCommentNode (node) {
+  isBrahmosCommentNode(node) {
     return node && node.nodeType === 8 && node.textContent === marker;
   }
 
-  getParts () {
+  getParts() {
     const { fragment, templateResult, isBrahmosCommentNode } = this;
 
     const { partsMeta } = templateResult;
@@ -60,7 +55,7 @@ export default class TemplateNode {
     const parts = [];
     const markerNodes = [];
 
-    const goToNextPart = function () {
+    const goToNextPart = function() {
       partIndex++;
       partMeta = partsMeta[partIndex];
     };
@@ -84,7 +79,9 @@ export default class TemplateNode {
         const { tagAttrs } = partMeta;
         while (
           // eslint-disable-next-line no-unmodified-loop-condition
-          partMeta && partMeta.isAttribute && partMeta.tagAttrs === tagAttrs
+          partMeta &&
+          partMeta.isAttribute &&
+          partMeta.tagAttrs === tagAttrs
         ) {
           parts.push({
             ...partMeta, // Spread object is slow, but bublejs compiles it to Object.assign which is optimized
@@ -96,28 +93,23 @@ export default class TemplateNode {
         addDataContainer(current);
       } else if (isBrahmosCommentNode(current)) {
         /**
-         * If the node is a node marker add previous sibling and next sibling
-         * detail so later we can find the exact place where value has to come
+         * If the node is a node marker add previous sibling and parentNode details
+         * so later we can find the exact place where value has to come
          */
 
         /**
-         * Wrap the element with a text node if previous or next sibling
-         * is Brahmos comment node. This makes locating dynamic part much
-         * easier.
+         * Add a dummy text node before if the previous element is a Brahmos comment node
+         * This makes locating dynamic part easier
          */
-        let { previousSibling, nextSibling } = current;
+        let { previousSibling } = current;
         if (isBrahmosCommentNode(previousSibling)) {
           previousSibling = createEmptyTextNode(current);
-        }
-        if (isBrahmosCommentNode(nextSibling)) {
-          nextSibling = createEmptyTextNode(current);
         }
 
         parts.push({
           ...partMeta, // Spread object is slow, but bublejs compiles it to Object.assign which is optimized
           parentNode,
           previousSibling,
-          nextSibling,
         });
         goToNextPart();
 
@@ -131,9 +123,9 @@ export default class TemplateNode {
     return parts;
   }
 
-  patchParts (nodePart) {
+  patchParts(nodePart) {
     const { parts } = this;
-    const { parentNode, nextSibling, previousSibling } = nodePart;
+    const { parentNode, previousSibling } = nodePart;
 
     if (this.patched) return;
 
@@ -141,7 +133,6 @@ export default class TemplateNode {
       const part = parts[i];
       if (part.isNode && part.parentNode instanceof DocumentFragment) {
         part.parentNode = parentNode;
-        part.nextSibling = part.nextSibling || nextSibling;
         part.previousSibling = part.previousSibling || previousSibling;
       }
     }

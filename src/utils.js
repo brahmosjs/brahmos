@@ -164,17 +164,9 @@ export function unwrap(el) {
   parent.removeChild(el);
 }
 
-/**
- * Get the node reference based on previousSibling, nextSibling or parentNode
- */
-export function getCurrentNode(parentNode, previousSibling, nextSibling) {
-  if (previousSibling) {
-    return previousSibling.nextSibling;
-  } else if (nextSibling) {
-    return nextSibling.previousSibling;
-  } else {
-    return parentNode.firstChild;
-  }
+// function to get next sibling based on parent node and previous sibling
+export function getNextSibling(parentNode, previousSibling) {
+  return previousSibling ? previousSibling.nextSibling : parentNode.firstChild;
 }
 
 /**

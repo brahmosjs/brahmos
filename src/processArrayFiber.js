@@ -3,10 +3,10 @@ import { getKey } from './brahmosNode';
 
 // handle array nodes
 export default function processArrayFiber(fiber) {
-  const { node: nodes, part, root } = fiber;
+  const { node: nodes, part } = fiber;
   let refFiber = fiber;
 
-  const { parentNode, previousSibling, nextSibling } = part;
+  const { parentNode, previousSibling } = part;
 
   const childKeyMap = new Map();
 
@@ -44,7 +44,6 @@ export default function processArrayFiber(fiber) {
       {
         parentNode,
         previousSibling,
-        nextSibling,
         isArrayNode: true,
         nodeIndex: i,
       },
