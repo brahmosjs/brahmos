@@ -3,6 +3,7 @@ import {
   createAndLink,
   resetToCommittedChild,
   markPendingEffect,
+  setCurrentFiber,
 } from './fiber';
 
 import functionalComponentInstance from './functionalComponentInstance';
@@ -67,6 +68,9 @@ function resetLoopToComponentsFiber(suspenseFiber) {
 }
 
 export default function processComponentFiber(fiber) {
+  // set the current fiber we are processing
+  setCurrentFiber(fiber);
+
   const { node, part, root } = fiber;
   const { type: Component, nodeType, props = {}, ref } = node;
 

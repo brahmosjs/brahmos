@@ -19,7 +19,6 @@ import {
   isTransitionCompleted,
 } from './transitionUtils';
 import {
-  setCurrentFiber,
   getNextFiber,
   cloneChildrenFibers,
   getUpdateTimeKey,
@@ -80,9 +79,6 @@ export function processFiber(fiber) {
     cloneChildrenFibers(fiber);
     return;
   }
-
-  // set the current fiber we are processing
-  setCurrentFiber(fiber);
 
   if (isPrimitiveNode(node)) {
     processTextFiber(fiber);

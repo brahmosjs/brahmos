@@ -44,6 +44,15 @@ export default function processArrayFiber(fiber) {
       {
         parentNode,
         previousSibling,
+        /**
+         * Surprisingly an undefined dummy property increases V8 performance.
+         * We remove nextSibling which when being undefined was running faster
+         * Looks like inlining and deopt issue. But still have to figure out why
+         * undefined property changed anything
+         * Inlining this whole body inside processFiber was not giving issue without
+         * undefined property
+         */
+        a: undefined,
         isArrayNode: true,
         nodeIndex: i,
       },
