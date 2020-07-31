@@ -1,4 +1,5 @@
 import { markPendingEffect } from './fiber';
+import { EFFECT_TYPE_OTHER } from './configs';
 
 export function processTextFiber(fiber) {
   const { node, alternate } = fiber;
@@ -7,6 +8,6 @@ export function processTextFiber(fiber) {
   // if text is different then only we should add it as an effect
   if (node !== oldNode) {
     // mark that the fiber has uncommitted effects
-    markPendingEffect(fiber);
+    markPendingEffect(fiber, EFFECT_TYPE_OTHER);
   }
 }

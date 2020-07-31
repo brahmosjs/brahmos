@@ -1,5 +1,6 @@
-import { getNextChildFiber, createAndLink, markToTearDown } from './fiber';
+import { getNextChildFiber, createAndLink, markToTearDown, markPendingEffect } from './fiber';
 import { getKey } from './brahmosNode';
+import { EFFECT_TYPE_PLACEMENT } from './configs';
 
 // handle array nodes
 export default function processArrayFiber(fiber) {
@@ -38,6 +39,8 @@ export default function processArrayFiber(fiber) {
       childKeyMap.delete(key);
     }
 
+    const previousFiber = refFiber;
+
     // create fiber if required and link it
     refFiber = createAndLink(
       node,
@@ -57,12 +60,24 @@ export default function processArrayFiber(fiber) {
         nodeIndex: i,
       },
       currentFiber,
-      refFiber,
+      previousFiber,
       fiber,
     );
 
     // reset the sibling fiber on the ref fiber. This will be set on next iteration of loop.
     refFiber.sibling = null;
+
+    /**
+     * if current fiber nodeIndex is different than new index,or if it is a new fiber without any alternate
+     * mark fiber and its previous fiber to have uncommitted placement effect
+     */
+    if (currentFiber && currentFiber.part.nodeIndex !== i) {
+      markPendingEffect(refFiber, EFFECT_TYPE_PLACEMENT);
+
+      // mark the previous fiber as well having the placement effect, as it makes it easier to
+      // rearrange the dom nodes
+      if (i !== 0) markPendingEffect(previousFiber, EFFECT_TYPE_PLACEMENT);
+    }
   }
 
   // mark non used node to tear down

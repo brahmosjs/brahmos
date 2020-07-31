@@ -13,28 +13,34 @@ import { setRef } from './refs';
 import { cleanEffects } from './hooks';
 import { BRAHMOS_DATA_KEY } from './configs';
 
-function tearDownFiber(fiber) {
+function tearDownFiber(fiber, removeDOM) {
   const { node, part, nodeInstance } = fiber;
 
   // bail out shouldTearDown is false or if node is non-renderable node
   if (!isRenderableNode(node)) return;
 
-  // if it is primitive node we need to delete the text node associated with it
-  if (isPrimitiveNode(node)) {
-    const textNode = getNextSibling(part.parentNode, part.previousSibling);
-    remove(textNode);
-    return;
-  }
-
   // recurse to the children and tear them down first
+  const _isTagNode = isTagNode(node);
   let { child } = fiber;
 
   if (child) {
-    tearDownFiber(child);
+    /**
+     * if we got a tag to remove for child nodes we don't need to remove those
+     * nodes in child fibers as it will be remove by current fiber
+     */
+    const _removeDOM = _isTagNode ? false : removeDOM;
+    tearDownFiber(child, _removeDOM);
     while (child.sibling) {
       child = child.sibling;
-      tearDownFiber(child);
+      tearDownFiber(child, _removeDOM);
     }
+  }
+
+  // if it is primitive node we need to delete the text node associated with it
+  if (isPrimitiveNode(node) && removeDOM) {
+    const textNode = getNextSibling(part.parentNode, part.previousSibling);
+    remove(textNode);
+    return;
   }
 
   const { ref } = node;
@@ -59,11 +65,11 @@ function tearDownFiber(fiber) {
   if (!nodeInstance) return;
 
   // if it is a tag node remove the dom elements added by tag node
-  if (isTagNode(node)) {
+  if (_isTagNode) {
     const { domNodes } = nodeInstance;
 
     // remove all the elements of nodeInstance
-    remove(domNodes);
+    if (removeDOM) remove(domNodes);
   }
   // if its a component node and is mounted then call lifecycle methods
   else if (isComponentNode(node) && nodeInstance[BRAHMOS_DATA_KEY].mounted) {
@@ -84,7 +90,7 @@ export default function(root) {
 
   tearDownFibers.forEach((fiber) => {
     // only tear down those fibers which are marked for tear down
-    if (fiber.shouldTearDown) tearDownFiber(fiber);
+    if (fiber.shouldTearDown) tearDownFiber(fiber, true);
   });
 
   // rest the tear down fibers

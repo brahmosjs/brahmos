@@ -1,7 +1,7 @@
 import { createElement, Component } from './circularDep';
 
 import { forwardRef } from './refs';
-import { getPromiseSuspendedValue, afterCurrentStack, now } from './utils';
+import { getPromiseSuspendedValue } from './utils';
 import {
   TRANSITION_STATE_SUSPENDED,
   TRANSITION_STATE_TIMED_OUT,

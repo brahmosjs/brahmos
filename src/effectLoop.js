@@ -11,7 +11,12 @@ import { getPendingUpdatesKey } from './updateMetaUtils';
 import { runEffects } from './hooks';
 
 import updateNodeAttributes from './updateAttribute';
-import { BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED, LAST_ARRAY_DOM_KEY } from './configs';
+import {
+  BRAHMOS_DATA_KEY,
+  UPDATE_TYPE_DEFERRED,
+  LAST_ARRAY_DOM_KEY,
+  EFFECT_TYPE_OTHER,
+} from './configs';
 
 /**
  * Updater to handle text node
@@ -236,7 +241,7 @@ function handleFiberEffect(fiber) {
   }
 
   // if node has uncommitted effect, handle the effect
-  if (fiber.hasUncommittedEffect) {
+  if (fiber.hasUncommittedEffect === EFFECT_TYPE_OTHER) {
     if (isPrimitiveNode(node)) {
       updateTextNode(fiber);
     } else if (isTagNode(node)) {

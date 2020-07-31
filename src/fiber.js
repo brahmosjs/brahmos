@@ -1,5 +1,10 @@
 import { isComponentNode, isTagNode, isPrimitiveNode, ATTRIBUTE_NODE } from './brahmosNode';
-import { UPDATE_TYPE_DEFERRED, BRAHMOS_DATA_KEY, UPDATE_TYPE_SYNC } from './configs';
+import {
+  UPDATE_TYPE_DEFERRED,
+  BRAHMOS_DATA_KEY,
+  UPDATE_TYPE_SYNC,
+  EFFECT_TYPE_NONE,
+} from './configs';
 import { now } from './utils';
 
 export const fibers = {
@@ -48,8 +53,8 @@ function linkFiber(fiber, refFiber, parentFiber) {
 }
 
 // function to mark pending effects on the fiber and root
-export function markPendingEffect(fiber) {
-  fiber.hasUncommittedEffect = true;
+export function markPendingEffect(fiber, effectType) {
+  fiber.hasUncommittedEffect = effectType;
   fiber.root.hasUncommittedEffect = true;
 }
 
@@ -196,7 +201,7 @@ export function createFiber(root, node, part) {
     processedTime: 0, // processedTime 0 signifies it needs processing
     createdAt: now(),
     shouldTearDown: false,
-    hasUncommittedEffect: false,
+    hasUncommittedEffect: EFFECT_TYPE_NONE,
   };
 }
 
@@ -351,21 +356,22 @@ export function getNewFibers(root) {
     const { createdAt, child, hasUncommittedEffect } = fiber;
     const updateTime = fiber[updateTimeKey];
     const fiberIsNew = createdAt > lastCompleteTime || hasUncommittedEffect;
-    const hierarchyHasUpdates = fiberIsNew || updateTime > lastCompleteTime;
+    const hierarchyHasUpdates = hasUncommittedEffect || updateTime > lastCompleteTime;
 
-    if (fiberIsNew) {
+    if (hasUncommittedEffect) {
       // push fiber in new fiber list
       newFibers.push(fiber);
-
-      /**
-       * if child is there and it does not point back to correct parent
-       * set the pointer back to parent. This can happen if the fiber is new
-       * but the child is an existing fiber. This can happen when we haven't
-       * processed fiber and just cloned from the current tree
-       * We don't do this during rendering phase to not disturb the current tree
-       */
-      if (child && child.parent !== fiber) child.parent = fiber;
     }
+
+    // correct the parent reference
+    /**
+     * if child is there and it does not point back to correct parent
+     * set the pointer back to parent. This can happen if the fiber is new
+     * but the child is an existing fiber. This can happen when we haven't
+     * processed fiber and just cloned from the current tree
+     * We don't do this during rendering phase to not disturb the current tree
+     */
+    if (fiberIsNew && child && child.parent !== fiber) child.parent = fiber;
 
     /**
      * do a depth first traversal,

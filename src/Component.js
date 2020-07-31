@@ -76,4 +76,9 @@ export function isClassComponent(element) {
   return element.prototype instanceof Component;
 }
 
-export class PureComponent extends Component {}
+export class PureComponent extends Component {
+  constructor(props) {
+    super(props);
+    this.isPureReactComponent = true;
+  }
+}

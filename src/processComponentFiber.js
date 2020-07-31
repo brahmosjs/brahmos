@@ -8,14 +8,14 @@ import {
 
 import functionalComponentInstance from './functionalComponentInstance';
 import { CLASS_COMPONENT_NODE } from './brahmosNode';
-import { PureComponent, getClosestSuspenseFiber } from './circularDep';
+import { getClosestSuspenseFiber } from './circularDep';
 
 import { cleanEffects } from './hooks';
 import { callLifeCycle } from './utils';
 import { getPendingUpdates } from './updateMetaUtils';
 
 import shallowEqual from './helpers/shallowEqual';
-import { BRAHMOS_DATA_KEY } from './configs';
+import { BRAHMOS_DATA_KEY, EFFECT_TYPE_OTHER } from './configs';
 
 function getCurrentContext(fiber, isReused) {
   const {
@@ -140,7 +140,7 @@ export default function processComponentFiber(fiber) {
      * do shallow check for props and states
      */
 
-    if (nodeInstance instanceof PureComponent && checkShouldUpdate) {
+    if (nodeInstance.isPureReactComponent && checkShouldUpdate) {
       shouldUpdate = !shallowEqual(state, prevState) || !shallowEqual(props, prevProps);
     }
 
@@ -225,7 +225,7 @@ export default function processComponentFiber(fiber) {
       return;
     }
     // mark that the fiber has uncommitted effects
-    markPendingEffect(fiber);
+    markPendingEffect(fiber, EFFECT_TYPE_OTHER);
   } else {
     // clone the existing nodes
     cloneChildrenFibers(fiber);

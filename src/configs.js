@@ -42,3 +42,8 @@ export const UPDATE_SOURCE_DEFAULT = 'js';
 export const UPDATE_SOURCE_EVENT = 'event';
 export const UPDATE_SOURCE_UNSTABLE_DEFERRED = 'deferredUpdate';
 export const UPDATE_SOURCE_TRANSITION = 'transition';
+
+/** Effect type ENUMS */
+export const EFFECT_TYPE_NONE = 0;
+export const EFFECT_TYPE_PLACEMENT = 1;
+export const EFFECT_TYPE_OTHER = 2;

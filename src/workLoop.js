@@ -6,7 +6,12 @@ import {
   ATTRIBUTE_NODE,
 } from './brahmosNode';
 
-import { UPDATE_SOURCE_TRANSITION, BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED } from './configs';
+import {
+  UPDATE_SOURCE_TRANSITION,
+  BRAHMOS_DATA_KEY,
+  UPDATE_TYPE_DEFERRED,
+  EFFECT_TYPE_OTHER,
+} from './configs';
 
 import processComponentFiber from './processComponentFiber';
 import { processTextFiber } from './processTextFiber';
@@ -90,7 +95,7 @@ export function processFiber(fiber) {
     processComponentFiber(fiber);
   } else if (node.nodeType === ATTRIBUTE_NODE) {
     // nothing to on process phase, just mark that the fiber has uncommitted effects
-    markPendingEffect(fiber);
+    markPendingEffect(fiber, EFFECT_TYPE_OTHER);
   }
 
   // after processing, set the processedTime to the fiber

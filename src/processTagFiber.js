@@ -3,7 +3,7 @@ import { createAndLink, cloneChildrenFibers, markPendingEffect } from './fiber';
 import getTagNode from './TagNode';
 import TemplateNode from './TemplateNode';
 import { loopEntries } from './utils';
-import { RESERVED_ATTRIBUTES, MODIFIED_ATTRIBUTES } from './configs';
+import { RESERVED_ATTRIBUTES, MODIFIED_ATTRIBUTES, EFFECT_TYPE_OTHER } from './configs';
 
 export function isAttrOverridden(tagAttrs, attrName, attrIndex) {
   const lastIndex = tagAttrs.lastIndexOf(attrName);
@@ -139,7 +139,7 @@ export default function processTagFiber(fiber) {
   }
 
   // mark that the fiber has uncommitted effects
-  markPendingEffect(fiber);
+  markPendingEffect(fiber, EFFECT_TYPE_OTHER);
 
   // attach context on fiber
   fiber.context = context;

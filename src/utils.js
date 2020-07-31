@@ -214,7 +214,6 @@ export function afterCurrentStack(cb) {
 /**
  * Function to create a unique id
  */
-
 export function getUniqueId() {
   return now() + '-' + Math.random() * 1000000;
 }
