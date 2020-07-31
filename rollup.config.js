@@ -1,4 +1,4 @@
-import { uglify } from 'rollup-plugin-uglify';
+import { terser } from 'rollup-plugin-terser';
 import fileSize from 'rollup-plugin-filesize';
 import commonjs from 'rollup-plugin-commonjs';
 import license from 'rollup-plugin-license';
@@ -44,6 +44,7 @@ const defaultConfig = {
     license({
       banner,
     }),
+    // terser(),
   ],
 };
 
@@ -54,7 +55,7 @@ const minConfig = {
     format: 'umd',
     name: 'Brahmos',
   },
-  plugins: [...defaultConfig.plugins, uglify()],
+  plugins: [...defaultConfig.plugins, terser()],
 };
 
 export default [defaultConfig, minConfig];
