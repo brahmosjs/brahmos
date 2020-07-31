@@ -14,7 +14,7 @@ import { withTransition } from './updateMetaUtils';
 import { deferredUpdates } from './deferredUpdates';
 import reRender from './reRender';
 import { BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED, SUSPENSE_REVEAL_INTERVAL } from './configs';
-import { getCurrentFiber, getFiberFromComponent, setUpdateTime } from './fiber';
+import { getCurrentComponentFiber, getFiberFromComponent, setUpdateTime } from './fiber';
 
 export function getClosestSuspenseFiber(fiber, includeSuspenseList) {
   const { root } = fiber;
@@ -103,7 +103,7 @@ class SuspenseManager {
 
   addRootToProcess() {
     const { rootSuspenseManager } = this;
-    const { root } = getCurrentFiber();
+    const { root } = getCurrentComponentFiber();
     root.afterRender(rootSuspenseManager.handleSuspense);
   }
 
@@ -305,7 +305,7 @@ class SuspenseManager {
 }
 
 function getActiveTransition(component) {
-  const fiber = getCurrentFiber();
+  const fiber = getCurrentComponentFiber();
   let transition = getTransitionFromFiber(fiber, PREDEFINED_TRANSITION_DEFERRED);
 
   /**
@@ -366,7 +366,7 @@ export class Suspense extends Component {
 
   render() {
     const transition = getActiveTransition(this);
-    const fiber = getCurrentFiber();
+    const fiber = getCurrentComponentFiber();
 
     const suspenseManager = getSuspenseManager(fiber, transition);
 

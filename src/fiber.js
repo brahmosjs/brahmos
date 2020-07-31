@@ -7,20 +7,14 @@ import {
 } from './configs';
 import { now } from './utils';
 
-export const fibers = {
-  workInProgress: null,
-  current: null,
-  currentFiber: null,
-};
+let currentComponentFiber;
 
-let currentFiber;
-
-export function setCurrentFiber(fiber) {
-  currentFiber = fiber;
+export function setCurrentComponentFiber(fiber) {
+  currentComponentFiber = fiber;
 }
 
-export function getCurrentFiber() {
-  return currentFiber;
+export function getCurrentComponentFiber() {
+  return currentComponentFiber;
 }
 
 export function getLastCompleteTimeKey(type) {

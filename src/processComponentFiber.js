@@ -3,7 +3,7 @@ import {
   createAndLink,
   resetToCommittedChild,
   markPendingEffect,
-  setCurrentFiber,
+  setCurrentComponentFiber,
 } from './fiber';
 
 import functionalComponentInstance from './functionalComponentInstance';
@@ -68,9 +68,6 @@ function resetLoopToComponentsFiber(suspenseFiber) {
 }
 
 export default function processComponentFiber(fiber) {
-  // set the current fiber we are processing
-  setCurrentFiber(fiber);
-
   const { node, part, root } = fiber;
   const { type: Component, nodeType, props = {}, ref } = node;
 
@@ -157,22 +154,21 @@ export default function processComponentFiber(fiber) {
      * If it is a context consumer add provider on the props
      */
     const { contextType } = Component;
-    let contextValue;
     if (contextType) {
       const { id, defaultValue } = contextType;
       const provider = context[id];
-      contextValue = provider ? provider.props.value : defaultValue;
+      const contextValue = provider ? provider.props.value : defaultValue;
 
       // if it is a first render subscribe component for provider value change
       if (provider && isFirstRender) {
         provider.sub(nodeInstance);
       }
+      nodeInstance.context = contextValue;
     }
 
     // set the new state, props, context and reset uncommitted state
     nodeInstance.state = state;
     nodeInstance.props = props;
-    nodeInstance.context = contextValue;
   } else if (!isFirstRender) {
     // for functional component call cleanEffect only on second render
     // alternate will be set on second render
@@ -183,6 +179,9 @@ export default function processComponentFiber(fiber) {
   // render the nodes
   if (shouldUpdate) {
     try {
+      // set the current component fiber we are processing
+      setCurrentComponentFiber(fiber);
+
       const childNodes = nodeInstance.__render(props);
 
       // component will always return a single node so we can pass the previous child as current fiber

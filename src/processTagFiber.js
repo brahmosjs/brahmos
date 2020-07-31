@@ -131,6 +131,8 @@ export default function processTagFiber(fiber) {
    * No need to perform this if node and oldNode are same
    * This will only happen when we are just doing position change
    * In which case just clone the children fibers
+   * CHECK: Will there be ever any case where node is same as oldNode
+   * and process is called.
    */
   if (node !== oldNode) {
     partsToFiber(nodeInstance.parts, values, fiber);

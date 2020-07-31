@@ -20,10 +20,10 @@ import {
 } from './updateMetaUtils';
 
 import { TRANSITION_STATE_INITIAL, TRANSITION_STATE_START } from './transitionUtils';
-import { getFiberFromComponent, getCurrentFiber } from './fiber';
+import { getFiberFromComponent, getCurrentComponentFiber } from './fiber';
 
 function getCurrentComponent() {
-  return getCurrentFiber().nodeInstance;
+  return getCurrentComponentFiber().nodeInstance;
 }
 
 /**
@@ -101,7 +101,7 @@ function getHook(createHook, shouldUpdate = (hook) => false, reduce = (hook) => 
   const {
     nodeInstance: component,
     root: { updateType },
-  } = getCurrentFiber();
+  } = getCurrentComponentFiber();
 
   const { pointer } = component;
   const hooks = getHooksList(updateType, component);
@@ -119,7 +119,7 @@ function getHook(createHook, shouldUpdate = (hook) => false, reduce = (hook) => 
 }
 
 export function prepareHooksForRender() {
-  const fiber = getCurrentFiber();
+  const fiber = getCurrentComponentFiber();
   const {
     nodeInstance: component,
     root: { updateType },
