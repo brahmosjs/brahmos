@@ -1,6 +1,6 @@
 import { getNextChildFiber, createAndLink, markToTearDown, markPendingEffect } from './fiber';
 import { getKey } from './brahmosNode';
-import { EFFECT_TYPE_PLACEMENT } from './configs';
+import { EFFECT_TYPE_PLACEMENT, EFFECT_TYPE_OTHER } from './configs';
 
 // handle array nodes
 export default function processArrayFiber(fiber) {
@@ -84,4 +84,7 @@ export default function processArrayFiber(fiber) {
   childKeyMap.forEach((fiber) => {
     markToTearDown(fiber);
   });
+
+  // mark the array fiber for handling effects
+  markPendingEffect(fiber, EFFECT_TYPE_OTHER);
 }

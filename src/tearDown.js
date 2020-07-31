@@ -80,9 +80,6 @@ function tearDownFiber(fiber, removeDOM) {
       cleanEffects(fiber, true);
     }
   }
-
-  // reset the nodeInstance property in fiber
-  fiber.nodeInstance = null;
 }
 
 export default function(root) {

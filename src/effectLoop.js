@@ -205,7 +205,7 @@ function handleAttributeEffect(fiber) {
   // TODO: Fix svg case
   updateNodeAttributes(domNode, attributes, oldAttributes, false);
 
-  // Handle value resets
+  // Handle value resetsx
 }
 
 export function resetEffectProperties(root) {
@@ -215,6 +215,17 @@ export function resetEffectProperties(root) {
 
   // reset after render callbacks
   root.resetRenderCallbacks();
+}
+
+/**
+ * reset properties which are not required in future
+ * of alternate fiber so those property values can be garbage collected
+ */
+function resetAlternate(alternate) {
+  alternate.node = null;
+  alternate.nodeInstance = null;
+  alternate.child = null;
+  alternate.sibling = null;
 }
 
 export function removeTransitionFromRoot(root) {
@@ -255,6 +266,15 @@ function handleFiberEffect(fiber) {
 
     // reset the hasUncommittedEffect flag
     fiber.hasUncommittedEffect = false;
+  }
+
+  /**
+   * once the fiber is committed, we can remove child and sibling link from alternate,
+   * so unused child and sibling fiber (if not linked as alternate of any current node)
+   * can be garbage collected
+   */
+  if (alternate) {
+    resetAlternate(alternate);
   }
 }
 
