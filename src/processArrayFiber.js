@@ -29,9 +29,8 @@ export default function processArrayFiber(fiber) {
    */
   fiber.child = null;
 
-  for (let i = 0, ln = nodes.length; i < ln; i++) {
-    const node = nodes[i];
-    const key = getKey(node, i);
+  nodes.forEach((node, index) => {
+    const key = getKey(node, index);
     const currentFiber = childKeyMap.get(key);
 
     if (currentFiber) {
@@ -57,7 +56,7 @@ export default function processArrayFiber(fiber) {
          */
         a: undefined,
         isArrayNode: true,
-        nodeIndex: i,
+        nodeIndex: index,
       },
       currentFiber,
       previousFiber,
@@ -71,14 +70,14 @@ export default function processArrayFiber(fiber) {
      * if current fiber nodeIndex is different than new index,or if it is a new fiber without any alternate
      * mark fiber and its previous fiber to have uncommitted placement effect
      */
-    if (currentFiber && currentFiber.part.nodeIndex !== i) {
+    if (currentFiber && currentFiber.part.nodeIndex !== index) {
       markPendingEffect(refFiber, EFFECT_TYPE_PLACEMENT);
 
       // mark the previous fiber as well having the placement effect, as it makes it easier to
       // rearrange the dom nodes
-      if (i !== 0) markPendingEffect(previousFiber, EFFECT_TYPE_PLACEMENT);
+      if (index !== 0) markPendingEffect(previousFiber, EFFECT_TYPE_PLACEMENT);
     }
-  }
+  });
 
   // mark non used node to tear down
   childKeyMap.forEach((fiber) => {
