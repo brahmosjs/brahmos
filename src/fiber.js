@@ -1,10 +1,5 @@
 import { isComponentNode, isTagNode, isPrimitiveNode, ATTRIBUTE_NODE } from './brahmosNode';
-import {
-  UPDATE_TYPE_DEFERRED,
-  BRAHMOS_DATA_KEY,
-  UPDATE_TYPE_SYNC,
-  EFFECT_TYPE_NONE,
-} from './configs';
+import { UPDATE_TYPE_DEFERRED, BRAHMOS_DATA_KEY, EFFECT_TYPE_NONE } from './configs';
 import { now } from './utils';
 
 let currentComponentFiber;
@@ -334,52 +329,6 @@ export function resetToCommittedChild(fiber) {
 export function markToTearDown(fiber) {
   fiber.shouldTearDown = true;
   fiber.root.tearDownFibers.push(fiber);
-}
-
-/**
- * Get all the new fibers which are created during the
- */
-export function getNewFibers(root) {
-  const { updateType, wip, current, lastCompleteTime } = root;
-  const updateTimeKey = getUpdateTimeKey(updateType);
-  const newFibers = [];
-
-  let fiber = updateType === UPDATE_TYPE_SYNC ? current : wip;
-
-  while (fiber) {
-    const { createdAt, child, hasUncommittedEffect } = fiber;
-    const updateTime = fiber[updateTimeKey];
-    const fiberIsNew = createdAt > lastCompleteTime || hasUncommittedEffect;
-    const hierarchyHasUpdates = hasUncommittedEffect || updateTime > lastCompleteTime;
-
-    if (hasUncommittedEffect) {
-      // push fiber in new fiber list
-      newFibers.push(fiber);
-    }
-
-    // correct the parent reference
-    /**
-     * if child is there and it does not point back to correct parent
-     * set the pointer back to parent. This can happen if the fiber is new
-     * but the child is an existing fiber. This can happen when we haven't
-     * processed fiber and just cloned from the current tree
-     * We don't do this during rendering phase to not disturb the current tree
-     */
-    if (fiberIsNew && child && child.parent !== fiber) child.parent = fiber;
-
-    /**
-     * do a depth first traversal,
-     * go to child fiber only if the fiber is new, if its not
-     * it means no child has updates
-     */
-    if (child && hierarchyHasUpdates) fiber = child;
-    else {
-      while (fiber !== root && !fiber.sibling) fiber = fiber.parent;
-      fiber = fiber.sibling;
-    }
-  }
-
-  return newFibers;
 }
 
 // NOTE: Delete this function

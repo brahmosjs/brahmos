@@ -16,7 +16,9 @@ import {
   UPDATE_TYPE_DEFERRED,
   LAST_ARRAY_DOM_KEY,
   EFFECT_TYPE_OTHER,
+  UPDATE_TYPE_SYNC,
 } from './configs';
+import { getUpdateTimeKey } from './fiber';
 
 /**
  * Updater to handle text node
@@ -240,15 +242,9 @@ function handleFiberEffect(fiber) {
   const { node, alternate } = fiber;
   const _isComponentNode = node && isComponentNode(node);
 
-  if (_isComponentNode) {
-    // if fiber is a component fiber, update the fiber reference in nodeInstance
-
-    fiber.nodeInstance[BRAHMOS_DATA_KEY].fiber = fiber;
-
-    // if the fiber is part of an array and requires rearrange then do it
-    if (alternate) {
-      reArrangeExistingNode(fiber, alternate);
-    }
+  // if the fiber is part of an array and requires rearrange then do it
+  if (_isComponentNode && alternate) {
+    reArrangeExistingNode(fiber, alternate);
   }
 
   // if node has uncommitted effect, handle the effect
@@ -278,10 +274,66 @@ function handleFiberEffect(fiber) {
   }
 }
 
-export default function effectLoop(root, newFibers) {
+/**
+ * Fix pointers on fibers, and return the fibers with effects
+ */
+export function preCommitBookkeeping(root) {
+  const { updateType, wip, current, lastCompleteTime } = root;
+  const updateTimeKey = getUpdateTimeKey(updateType);
+  const fibersWithEffect = [];
+
+  let fiber = updateType === UPDATE_TYPE_SYNC ? current : wip;
+
+  while (fiber) {
+    const { createdAt, node, child, hasUncommittedEffect } = fiber;
+    const updateTime = fiber[updateTimeKey];
+    const fiberIsNew = createdAt > lastCompleteTime;
+    const hierarchyHasUpdates = hasUncommittedEffect || updateTime > lastCompleteTime;
+
+    if (hasUncommittedEffect) {
+      // push fiber in new fiber list
+      fibersWithEffect.push(fiber);
+    }
+
+    // correct the references
+    if (fiberIsNew) {
+      /**
+       * if child is there and it does not point back to correct parent
+       * set the pointer back to parent. This can happen if the fiber is new
+       * but the child is an existing fiber. This can happen when we haven't
+       * processed fiber and just cloned from the current tree
+       * We don't do this during rendering phase to not disturb the current tree
+       */
+      if (child && child.parent !== fiber) child.parent = fiber;
+
+      /**
+       * If fiber is new and it is a component node we will need update the fiber
+       * reference in the component node
+       */
+      if (node && isComponentNode(node)) {
+        fiber.nodeInstance[BRAHMOS_DATA_KEY].fiber = fiber;
+      }
+    }
+
+    /**
+     * do a depth first traversal,
+     * go to child fiber only if the fiber is new, if its not
+     * it means no child has updates
+     */
+    if (child && hierarchyHasUpdates) fiber = child;
+    else {
+      while (fiber !== root && !fiber.sibling) fiber = fiber.parent;
+      fiber = fiber.sibling;
+    }
+  }
+
+  return fibersWithEffect;
+}
+
+export default function effectLoop(root, fibersWithEffect) {
   // loop on new fibers hand call if effect needs to be called
-  for (let i = 0, ln = newFibers.length; i < ln; i++) {
-    handleFiberEffect(newFibers[i]);
+  for (let i = 0, ln = fibersWithEffect.length; i < ln; i++) {
+    handleFiberEffect(fibersWithEffect[i]);
   }
 
   const { postCommitEffects } = root;

@@ -16,7 +16,11 @@ import {
 import processComponentFiber from './processComponentFiber';
 import { processTextFiber } from './processTextFiber';
 import processTagFiber from './processTagFiber';
-import effectLoop, { resetEffectProperties, removeTransitionFromRoot } from './effectLoop';
+import effectLoop, {
+  preCommitBookkeeping,
+  resetEffectProperties,
+  removeTransitionFromRoot,
+} from './effectLoop';
 import { shouldPreventSchedule, getPendingUpdates, withUpdateSource } from './updateMetaUtils';
 import {
   getFirstTransitionToProcess,
@@ -31,7 +35,6 @@ import {
   cloneCurrentFiber,
   markToTearDown,
   markPendingEffect,
-  getNewFibers,
 } from './fiber';
 import processArrayFiber from './processArrayFiber';
 import tearDown from './tearDown';
@@ -133,9 +136,7 @@ function commitChanges(root) {
   // tearDown old nodes
   tearDown(root);
 
-  // get new fibers before setting update time
-  const newFibers = getNewFibers(root);
-
+  const fibersWithEffect = preCommitBookkeeping(root);
   /**
    * set the last updated time for render
    * NOTE: We do it before effect loop so if there is
@@ -154,7 +155,7 @@ function commitChanges(root) {
   }
 
   // After correcting the tree flush the effects on new fibers
-  effectLoop(root, newFibers);
+  effectLoop(root, fibersWithEffect);
 }
 
 export default function workLoop(fiber, topFiber) {
