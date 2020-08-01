@@ -45,6 +45,7 @@ export function schedule(root, shouldSchedule, cb) {
 
   if (shouldSchedule) {
     root.requestIdleHandle = requestIdleCallback(cb, { timeout: 1000 });
+    return;
   }
 
   cb();

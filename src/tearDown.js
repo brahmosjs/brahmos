@@ -13,6 +13,18 @@ import { setRef } from './refs';
 import { cleanEffects } from './hooks';
 import { BRAHMOS_DATA_KEY } from './configs';
 
+function tearDownChild(child, part, _isTagNode, removeDOM) {
+  /**
+   * if we got a tag to remove for child nodes we don't need to remove those
+   * nodes in child fibers as it will be remove by current fiber
+   * Note, some child node can be outside of the dom boundary a TagNode is covering
+   * So we should check if the parent node of the child is not same as the tagNode.
+   */
+  const _removeDOM = child.part.parentNode !== part.parentNode && _isTagNode ? false : removeDOM;
+
+  tearDownFiber(child, _removeDOM);
+}
+
 function tearDownFiber(fiber, removeDOM) {
   const { node, part, nodeInstance } = fiber;
 
@@ -28,11 +40,11 @@ function tearDownFiber(fiber, removeDOM) {
      * if we got a tag to remove for child nodes we don't need to remove those
      * nodes in child fibers as it will be remove by current fiber
      */
-    const _removeDOM = _isTagNode ? false : removeDOM;
-    tearDownFiber(child, _removeDOM);
+    tearDownChild(child, part, _isTagNode, removeDOM);
+
     while (child.sibling) {
       child = child.sibling;
-      tearDownFiber(child, _removeDOM);
+      tearDownChild(child, part, _isTagNode, removeDOM);
     }
   }
 
