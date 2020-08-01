@@ -18,7 +18,7 @@ import {
   EFFECT_TYPE_OTHER,
   UPDATE_TYPE_SYNC,
 } from './configs';
-import { getUpdateTimeKey } from './fiber';
+import { getUpdateTimeKey, getLastCompleteTimeKey } from './fiber';
 
 /**
  * Updater to handle text node
@@ -278,8 +278,9 @@ function handleFiberEffect(fiber) {
  * Fix pointers on fibers, and return the fibers with effects
  */
 export function preCommitBookkeeping(root) {
-  const { updateType, wip, current, lastCompleteTime } = root;
+  const { updateType, wip, current } = root;
   const updateTimeKey = getUpdateTimeKey(updateType);
+  const lastCompleteTime = root[getLastCompleteTimeKey(updateType)];
   const fibersWithEffect = [];
 
   let fiber = updateType === UPDATE_TYPE_SYNC ? current : wip;
