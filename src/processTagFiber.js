@@ -50,8 +50,6 @@ export function partsToFiber(parts, values, parentFiber) {
           } else if (attrName === 'ref') {
             // Note only functional refs are supported
             refValue = attrValue;
-            // TODO: Handle refs
-            // setRef(attrValue, domNode);
           }
         });
         part = parts[++i];

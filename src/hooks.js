@@ -53,6 +53,18 @@ function getHooksList(updateType, component) {
 }
 
 /**
+ * Get the current hooks array from the fiber
+ */
+function getHooksListFromFiber(fiber) {
+  const {
+    nodeInstance,
+    root: { updateType },
+  } = fiber;
+
+  return getHooksList(updateType, nodeInstance);
+}
+
+/**
  * Get current hook, based on the type of update we are doing
  * If it is inside transition of deferred update we need deferredHooksList,
  * or else we need the sync hooks list
@@ -60,7 +72,7 @@ function getHooksList(updateType, component) {
 function getCurrentHook(updateType, hookIndex, component) {
   /**
    * if deferred hooks is not populated clone from the syncHooks
-   * This will only happen when component is rendered only once.
+   * This will happen if the component has never been rendered in deferred mode.
    */
   if (updateType === UPDATE_TYPE_DEFERRED && !component.deferredHooks.length) {
     cloneHooks(component);
@@ -98,13 +110,10 @@ function reRenderComponentIfRequired(component, state, lastState) {
  * Plus a method to check if hook has to be updated
  */
 function getHook(createHook, shouldUpdate = (hook) => false, reduce = (hook) => hook) {
-  const {
-    nodeInstance: component,
-    root: { updateType },
-  } = getCurrentComponentFiber();
-
+  const fiber = getCurrentComponentFiber();
+  const { nodeInstance: component } = fiber;
   const { pointer } = component;
-  const hooks = getHooksList(updateType, component);
+  const hooks = getHooksListFromFiber(fiber);
   let hook = hooks[pointer];
 
   // if hook is not there initialize and add it to the pointer
@@ -253,8 +262,11 @@ export function useCallback(callback, dependencies) {
  * Base module to create effect hooks
  */
 function useEffectBase(effectHandler, dependencies) {
-  const component = getCurrentComponent();
-  const { pointer, hooks } = component;
+  const fiber = getCurrentComponentFiber();
+  const { nodeInstance: component } = fiber;
+  const { pointer } = component;
+  const hooks = getHooksListFromFiber(fiber);
+
   const lastHook = hooks[pointer] || {
     animationFrame: null,
     cleanEffect: null,
@@ -316,9 +328,8 @@ export function useDebugValue() {
  * Create context hook
  */
 export function useContext(Context) {
-  const component = getCurrentComponent();
+  const { nodeInstance: component, context } = getCurrentComponentFiber();
   const { id, defaultValue } = Context;
-  const { __context: context } = component;
   const provider = context[id];
 
   const value = provider ? provider.props.value : defaultValue;
@@ -427,11 +438,7 @@ export function useTransition({ timeoutMs }) {
  * Method to run all the effects of a component
  */
 export function runEffects(fiber) {
-  const {
-    nodeInstance,
-    root: { updateType },
-  } = fiber;
-  const hooks = getHooksList(updateType, nodeInstance);
+  const hooks = getHooksListFromFiber(fiber);
 
   for (let i = 0, ln = hooks.length; i < ln; i++) {
     const hook = hooks[i];
@@ -445,12 +452,7 @@ export function runEffects(fiber) {
  * Method to run cleanup all the effects of a component
  */
 export function cleanEffects(fiber, unmount) {
-  const {
-    nodeInstance,
-    root: { updateType },
-  } = fiber;
-
-  const hooks = getHooksList(updateType, nodeInstance);
+  const hooks = getHooksListFromFiber(fiber);
 
   for (let i = 0, ln = hooks.length; i < ln; i++) {
     const hook = hooks[i];

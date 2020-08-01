@@ -27,7 +27,7 @@ function getCurrentContext(fiber, isReused) {
 
   // if component has createContext index, we treat it as provider
   const { __ccId } = Component;
-  const { context } = parent;
+  const context = parent.context || {};
 
   // if component is not a provider return the same context
   if (!__ccId) return context;
@@ -69,7 +69,7 @@ function resetLoopToComponentsFiber(suspenseFiber) {
 
 export default function processComponentFiber(fiber) {
   const { node, part, root } = fiber;
-  const { type: Component, nodeType, props = {}, ref } = node;
+  const { type: Component, nodeType, props = {} } = node;
 
   const isReused = false;
   let shouldUpdate = true;
@@ -103,7 +103,7 @@ export default function processComponentFiber(fiber) {
 
   /**
    * If it is a class component,
-   * associate state, props, context and ref
+   * associate state, props to component instance
    * and call all the life cycle method which comes before rendering.
    */
   if (isClassComponent) {

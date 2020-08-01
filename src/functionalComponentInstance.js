@@ -5,6 +5,7 @@ export default function functionalComponentInstance(FuncComponent) {
   return {
     syncHooks: [],
     deferredHooks: [],
+    pointer: 0,
     __render(props) {
       prepareHooksForRender(this);
       const nodes = FuncComponent(props);

@@ -19,6 +19,7 @@ import {
   UPDATE_TYPE_SYNC,
 } from './configs';
 import { getUpdateTimeKey, getLastCompleteTimeKey } from './fiber';
+import { setRef } from './refs';
 
 /**
  * Updater to handle text node
@@ -158,7 +159,7 @@ function handleComponentPostCommitEffect(fiber) {
   const { node, nodeInstance, root } = fiber;
   const { updateType } = root;
 
-  const { nodeType } = node;
+  const { nodeType, ref } = node;
   const brahmosData = nodeInstance[BRAHMOS_DATA_KEY];
 
   if (nodeType === CLASS_COMPONENT_NODE) {
@@ -175,6 +176,9 @@ function handleComponentPostCommitEffect(fiber) {
     } else {
       callLifeCycle(nodeInstance, 'componentDidUpdate', [prevProps, prevState, lastSnapshot]);
     }
+
+    // if the component node has ref call the ref with the node instance
+    if (ref) setRef(ref, nodeInstance);
 
     // after commit is done set the current prop and state on committed values
     committedValues.props = props;
@@ -199,15 +203,16 @@ function handleComponentPostCommitEffect(fiber) {
 }
 
 function handleAttributeEffect(fiber) {
-  const { part, node, alternate } = fiber;
+  const { part, node, alternate, isSvgPart } = fiber;
   const { domNode } = part;
-  const { attributes } = node;
+  const { attributes, ref } = node;
   const oldAttributes = alternate && alternate.node.attributes;
 
   // TODO: Fix svg case
-  updateNodeAttributes(domNode, attributes, oldAttributes, false);
+  updateNodeAttributes(domNode, attributes, oldAttributes, isSvgPart);
 
-  // Handle value resetsx
+  // set ref if present
+  if (ref) setRef(ref, domNode);
 }
 
 export function resetEffectProperties(root) {

@@ -379,16 +379,17 @@ export class Suspense extends Component {
 }
 
 export const lazy = (lazyCallback) => {
-  let componentPromise;
+  let componentSuspender;
 
   const LazyComponent = forwardRef((props, ref) => {
-    const Component = getPromiseSuspendedValue(componentPromise).read();
-    return createElement(Component, { ...props, ref: ref }, props.children);
+    const ComponentModule = componentSuspender.read();
+
+    return createElement(ComponentModule.default, { ...props, ref: ref }, props.children);
   });
 
   // assign a method to lazy load to start loading during createElement call
   LazyComponent.__loadLazyComponent = () => {
-    if (!componentPromise) componentPromise = lazyCallback();
+    if (!componentSuspender) componentSuspender = getPromiseSuspendedValue(lazyCallback());
   };
 
   return LazyComponent;
