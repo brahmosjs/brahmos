@@ -20,7 +20,13 @@ function tearDownChild(child, part, _isTagNode, removeDOM) {
    * Note, some child node can be outside of the dom boundary a TagNode is covering
    * So we should check if the parent node of the child is not same as the tagNode.
    */
-  const _removeDOM = child.part.parentNode !== part.parentNode && _isTagNode ? false : removeDOM;
+  let _removeDOM = child.part.parentNode !== part.parentNode && _isTagNode ? false : removeDOM;
+
+  // if a child is portal then we should keep the remove dom to true
+  const { node } = child;
+  if (node && node.portalContainer) {
+    _removeDOM = true;
+  }
 
   tearDownFiber(child, _removeDOM);
 }
@@ -36,10 +42,6 @@ function tearDownFiber(fiber, removeDOM) {
   let { child } = fiber;
 
   if (child) {
-    /**
-     * if we got a tag to remove for child nodes we don't need to remove those
-     * nodes in child fibers as it will be remove by current fiber
-     */
     tearDownChild(child, part, _isTagNode, removeDOM);
 
     while (child.sibling) {

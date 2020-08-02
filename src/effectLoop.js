@@ -156,7 +156,7 @@ function handleComponentEffect(fiber) {
 }
 
 function handleComponentPostCommitEffect(fiber) {
-  const { node, nodeInstance, root } = fiber;
+  const { node, nodeInstance, root, childFiberError } = fiber;
   const { updateType } = root;
 
   const { nodeType, ref } = node;
@@ -175,6 +175,16 @@ function handleComponentPostCommitEffect(fiber) {
       callLifeCycle(nodeInstance, 'componentDidMount');
     } else {
       callLifeCycle(nodeInstance, 'componentDidUpdate', [prevProps, prevState, lastSnapshot]);
+    }
+
+    if (childFiberError) {
+      callLifeCycle(nodeInstance, 'componentDidCatch', [
+        childFiberError.error,
+        childFiberError.errorInfo,
+      ]);
+
+      // reset the error
+      fiber.childFiberError = null;
     }
 
     // if the component node has ref call the ref with the node instance

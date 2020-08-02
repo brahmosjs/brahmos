@@ -73,6 +73,7 @@ export function brahmosNode(props, values, key) {
     key,
     added: false,
     ref: null,
+    portalContainer: null,
 
     /** Component specific properties */
     type: null,

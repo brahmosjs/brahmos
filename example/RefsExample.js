@@ -23,11 +23,11 @@ export default class RefsExample extends Component {
   }
 
   logRefs = () => {
-    // console.log(this.childCreateRef);
-    // console.log(this.childCallbackRef);
-    // console.log(this.domCreateRef);
-    // console.log(this.domCbRef);
-    // console.log(this.forwardedRef);
+    console.log(this.childCreateRef);
+    console.log(this.childCallbackRef);
+    console.log(this.domCreateRef);
+    console.log(this.domCbRef);
+    console.log(this.forwardedRef);
   };
 
   render() {

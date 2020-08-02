@@ -186,7 +186,20 @@ export default function workLoop(fiber, topFiber) {
         deadline.timeRemaining() >= TIME_REQUIRE_TO_PROCESS_FIBER
       ) {
         processFiber(fiber);
-        fiber = getNextFiber(fiber, topFiber, lastCompleteTime, updateTimeKey);
+
+        /**
+         * if the fiber jump due to suspense or error boundary,
+         * we need to use that as next fiber. We also need to reset
+         * topFiber to root, as the retry fiber can be in upper hierarchy
+         */
+        const { retryFiber } = root;
+        if (retryFiber) {
+          fiber = retryFiber;
+          topFiber = root;
+          root.retryFiber = null;
+        } else {
+          fiber = getNextFiber(fiber, topFiber, lastCompleteTime, updateTimeKey);
+        }
       } else {
         // if we are out of time schedule work for next fiber
         workLoop(fiber, topFiber);

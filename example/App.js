@@ -7,6 +7,7 @@ import RefsExample from './RefsExample';
 import CreatePortalExample from './createPortalExample';
 import SVGExample from './SVGExample';
 import LazySuspenseExample from './lazySuspenseExample';
+import ErrorBoundaryExample from './ErrorBoundaryExample';
 
 function shuffle(array) {
   array = [...array];
@@ -29,33 +30,37 @@ function shuffle(array) {
   return array;
 }
 
-export function oldApp() {
+export function OldApp() {
   return (
     <div>
-      <div className="wrapper">
+      {/* <div className="wrapper">
         <h2>Todo List</h2>
         <TodoList />
       </div>
       <div className="wrapper">
         <h2>useState hook example</h2>
         <UseStateExample />
-      </div>
-      <div className="wrapper">
+      </div> */}
+      {/* <div className="wrapper">
         <h2>Context api example</h2>
         <ContextExample />
-      </div>
-      <div className="wrapper">
+      </div> */}
+      {/* <div className="wrapper">
         <h2>Refs example</h2>
         <RefsExample />
-      </div>
-      <div className="wrapper">
+      </div> */}
+      {/* <div className="wrapper">
         <h2>SVG Example</h2>
         <SVGExample />
-      </div>
-      <div className="wrapper">
+      </div> */}
+      {/* <div className="wrapper">
         <h2>Lazy and Suspense Example</h2>
         <LazySuspenseExample />
-      </div>
+      </div> */}
+      {/* <div className="wrapper">
+        <h2>Error Boundary Example</h2>
+        <ErrorBoundaryExample />
+      </div> */}
       {/** Keep the portal example on last */}
       <div className="wrapper">
         <h2>CreatePortal Example</h2>
@@ -112,8 +117,7 @@ export class AppBase extends Component {
 export default function App() {
   return (
     <div>
-      <AppBase />
-      <AppBase />
+      <OldApp />
     </div>
   );
 }

@@ -173,6 +173,11 @@ export function createHostFiber(domNode) {
 }
 
 export function createFiber(root, node, part) {
+  // if a node is ported node, update the part information
+  if (node && node.portalContainer) {
+    part.parentNode = node.portalContainer;
+  }
+
   return {
     node,
     nodeInstance: null,
@@ -183,7 +188,7 @@ export function createFiber(root, node, part) {
     part,
     alternate: null, // points to the current fiber
     context: null, // Points to the context applicable for that fiber
-    errorBoundary: null,
+    childFiberError: null,
     isSvgPart: false,
     deferredUpdateTime: 0,
     updateTime: 0,
@@ -231,7 +236,6 @@ export function createAndLink(node, part, currentFiber, refFiber, parentFiber) {
   fiber[updateTimeKey] = parentFiber[updateTimeKey];
   fiber.context = parentFiber.context;
   fiber.isSvgPart = parentFiber.isSvgPart;
-  fiber.errorBoundary = parentFiber.errorBoundary;
 
   return fiber;
 }
@@ -268,15 +272,6 @@ function getFiberWhichRequiresProcessing(fiber, lastCompleteTime, updateTimeKey)
 }
 
 export function getNextFiber(fiber, topFiber, lastCompleteTime, updateTimeKey) {
-  // if we have any retry fiber reset return that fiber
-  const { root } = fiber;
-  const { retryFiber } = root;
-  if (retryFiber) {
-    // reset the retry fiber and return it
-    root.retryFiber = null;
-    return retryFiber;
-  }
-
   /**
    * Skip fibers which does not require processing
    */

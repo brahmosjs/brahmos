@@ -16,6 +16,36 @@ import { getPendingUpdates } from './updateMetaUtils';
 
 import shallowEqual from './helpers/shallowEqual';
 import { BRAHMOS_DATA_KEY, EFFECT_TYPE_OTHER } from './configs';
+import { Component } from './Component';
+
+export function getErrorBoundaryFiber(fiber) {
+  const { root } = fiber;
+
+  while (
+    (fiber = fiber.parent) &&
+    !(
+      fiber.nodeInstance instanceof Component &&
+      (fiber.nodeInstance.componentDidCatch || fiber.node.type.getDerivedStateFromError)
+    )
+  ) {
+    if (fiber === root) return null;
+  }
+
+  return fiber;
+}
+
+export function getErrorInfo(fiber) {
+  const {
+    node: { type: Component },
+  } = fiber;
+  const componentName = Component.displayName || Component.name;
+  const error = `The above error occurred in the <${componentName}> component:`;
+
+  // TODO: write error stack information here.
+  return {
+    componentStack: error,
+  };
+}
 
 function getCurrentContext(fiber, isReused) {
   const {
@@ -57,18 +87,18 @@ function getUpdatedState(prevState, updates) {
 }
 
 // method to reset work loop to a fiber of given component
-function resetLoopToComponentsFiber(suspenseFiber) {
-  const { root, nodeInstance } = suspenseFiber;
+function resetLoopToComponentsFiber(fiber) {
+  const { root, nodeInstance } = fiber;
 
   // mark component as dirty, so it can be rendered again
   nodeInstance[BRAHMOS_DATA_KEY].isDirty = true;
 
   // set the alternate fiber as retry fiber, as
-  root.retryFiber = suspenseFiber;
+  root.retryFiber = fiber;
 }
 
 export default function processComponentFiber(fiber) {
-  const { node, part, root } = fiber;
+  const { node, part, root, childFiberError } = fiber;
   const { type: Component, nodeType, props = {} } = node;
 
   const isReused = false;
@@ -126,7 +156,13 @@ export default function processComponentFiber(fiber) {
 
     // call getDerivedStateFromProps lifecycle with the unCommitted state and apply the derivedState on state
     const derivedState = callLifeCycle(Component, 'getDerivedStateFromProps', [props, state]);
-    if (derivedState) state = { ...state, ...derivedState };
+
+    const derivedErrorState = childFiberError
+      ? callLifeCycle(Component, 'getDerivedStateFromError', [childFiberError.error])
+      : undefined;
+
+    if (derivedState || derivedErrorState)
+      state = { ...state, ...derivedState, ...derivedErrorState };
 
     // call callbacks of setState with new state
     pendingUpdates.forEach(({ callback }) => {
@@ -182,17 +218,19 @@ export default function processComponentFiber(fiber) {
       // set the current component fiber we are processing
       setCurrentComponentFiber(fiber);
 
-      const childNodes = nodeInstance.__render(props);
+      // if the component is error boundary and it does not have getDerivedStateFromError, render null
+      const hasNonHandledError = childFiberError && !Component.getDerivedStateFromError;
+      const childNodes = hasNonHandledError ? null : nodeInstance.__render(props);
 
       // component will always return a single node so we can pass the previous child as current fiber
       createAndLink(childNodes, part, fiber.child, fiber, fiber);
-    } catch (err) {
-      const { errorBoundary } = fiber;
+    } catch (error) {
+      const errorBoundary = getErrorBoundaryFiber(fiber);
       // TODO: handle error boundaries
 
       // if error is a suspender, handle the suspender in suspense component
       // TODO: this is very basic case for suspender, add better code to check if it is a suspender
-      if (typeof err.then === 'function') {
+      if (typeof error.then === 'function') {
         const suspenseFiber = getClosestSuspenseFiber(fiber);
 
         /**
@@ -204,21 +242,27 @@ export default function processComponentFiber(fiber) {
           throw new Error(`Rendering which got suspended can't be used outside of suspense.`);
         }
 
-        suspenseFiber.nodeInstance.handleSuspender(err, suspenseFiber);
+        suspenseFiber.nodeInstance.handleSuspender(error, suspenseFiber);
 
         // reset the work loop to suspense fiber
         resetLoopToComponentsFiber(suspenseFiber);
-
-        // else if there is any error boundary handle the error in error boundary
-      } else if (errorBoundary) {
-        errorBoundary.__handleError(err);
+        /**
+         * else if there is any error boundary handle the error in error boundary
+         * It should not handle error if its already been handled once
+         */
+      } else if (errorBoundary && !errorBoundary.childFiberError) {
+        const errorInfo = getErrorInfo(fiber);
+        // log the error and retry rendering
+        console.error(error);
+        console.error(errorInfo.componentStack);
+        errorBoundary.childFiberError = { error, errorInfo };
 
         // reset the work loop to errorBoundary fiber
         resetLoopToComponentsFiber(errorBoundary);
 
         // else throw error
       } else {
-        throw err;
+        throw error;
       }
 
       return;

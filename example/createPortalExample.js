@@ -17,10 +17,10 @@ function CreatePortalExample() {
       {display && createPortal(<Child />, document.querySelector('#another-root'))}
       <button
         onClick={() => {
-          setDisplay(false);
+          setDisplay(!display);
         }}
       >
-        Hide
+        Toggle
       </button>
     </div>
   );

@@ -44,7 +44,7 @@ const defaultConfig = {
     license({
       banner,
     }),
-    // terser(),
+    terser(),
   ],
 };
 
@@ -55,7 +55,7 @@ const minConfig = {
     format: 'umd',
     name: 'Brahmos',
   },
-  plugins: [...defaultConfig.plugins, terser()],
+  plugins: [...defaultConfig.plugins],
 };
 
 export default [defaultConfig, minConfig];

@@ -60,8 +60,6 @@ export class Component {
     if (callback) callback(this.state);
   }
 
-  __handleError() {}
-
   __render() {
     // get the new rendered node
     const nodes = this.render();

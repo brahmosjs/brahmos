@@ -5,6 +5,6 @@ import ConcurrentApp from './concurrentApp';
 import SuspenseApp from './suspenseExamples';
 import SuspenseListApp from './suspenseListExample';
 
-render(<ConcurrentApp />, document.getElementById('app'));
+render(<App />, document.getElementById('app'));
 
-// render(<UnMountAtNode/>, document.getElementById('unmount-node'));
+render(<UnMountAtNode />, document.getElementById('unmount-node'));
