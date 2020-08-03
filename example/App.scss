@@ -1,0 +1,24 @@
+.app-container {
+  .header {
+    text-align: center;
+    padding: 20px;
+  }
+
+  .body {
+    display: flex;
+  }
+
+  .nav-list {
+    width: 200px;
+
+    &-container {
+      margin: 0;
+      padding: 0;
+    }
+
+    &-item {
+      list-style: none;
+      padding: 10px;
+    }
+  }
+}
