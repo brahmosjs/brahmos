@@ -1,6 +1,4 @@
-import Brahmos, { Component, unstable_deferredUpdates } from '../../src';
-import { withUpdateSource } from '../../src/updateMetaUtils';
-import { UPDATE_SOURCE_EVENT } from '../../src/configs';
+import Brahmos, { Component, unstable_deferredUpdates, unstable_syncUpdates } from '../../src';
 
 /**
  * Source: https://github.com/facebook/react/blob/master/fixtures/fiber-triangle/index.html
@@ -155,7 +153,7 @@ class SierpinskiWrapper extends Component {
       });
     } else {
       // Update is not time-sliced. Causes demo to stutter.
-      this.setState((state) => ({ seconds: (state.seconds % 10) + 1 }));
+      this.setState({ seconds: (this.state.seconds % 10) + 1 });
     }
   }
 
@@ -187,7 +185,7 @@ class SierpinskiWrapper extends Component {
         </div>
         <div style={{ ...containerStyle, transform }}>
           <div className="dot-container">
-            <SierpinskiTriangle x={0} y={0} s={1000}>
+            <SierpinskiTriangle x={0} y={0} s={800}>
               {seconds}
             </SierpinskiTriangle>
           </div>
@@ -212,7 +210,7 @@ export default class DemoApp extends Component {
 
   updateElapsed() {
     requestAnimationFrame(() => {
-      withUpdateSource(UPDATE_SOURCE_EVENT, () => {
+      unstable_syncUpdates(() => {
         this.setState({
           elapsed: Date.now() - this.start,
         });

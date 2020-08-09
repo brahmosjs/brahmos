@@ -1,6 +1,9 @@
 import Brahmos, { render, Component, useState } from '../src';
 import TodoList from './todo-list/TodoList';
-import SierpinskiTriangleDemo from './sierpinski-triangle/SierpinskiTriangle';
+import SierpinskiTriangleDemo from './sierpinski-triangle';
+import ConcurrentModeDemo from './concurrent-mode';
+import SuspenseListDemo from './suspense-list';
+import SVGDemo from './svg-chart';
 
 import './App.scss';
 
@@ -14,6 +17,21 @@ const examples = [
     title: 'Sierpinski Triangle Demo',
     id: 'sierpinski-triangle',
     Component: SierpinskiTriangleDemo,
+  },
+  {
+    title: 'Concurrent Mode Demo',
+    id: 'concurrent-mode',
+    Component: ConcurrentModeDemo,
+  },
+  {
+    title: 'Suspense List Demo',
+    id: 'suspense-list',
+    Component: SuspenseListDemo,
+  },
+  {
+    title: 'SVG Chart',
+    id: 'svg-chart',
+    Component: SVGDemo,
   },
 ];
 

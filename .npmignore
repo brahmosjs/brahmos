@@ -8,5 +8,8 @@ reference
 .gitignore
 webpack.config.js
 
-# Ignore doc files
+# Ignore doc and example file
 docs
+example
+example_old
+
