@@ -39,20 +39,7 @@ import {
 import processArrayFiber from './processArrayFiber';
 import tearDown from './tearDown';
 import { now } from './utils';
-
-const TIME_REQUIRE_TO_PROCESS_FIBER = 2;
-
-export function schedule(root, shouldSchedule, cb) {
-  // cancel the previous requestIdle handle
-  if (root.requestIdleHandle) cancelIdleCallback(root.requestIdleHandle);
-
-  if (shouldSchedule) {
-    root.requestIdleHandle = requestIdleCallback(cb, { timeout: 1000 });
-    return;
-  }
-
-  cb();
-}
+import schedule from './schedular';
 
 function fiberHasUnprocessedUpdates(fiber) {
   const { node, nodeInstance } = fiber;
@@ -172,7 +159,7 @@ export default function workLoop(fiber, topFiber) {
    */
   const shouldSchedule = !shouldPreventSchedule(root);
 
-  schedule(root, shouldSchedule, (deadline) => {
+  schedule(root, shouldSchedule, (timeRemaining) => {
     while (fiber !== topFiber) {
       // process the current fiber which will return the next fiber
       /**
@@ -180,11 +167,8 @@ export default function workLoop(fiber, topFiber) {
        * process the current fiber, and then move to next
        * and keep doing it till we are out of time.
        */
-      if (
-        !shouldSchedule ||
-        deadline.didTimeout ||
-        deadline.timeRemaining() >= TIME_REQUIRE_TO_PROCESS_FIBER
-      ) {
+      // if (deadline) console.log(deadline.timeRemaining());
+      if (timeRemaining() > 0) {
         processFiber(fiber);
 
         /**
@@ -214,6 +198,9 @@ export default function workLoop(fiber, topFiber) {
     if (currentTransition) {
       // set transition complete if it is not on suspended or timed out state
       setTransitionComplete(currentTransition);
+
+      // reset try count
+      currentTransition.tryCount = 0;
 
       /**
        * if transition is completed and it does not have any effect to commit, we should remove the
@@ -252,7 +239,10 @@ export function doDeferredProcessing(root) {
   // set the pending transition as current transition
   root.currentTransition = pendingTransition;
 
+  pendingTransition.tryCount += 1;
+
   root.wip = cloneCurrentFiber(root.current, root.wip, root, root);
+
   workLoop(root.wip, root);
 }
 

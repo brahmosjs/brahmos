@@ -1,6 +1,6 @@
 import { isComponentNode, isTagNode, isPrimitiveNode, ATTRIBUTE_NODE } from './brahmosNode';
 import { UPDATE_TYPE_DEFERRED, BRAHMOS_DATA_KEY, EFFECT_TYPE_NONE } from './configs';
-import { now } from './utils';
+import { now, isNil } from './utils';
 
 let currentComponentFiber;
 
@@ -48,7 +48,8 @@ export function markPendingEffect(fiber, effectType) {
 }
 
 export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
-  const { root, node, part, nodeInstance, child, deferredUpdateTime } = fiber;
+  const { root, node, part, nodeInstance, child } = fiber;
+  const updateTimeKey = getUpdateTimeKey(root.updateType);
 
   if (!wipFiber) {
     wipFiber = createFiber(root, node, part);
@@ -84,13 +85,9 @@ export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
   wipFiber.child = child;
 
   /**
-   * We should add deferred update times from current fiber.
-   * We don't need to add updateTime as in sync mode cloneCurrentFiber called only
-   * when a new fiber is created, in which case it will get the time from its parent
-   * and the other case is when we clone current to deferred tree,
-   * in which case we should add the deferredUpdateTime from the current fiber.
+   * We should add update times from parent fiber.
    */
-  wipFiber.deferredUpdateTime = deferredUpdateTime;
+  wipFiber[updateTimeKey] = parentFiber[updateTimeKey];
 
   // link the new fiber to its parent or it's previous sibling
   linkFiber(wipFiber, refFiber, parentFiber);
@@ -135,7 +132,7 @@ export function createHostFiber(domNode) {
   return {
     updateType: 'sync',
     updateSource: 'js',
-    requestIdleHandle: null,
+    scheduleId: 0,
     domNode,
     forcedUpdateWith: null,
     current: null,
@@ -213,7 +210,12 @@ export function createAndLink(node, part, currentFiber, refFiber, parentFiber) {
   const { root } = refFiber;
   const updateTimeKey = getUpdateTimeKey(root.updateType);
   let fiber;
-  if (currentFiber && currentFiber.node && node && shouldClone(node, currentFiber.node)) {
+  if (
+    currentFiber &&
+    !isNil(currentFiber.node) &&
+    !isNil(node) &&
+    shouldClone(node, currentFiber.node)
+  ) {
     fiber = cloneCurrentFiber(currentFiber, currentFiber.alternate, refFiber, parentFiber);
 
     // assign new node and part to the fiber

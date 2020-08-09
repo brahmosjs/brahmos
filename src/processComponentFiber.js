@@ -15,7 +15,7 @@ import { callLifeCycle } from './utils';
 import { getPendingUpdates } from './updateMetaUtils';
 
 import shallowEqual from './helpers/shallowEqual';
-import { BRAHMOS_DATA_KEY, EFFECT_TYPE_OTHER } from './configs';
+import { BRAHMOS_DATA_KEY, EFFECT_TYPE_OTHER, UPDATE_TYPE_DEFERRED } from './configs';
 import { Component } from './Component';
 
 export function getErrorBoundaryFiber(fiber) {
@@ -47,7 +47,7 @@ export function getErrorInfo(fiber) {
   };
 }
 
-function getCurrentContext(fiber, isReused) {
+function getCurrentContext(fiber) {
   const {
     node: { type: Component },
     nodeInstance,
@@ -68,7 +68,7 @@ function getCurrentContext(fiber, isReused) {
    * if provider in parent hierarchy is changed, the whole child hierarchy will
    * be different and nodeInstance are not reused.
    */
-  if (currentContext && isReused) return currentContext;
+  if (currentContext) return currentContext;
 
   // for new provider instance create a new context extending the parent context
   const newContext = Object.create(context);
@@ -101,8 +101,10 @@ export default function processComponentFiber(fiber) {
   const { node, part, root, childFiberError } = fiber;
   const { type: Component, nodeType, props = {} } = node;
 
-  const isReused = false;
+  const isDeferredUpdate = root.updateType === UPDATE_TYPE_DEFERRED;
+
   let shouldUpdate = true;
+  let usedMemoizedValue = false;
   const isClassComponent = nodeType === CLASS_COMPONENT_NODE;
 
   /**
@@ -126,7 +128,7 @@ export default function processComponentFiber(fiber) {
   const brahmosData = nodeInstance[BRAHMOS_DATA_KEY];
 
   // get current context
-  const context = getCurrentContext(fiber, isReused);
+  const context = getCurrentContext(fiber);
 
   // store context in fiber
   fiber.context = context;
@@ -137,12 +139,27 @@ export default function processComponentFiber(fiber) {
    * and call all the life cycle method which comes before rendering.
    */
   if (isClassComponent) {
-    const { committedValues } = brahmosData;
+    const { committedValues, memoizedValues } = brahmosData;
 
     // if it is first render we should store the initial state on committedValues
     if (isFirstRender) committedValues.state = nodeInstance.state;
 
-    const { props: prevProps, state: prevState } = committedValues;
+    let { props: prevProps, state: prevState } = committedValues;
+
+    if (memoizedValues && isDeferredUpdate) {
+      ({ props: prevProps, state: prevState } = memoizedValues);
+      usedMemoizedValue = true;
+    }
+
+    //
+    /**
+     * reset the component instance values to prevProps and prevState,
+     * The state and prop value might have been effected by deferred rendering
+     * For sync render it should point to previous committed value, and for
+     * deferred render it should point to memoized values
+     */
+    nodeInstance.props = prevProps;
+    nodeInstance.state = prevState;
 
     const { shouldComponentUpdate } = nodeInstance;
 
@@ -205,6 +222,14 @@ export default function processComponentFiber(fiber) {
     // set the new state, props, context and reset uncommitted state
     nodeInstance.state = state;
     nodeInstance.props = props;
+
+    // store the state and props on memoized value as well
+    if (isDeferredUpdate) {
+      brahmosData.memoizedValues = {
+        state,
+        props,
+      };
+    }
   } else if (!isFirstRender) {
     // for functional component call cleanEffect only on second render
     // alternate will be set on second render
@@ -269,6 +294,25 @@ export default function processComponentFiber(fiber) {
     }
     // mark that the fiber has uncommitted effects
     markPendingEffect(fiber, EFFECT_TYPE_OTHER);
+    /**
+     * If we are using memoized values and shouldUpdate is false,
+     * we might have some pending nodes from last render, in which case
+     * we should create new child fibers with pending nodes.
+     */
+  } else if (usedMemoizedValue) {
+    const { child } = fiber;
+
+    if (!child || child.node !== brahmosData.nodes) {
+      createAndLink(brahmosData.nodes, part, child, fiber, fiber);
+
+      // mark that the fiber has uncommitted effects
+      markPendingEffect(fiber, EFFECT_TYPE_OTHER);
+    }
+    /**
+     * if we don't need to update the child fibers, we should clone the child fiber from current tree
+     * But if had memoized props and states and no update is required, it means we already are
+     * pointing to correct child fibers, in which case we shouldn't clone the child
+     */
   } else {
     // clone the existing nodes
     cloneChildrenFibers(fiber);

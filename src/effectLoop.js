@@ -193,6 +193,8 @@ function handleComponentPostCommitEffect(fiber) {
     // after commit is done set the current prop and state on committed values
     committedValues.props = props;
     committedValues.state = state;
+
+    brahmosData.memoizedValues = null;
   } else {
     // call effects of functional component
     runEffects(fiber);

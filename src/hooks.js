@@ -369,6 +369,7 @@ export function useTransition({ timeoutMs }) {
 
       const hook = {
         transitionId: getUniqueId(),
+        tryCount: 0,
         isPending: false,
         transitionTimeout: null,
         pendingSuspense: [],

@@ -56,7 +56,6 @@ class Dot extends Component {
       lineHeight: s + 'px',
       background: this.state.hover ? '#ff0' : dotStyle.background,
     };
-    if (this.state.hover) console.log(this.state.hover, props.text);
     return (
       <div style={style} onMouseEnter={() => this.enter()} onMouseLeave={() => this.leave()}>
         {this.state.hover ? '*' + props.text + '*' : props.text}
@@ -74,6 +73,7 @@ class SierpinskiTriangle extends Component {
 
   render() {
     let { x, y, s, children } = this.props;
+
     if (s <= targetSize) {
       return (
         <Dot x={x - targetSize / 2} y={y - targetSize / 2} size={targetSize} text={children} />
@@ -81,7 +81,7 @@ class SierpinskiTriangle extends Component {
       return r;
     }
     var newSize = s / 2;
-    var slowDown = false;
+    var slowDown = true;
     if (slowDown) {
       var e = performance.now() + 0.8;
       while (performance.now() < e) {
@@ -151,7 +151,7 @@ class SierpinskiWrapper extends Component {
     if (this.state.useTimeSlicing) {
       // Update is time-sliced.
       unstable_deferredUpdates(() => {
-        this.setState((state) => ({ seconds: (state.seconds % 10) + 1 }));
+        this.setState({ seconds: (this.state.seconds % 10) + 1 });
       });
     } else {
       // Update is not time-sliced. Causes demo to stutter.
@@ -186,9 +186,9 @@ class SierpinskiWrapper extends Component {
           />
         </div>
         <div style={{ ...containerStyle, transform }}>
-          <div>
+          <div className="dot-container">
             <SierpinskiTriangle x={0} y={0} s={1000}>
-              {this.state.seconds}
+              {seconds}
             </SierpinskiTriangle>
           </div>
         </div>

@@ -10,11 +10,13 @@ export const TRANSITION_STATE_TIMED_OUT = 'timedOut';
 
 export const PREDEFINED_TRANSITION_SYNC = {
   transitionId: '',
+  tryCount: 0,
   transitionState: TRANSITION_STATE_TIMED_OUT,
 };
 
 export const PREDEFINED_TRANSITION_DEFERRED = {
   transitionId: getUniqueId(),
+  tryCount: 0,
   transitionState: TRANSITION_STATE_TIMED_OUT,
 };
 

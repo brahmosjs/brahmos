@@ -15,6 +15,7 @@ export class Component {
       nodes: null,
       mounted: false,
       committedValues: {},
+      memoizedValues: null,
       isDirty: false,
     };
 
