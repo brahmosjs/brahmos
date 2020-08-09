@@ -1,6 +1,6 @@
 import { getNodeName } from './utils';
-import { withUpdateSource } from './updateMetaUtils';
-import { RENAMED_EVENTS, UPDATE_SOURCE_EVENT } from './configs';
+import { syncUpdates } from './updateUtils';
+import { RENAMED_EVENTS } from './configs';
 
 export function getEffectiveEventName(eventName, node) {
   const nodeName = getNodeName(node);
@@ -85,11 +85,7 @@ export function getPatchedEventHandler(node, attrName, handler) {
   eventHandlerObj.patched = function(event) {
     // if the handler is defined call the handler
     if (eventHandlerObj.handler) {
-      /**
-       * set update source as event which will make sure things
-       * are rendered and committed synchronously
-       */
-      withUpdateSource(UPDATE_SOURCE_EVENT, () => {
+      syncUpdates(() => {
         eventHandlerObj.handler.call(this, event);
       });
     }

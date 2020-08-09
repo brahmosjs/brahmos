@@ -139,7 +139,6 @@ export function createHostFiber(domNode) {
     wip: null,
     child: null,
     retryFiber: null,
-    preventSchedule: false,
     currentTransition: null,
     hasUncommittedEffect: false,
     pendingTransitions: [],

@@ -1,5 +1,5 @@
 import reRender from './reRender';
-import { getUpdateType, getPendingUpdatesKey, getCurrentTransition } from './updateMetaUtils';
+import { getUpdateType, getPendingUpdatesKey, getCurrentTransition } from './updateUtils';
 import { BRAHMOS_DATA_KEY } from './configs';
 
 export class Component {

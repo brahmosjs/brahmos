@@ -10,8 +10,7 @@ import {
   getTransitionFromFiber,
   isTransitionCompleted,
 } from './transitionUtils';
-import { withTransition } from './updateMetaUtils';
-import { deferredUpdates } from './deferredUpdates';
+import { withTransition, deferredUpdates } from './updateUtils';
 import reRender from './reRender';
 import { BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED, SUSPENSE_REVEAL_INTERVAL } from './configs';
 import { getCurrentComponentFiber, getFiberFromComponent, setUpdateTime } from './fiber';

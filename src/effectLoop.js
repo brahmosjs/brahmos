@@ -7,7 +7,7 @@ import {
 } from './brahmosNode';
 import { callLifeCycle, insertBefore, getNextSibling } from './utils';
 import { getTransitionFromFiber } from './transitionUtils';
-import { getPendingUpdatesKey } from './updateMetaUtils';
+import { getPendingUpdatesKey } from './updateUtils';
 import { runEffects } from './hooks';
 
 import updateNodeAttributes from './updateAttribute';

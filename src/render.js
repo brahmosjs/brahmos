@@ -1,8 +1,8 @@
 import { createElement } from './circularDep';
 
-import { createFiber, createHostFiber } from './fiber';
+import { createFiber, createHostFiber, setUpdateTime } from './fiber';
 import { doSyncProcessing } from './workLoop';
-import { afterCurrentStack } from './utils';
+import { syncUpdates, getCurrentUpdateSource } from './updateUtils';
 
 function BrahmosRootComponent({ children }) {
   return children;
@@ -12,18 +12,18 @@ function BrahmosRootComponent({ children }) {
  * Method to render a node
  */
 export default function render(node, target) {
-  const rootNode = createElement(BrahmosRootComponent, {}, node);
-
-  const part = {
-    parentNode: target,
-    isNode: true,
-  };
-
   let { __rootFiber: rootFiber } = target;
 
   let fiber;
 
   if (!rootFiber) {
+    const rootNode = createElement(BrahmosRootComponent, {}, node);
+
+    const part = {
+      parentNode: target,
+      isNode: true,
+    };
+
     rootFiber = createHostFiber(target);
 
     fiber = createFiber(rootFiber, rootNode, part);
@@ -36,28 +36,24 @@ export default function render(node, target) {
 
     // add root fiber on target
     target.__rootFiber = rootFiber;
-
-    /**
-     * do not schedule in first render
-     * NOTE: This will also affect sync setStates inside componentDidMount, or useEffects.
-     * This is expected to prevent multiple repaints
-     */
-    rootFiber.preventSchedule = true;
   } else {
     /**
-     * TODO: Check this part of logic looks incorrect
-     * if we are calling render method again, start again,
-     * no need to clone the root fiber as it will always be different
+     * Update the children in BrahmosRootComponent node and also reset the processedTime
+     * so it can processed again.
      */
     fiber = rootFiber.current;
+    fiber.node.props.children = node;
     fiber.processedTime = 0;
-    fiber.node = rootNode;
+    setUpdateTime(fiber);
   }
 
-  doSyncProcessing(rootFiber.current);
-
-  afterCurrentStack(() => {
-    // reset preventSchedule after render
-    rootFiber.preventSchedule = false;
+  /**
+   * do not schedule in render
+   * NOTE: This will also affect sync setStates inside componentDidMount, or useEffects.
+   * This is expected to prevent multiple repaints
+   */
+  syncUpdates(() => {
+    rootFiber.updateSource = getCurrentUpdateSource();
+    doSyncProcessing(fiber);
   });
 }

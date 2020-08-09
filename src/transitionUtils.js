@@ -1,5 +1,5 @@
 import { getUniqueId } from './utils';
-import { UPDATE_SOURCE_TRANSITION, UPDATE_TYPE_DEFERRED } from './configs';
+import { UPDATE_SOURCE_TRANSITION } from './configs';
 
 export const TRANSITION_STATE_INITIAL = 'initial';
 export const TRANSITION_STATE_START = 'start';

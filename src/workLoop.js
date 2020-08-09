@@ -21,7 +21,7 @@ import effectLoop, {
   resetEffectProperties,
   removeTransitionFromRoot,
 } from './effectLoop';
-import { shouldPreventSchedule, getPendingUpdates, withUpdateSource } from './updateMetaUtils';
+import { shouldPreventSchedule, getPendingUpdates, withUpdateSource } from './updateUtils';
 import {
   getFirstTransitionToProcess,
   setTransitionComplete,
@@ -158,7 +158,6 @@ export default function workLoop(fiber, topFiber) {
    * schedule our renders.
    */
   const shouldSchedule = !shouldPreventSchedule(root);
-
   schedule(root, shouldSchedule, (timeRemaining) => {
     while (fiber !== topFiber) {
       // process the current fiber which will return the next fiber

@@ -1,5 +1,9 @@
-import { UPDATE_SOURCE_EVENT, UPDATE_SOURCE_TRANSITION, UPDATE_TYPE_SYNC } from './configs';
-import { getCurrentUpdateSource, getCurrentTransition, getUpdateType } from './updateMetaUtils';
+import {
+  UPDATE_SOURCE_IMMEDIATE_ACTION,
+  UPDATE_SOURCE_TRANSITION,
+  UPDATE_TYPE_SYNC,
+} from './configs';
+import { getCurrentUpdateSource, getCurrentTransition, getUpdateType } from './updateUtils';
 import { PREDEFINED_TRANSITION_DEFERRED } from './transitionUtils';
 import { setUpdateTime, getFiberFromComponent } from './fiber';
 import { doSyncProcessing, doDeferredProcessing } from './workLoop';
@@ -62,7 +66,8 @@ export default function reRender(component) {
        * Start the processing from the fiber which cause the update.
        */
       const hasOngoingSyncUpdates = root.updateType === UPDATE_TYPE_SYNC && root.requestIdleHandle;
-      const startFromFiber = currentUpdateSource === UPDATE_SOURCE_EVENT && !hasOngoingSyncUpdates;
+      const startFromFiber =
+        currentUpdateSource === UPDATE_SOURCE_IMMEDIATE_ACTION && !hasOngoingSyncUpdates;
 
       doSyncProcessing(startFromFiber ? fiber : root.current);
     } else {

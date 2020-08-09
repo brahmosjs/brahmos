@@ -17,7 +17,7 @@ import {
   getCurrentTransition,
   getPendingUpdates,
   getUpdateType,
-} from './updateMetaUtils';
+} from './updateUtils';
 
 import { TRANSITION_STATE_INITIAL, TRANSITION_STATE_START } from './transitionUtils';
 import { getFiberFromComponent, getCurrentComponentFiber } from './fiber';

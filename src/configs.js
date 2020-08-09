@@ -39,8 +39,7 @@ export const UPDATE_TYPE_DEFERRED = 'deferred';
 
 /** Update source related constants */
 export const UPDATE_SOURCE_DEFAULT = 'js';
-export const UPDATE_SOURCE_EVENT = 'event';
-export const UPDATE_SOURCE_UNSTABLE_DEFERRED = 'deferredUpdate';
+export const UPDATE_SOURCE_IMMEDIATE_ACTION = 'immediate_action';
 export const UPDATE_SOURCE_TRANSITION = 'transition';
 
 /** Effect type ENUMS */

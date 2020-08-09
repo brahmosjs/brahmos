@@ -40,7 +40,7 @@ import { forwardRef, createRef } from './refs';
 import unmountComponentAtNode from './unmountComponentAtNode';
 
 /** unstableBatchedUpdate */
-import { deferredUpdates } from './deferredUpdates';
+import { deferredUpdates, syncUpdates } from './updateUtils';
 
 const Brahmos = {
   createElement,
@@ -66,6 +66,7 @@ const Brahmos = {
   SuspenseList,
   lazy,
   unstable_deferredUpdates: deferredUpdates,
+  unstable_syncUpdates: syncUpdates,
 };
 
 export {
@@ -92,6 +93,7 @@ export {
   SuspenseList,
   lazy,
   deferredUpdates as unstable_deferredUpdates,
+  syncUpdates as unstable_syncUpdates,
 };
 
 export default Brahmos;

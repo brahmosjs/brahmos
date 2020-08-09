@@ -12,7 +12,7 @@ import { getClosestSuspenseFiber } from './circularDep';
 
 import { cleanEffects } from './hooks';
 import { callLifeCycle } from './utils';
-import { getPendingUpdates } from './updateMetaUtils';
+import { getPendingUpdates } from './updateUtils';
 
 import shallowEqual from './helpers/shallowEqual';
 import { BRAHMOS_DATA_KEY, EFFECT_TYPE_OTHER, UPDATE_TYPE_DEFERRED } from './configs';

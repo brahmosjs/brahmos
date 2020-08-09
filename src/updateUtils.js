@@ -1,10 +1,13 @@
 import { afterCurrentStack } from './utils';
-import { PREDEFINED_TRANSITION_SYNC, getTransitionFromFiber } from './transitionUtils';
+import {
+  PREDEFINED_TRANSITION_SYNC,
+  PREDEFINED_TRANSITION_DEFERRED,
+  getTransitionFromFiber,
+} from './transitionUtils';
 import {
   UPDATE_SOURCE_DEFAULT,
   UPDATE_SOURCE_TRANSITION,
-  UPDATE_SOURCE_EVENT,
-  UPDATE_SOURCE_UNSTABLE_DEFERRED,
+  UPDATE_SOURCE_IMMEDIATE_ACTION,
   BRAHMOS_DATA_KEY,
   UPDATE_TYPE_SYNC,
   UPDATE_TYPE_DEFERRED,
@@ -15,7 +18,7 @@ export const deferredMeta = {
   timeout: 0,
 };
 
-let updateSource = 'js';
+let updateSource = UPDATE_SOURCE_DEFAULT;
 let currentTransition = PREDEFINED_TRANSITION_SYNC;
 
 export function getDeferredMeta() {
@@ -63,20 +66,12 @@ export function withTransition(transition, cb) {
 }
 
 export function shouldPreventSchedule(root) {
-  const { updateSource, preventSchedule } = root;
-  /**
-   * In case we explicity prevent schedule or
-   * set state triggered from event
-   * we don't want to do things synchronously
-   * as it needs to be flushed synchronously
-   */
-  return preventSchedule || updateSource === UPDATE_SOURCE_EVENT;
+  // it should prevent scheduling if immediate update is required
+  return root.updateSource === UPDATE_SOURCE_IMMEDIATE_ACTION;
 }
 
 export function isDeferredUpdate() {
-  return (
-    updateSource === UPDATE_SOURCE_UNSTABLE_DEFERRED || updateSource === UPDATE_SOURCE_TRANSITION
-  );
+  return updateSource === UPDATE_SOURCE_TRANSITION;
 }
 
 export function getUpdateType() {
@@ -106,4 +101,17 @@ export function getPendingUpdates(fiber) {
   return brahmosData[pendingUpdatesKey].filter(
     (stateMeta) => stateMeta.transitionId === currentTransitionId,
   );
+}
+
+// function to trigger deferred updates
+export function deferredUpdates(cb) {
+  withTransition(PREDEFINED_TRANSITION_DEFERRED, cb);
+}
+
+/**
+ * function to trigger sync updates which doesn't schedule
+ * And rendered and committed synchronously
+ */
+export function syncUpdates(cb) {
+  withUpdateSource(UPDATE_SOURCE_IMMEDIATE_ACTION, cb);
 }
