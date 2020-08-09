@@ -19,7 +19,11 @@ import {
   getUpdateType,
 } from './updateUtils';
 
-import { TRANSITION_STATE_INITIAL, TRANSITION_STATE_START } from './transitionUtils';
+import {
+  TRANSITION_STATE_INITIAL,
+  TRANSITION_STATE_START,
+  TRANSITION_STATE_TIMED_OUT,
+} from './transitionUtils';
 import { getFiberFromComponent, getCurrentComponentFiber } from './fiber';
 
 function getCurrentComponent() {
@@ -418,13 +422,10 @@ export function useTransition({ timeoutMs }) {
           /**
            * Set a timeout which set's the is pending to false and then triggers a deferred update
            */
-          /**
-           * TODO: UNCOMMENT THIS:
-           */
-          // hook.transitionTimeout = setTimeout(() => {
-          //   hook.transitionState = TRANSITION_STATE_TIMED_OUT;
-          //   hook.updatePendingState(false, UPDATE_SOURCE_TRANSITION);
-          // }, timeoutMs);
+          hook.transitionTimeout = setTimeout(() => {
+            hook.transitionState = TRANSITION_STATE_TIMED_OUT;
+            hook.updatePendingState(false, UPDATE_SOURCE_TRANSITION);
+          }, timeoutMs);
         },
       };
 
