@@ -1,6 +1,13 @@
 import { PREDEFINED_TRANSITION_DEFERRED } from './transitionUtils';
 
-const RENDER_CYCLE_TIME = 5;
+const RENDER_SLOT = 5;
+const MIN_RENDER_SLOT = 2;
+const MAX_RENDER_SLOT = 30;
+const FRAME_TIME = 16;
+const DEFERRED_TRANSITION_MAX_RETRY = 300; // close to 5000ms -> 16 * 300 with some buffer
+const OTHER_TRANSITION_MAX_RETRY = 600; // close to 10000ms -> 16 * 600 with some buffer
+
+
 let lastFrameTime;
 
 function updateFrameTime() {
@@ -12,8 +19,8 @@ function updateFrameTime() {
 
 updateFrameTime();
 
-function frameRemainingTime(allowedTime) {
-  return lastFrameTime + allowedTime - performance.now();
+function frameRemainingTime(frameTime) {
+  return lastFrameTime + frameTime - performance.now();
 }
 
 const timedOutRemaining = () => 1;
@@ -23,17 +30,22 @@ export default function schedule(root, shouldSchedule, cb) {
   if (scheduleId) clearTimeout(scheduleId);
 
   if (shouldSchedule) {
-    const timeOutTime = frameRemainingTime(16);
+    const _frameRemainingTime = frameRemainingTime(FRAME_TIME);
+    /**
+     * if remaining time is less than minium render time threshold,
+     * push it to next frame, else use same frame
+     */
+    const timeOutTime = _frameRemainingTime > MIN_RENDER_SLOT ? 0 : _frameRemainingTime + 1;
 
     root.scheduleId = setTimeout(() => {
       const { currentTransition } = root;
       const tryCount = currentTransition ? currentTransition.tryCount : 0;
-      const maxAllowedRetry = currentTransition === PREDEFINED_TRANSITION_DEFERRED ? 200 : 500;
+      const maxAllowedRetry = currentTransition === PREDEFINED_TRANSITION_DEFERRED ? DEFERRED_TRANSITION_MAX_RETRY : OTHER_TRANSITION_MAX_RETRY;
 
-      const additionalTime = Math.min(25, tryCount);
+      const slotTime = Math.min(MAX_RENDER_SLOT, RENDER_SLOT + tryCount);
 
       const timeRemaining = () => {
-        return frameRemainingTime(RENDER_CYCLE_TIME + additionalTime);
+        return frameRemainingTime(slotTime);
       };
       cb(tryCount > maxAllowedRetry ? timedOutRemaining : timeRemaining);
     }, timeOutTime);
