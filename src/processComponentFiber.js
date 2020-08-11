@@ -100,6 +100,7 @@ function resetLoopToComponentsFiber(fiber) {
 export default function processComponentFiber(fiber) {
   const { node, part, root, childFiberError } = fiber;
   const { type: Component, nodeType, props = {} } = node;
+  const { currentTransition } = root;
 
   const isDeferredUpdate = root.updateType === UPDATE_TYPE_DEFERRED;
 
@@ -146,7 +147,11 @@ export default function processComponentFiber(fiber) {
 
     let { props: prevProps, state: prevState } = committedValues;
 
-    if (memoizedValues && isDeferredUpdate) {
+    if (
+      memoizedValues &&
+      isDeferredUpdate &&
+      currentTransition.transitionId === memoizedValues.transitionId
+    ) {
       ({ props: prevProps, state: prevState } = memoizedValues);
       usedMemoizedValue = true;
     }
@@ -228,6 +233,7 @@ export default function processComponentFiber(fiber) {
       brahmosData.memoizedValues = {
         state,
         props,
+        transitionId: currentTransition.transitionId,
       };
     }
   } else if (!isFirstRender) {
