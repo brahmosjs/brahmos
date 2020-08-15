@@ -21,6 +21,7 @@ export default function functionalComponentInstance(FuncComponent) {
       nodes: null,
       isDirty: false,
       mounted: false,
+      renderCount: 0,
     },
   };
 }

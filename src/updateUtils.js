@@ -12,6 +12,7 @@ import {
   UPDATE_TYPE_SYNC,
   UPDATE_TYPE_DEFERRED,
 } from './configs';
+import { getCurrentComponentFiber } from './fiber';
 
 export const deferredMeta = {
   initialized: false,
@@ -114,4 +115,58 @@ export function deferredUpdates(cb) {
  */
 export function syncUpdates(cb) {
   withUpdateSource(UPDATE_SOURCE_IMMEDIATE_ACTION, cb);
+}
+
+function getComponentFiberInWorkingTree(fiber, nodeInstance) {
+  const { root } = fiber;
+
+  while (!(fiber.nodeInstance === nodeInstance)) {
+    fiber = fiber.parent;
+
+    if (fiber === root) return null;
+  }
+
+  return fiber;
+}
+/**
+ * get guarded update meta details. Through error if setState is called
+ * too many times
+ */
+export function guardedSetState(componentInstance, getStateMeta) {
+  let updateType, currentTransition;
+  const brahmosData = componentInstance[BRAHMOS_DATA_KEY];
+
+  const fiber = getCurrentComponentFiber();
+  /**
+   * if the setState is called while rendering, which will be the case when current fiber is set
+   */
+  if (fiber) {
+    const { renderCount } = brahmosData;
+
+    // if render count is more than 50 probably we got into infinite loop
+    if (renderCount > 50) {
+      throw new Error(
+        'Too many rerender. Check your setState call, this may cause an infinite loop.',
+      );
+    }
+
+    const { root } = fiber;
+
+    // mark the component to retry the components fiber
+    root.retryFiber = getComponentFiberInWorkingTree(fiber, componentInstance);
+
+    updateType = root.updateType;
+    currentTransition = root.currentTransition || PREDEFINED_TRANSITION_SYNC;
+  } else {
+    // reset the renderCount if not called during the render phase
+    brahmosData.renderCount = 0;
+
+    updateType = getUpdateType();
+    currentTransition = getCurrentTransition();
+  }
+
+  const pendingUpdateKey = getPendingUpdatesKey(updateType);
+  const stateMeta = getStateMeta(currentTransition.transitionId);
+
+  brahmosData[pendingUpdateKey].push(stateMeta);
 }

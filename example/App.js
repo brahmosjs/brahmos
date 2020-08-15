@@ -3,6 +3,7 @@ import TodoList from './todo-list/TodoList';
 import SierpinskiTriangleDemo from './sierpinski-triangle';
 import ConcurrentModeDemo from './concurrent-mode';
 import SuspenseListDemo from './suspense-list';
+import UseDeferredValueDemo from './use-deferred-value';
 import SVGDemo from './svg-chart';
 
 import './App.scss';
@@ -27,6 +28,11 @@ const examples = [
     title: 'Suspense List Demo',
     id: 'suspense-list',
     Component: SuspenseListDemo,
+  },
+  {
+    title: 'useDeferredValue Demo',
+    id: 'use-deferred-value',
+    Component: UseDeferredValueDemo,
   },
   {
     title: 'SVG Chart',

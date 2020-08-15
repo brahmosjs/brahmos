@@ -1,6 +1,6 @@
 import reRender from './reRender';
 import { getConsumerCallback } from './createContext';
-import { getUniqueId } from './utils';
+import { getUniqueId, timestamp } from './utils';
 
 import {
   UPDATE_TYPE_SYNC,
@@ -13,10 +13,9 @@ import {
   getCurrentUpdateSource,
   withUpdateSource,
   withTransition,
-  getPendingUpdatesKey,
-  getCurrentTransition,
   getPendingUpdates,
   getUpdateType,
+  guardedSetState,
 } from './updateUtils';
 
 import {
@@ -172,10 +171,8 @@ function useStateBase(initialState, getNewState) {
         const lastState = currentHook[0];
         const state = getNewState(param, lastState);
 
-        const pendingUpdatesKey = getPendingUpdatesKey(updateType);
-
-        const stateMeta = {
-          transitionId: getCurrentTransition().transitionId,
+        guardedSetState(component, (transitionId) => ({
+          transitionId,
           updater() {
             /**
              * get the hook again inside, as the reference of currentHook might change
@@ -186,8 +183,8 @@ function useStateBase(initialState, getNewState) {
             // call getNewState again as currentHook[0] might change if there are multiple setState
             stateHook[0] = getNewState(param, currentHook[0]);
           },
-        };
-        component[BRAHMOS_DATA_KEY][pendingUpdatesKey].push(stateMeta);
+        }));
+
         reRenderComponentIfRequired(component, state, lastState);
       },
     ];
@@ -434,6 +431,39 @@ export function useTransition({ timeoutMs }) {
     undefined,
     ({ startTransition, isPending }) => [startTransition, isPending],
   );
+}
+
+/**
+ * A hook to have deferred value
+ */
+export function useDeferredValue(value, { timeoutMs }) {
+  const [startTransition] = useTransition({ timeoutMs });
+  const [deferredValue, setDeferredValue] = useState(value);
+  const timeStampRef = useRef(timestamp());
+
+  /**
+   * If there is a timestamp that denotes the timestamp form where the data
+   * went stale, timestamp 0 means the data is not stale.
+   * So when data is stale and stale data timed-out, update the value
+   * And if it isn't stale the new data will go as stale value,
+   */
+  const { current: staleTime } = timeStampRef;
+  const currentTime = timestamp();
+
+  if (staleTime === 0) {
+    timeStampRef.current = currentTime;
+  } else if (currentTime > staleTime + timeoutMs) {
+    timeStampRef.current = 0;
+    setDeferredValue(value);
+  }
+
+  useEffect(() => {
+    startTransition(() => {
+      setDeferredValue(value);
+    });
+  }, [value]);
+
+  return deferredValue;
 }
 
 /**

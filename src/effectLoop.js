@@ -151,6 +151,7 @@ function handleComponentEffect(fiber) {
 
   // reset isDirty flag
   brahmosData.isDirty = false;
+  brahmosData.renderCount = 0;
 
   root.postCommitEffects.push(fiber);
 }

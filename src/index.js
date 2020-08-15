@@ -28,6 +28,7 @@ import {
   useLayoutEffect,
   useContext,
   useTransition,
+  useDeferredValue,
 } from './hooks';
 
 /** createContext */
@@ -57,6 +58,7 @@ const Brahmos = {
   useLayoutEffect,
   useContext,
   useTransition,
+  useDeferredValue,
   createContext,
   forwardRef,
   createRef,
@@ -84,6 +86,7 @@ export {
   useLayoutEffect,
   useContext,
   useTransition,
+  useDeferredValue,
   createContext,
   forwardRef,
   createRef,

@@ -249,9 +249,15 @@ export default function processComponentFiber(fiber) {
       // set the current component fiber we are processing
       setCurrentComponentFiber(fiber);
 
+      // increment the render count. This is to track how many times a component is rendered in a render cycle
+      brahmosData.renderCount += 1;
+
       // if the component is error boundary and it does not have getDerivedStateFromError, render null
       const hasNonHandledError = childFiberError && !Component.getDerivedStateFromError;
       const childNodes = hasNonHandledError ? null : nodeInstance.__render(props);
+
+      // once render is called reset the current component fiber
+      setCurrentComponentFiber(null);
 
       // component will always return a single node so we can pass the previous child as current fiber
       createAndLink(childNodes, part, fiber.child, fiber, fiber);

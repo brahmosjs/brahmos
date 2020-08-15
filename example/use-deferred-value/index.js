@@ -1,7 +1,8 @@
 /**
- * Forked from: https://codesandbox.io/s/jovial-lalande-26yep?file=/src/index.js:0-1646
+ * Forked from: https://codesandbox.io/s/vigorous-keller-3ed2b
  */
-import Brahmos, { useState, useTransition, Suspense } from '../../src';
+
+import Brahmos, { useDeferredValue, useState, useTransition, Suspense } from '../../src';
 import ReactCredit from '../common/ReactCredit';
 
 import { fetchProfileData } from './fakeApi';
@@ -32,17 +33,20 @@ function App() {
       </button>
       {isPending ? ' Loading...' : null}
       <ProfilePage resource={resource} />
-      <ReactCredit name="Concurrent Mode" link="https://codesandbox.io/s/jovial-lalande-26yep" />
+      <ReactCredit name="useDeferredValue" link="https://codesandbox.io/s/vigorous-keller-3ed2b" />
     </>
   );
 }
 
 function ProfilePage({ resource }) {
+  const deferredResource = useDeferredValue(resource, {
+    timeoutMs: 1000,
+  });
   return (
     <Suspense fallback={<h1>Loading profile...</h1>}>
       <ProfileDetails resource={resource} />
       <Suspense fallback={<h1>Loading posts...</h1>}>
-        <ProfileTimeline resource={resource} />
+        <ProfileTimeline resource={deferredResource} isStale={deferredResource !== resource} />
       </Suspense>
     </Suspense>
   );
@@ -53,10 +57,10 @@ function ProfileDetails({ resource }) {
   return <h1>{user.name}</h1>;
 }
 
-function ProfileTimeline({ resource }) {
+function ProfileTimeline({ isStale, resource }) {
   const posts = resource.posts.read();
   return (
-    <ul>
+    <ul style={{ opacity: isStale ? 0.7 : 1 }}>
       {posts.map((post) => (
         <li key={post.id}>{post.text}</li>
       ))}

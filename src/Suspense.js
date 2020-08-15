@@ -1,7 +1,7 @@
 import { createElement, Component } from './circularDep';
 
 import { forwardRef } from './refs';
-import { getPromiseSuspendedValue } from './utils';
+import { getPromiseSuspendedValue, timestamp } from './utils';
 import {
   TRANSITION_STATE_SUSPENDED,
   TRANSITION_STATE_TIMED_OUT,
@@ -9,6 +9,7 @@ import {
   PREDEFINED_TRANSITION_DEFERRED,
   getTransitionFromFiber,
   isTransitionCompleted,
+  TRANSITION_STATE_START,
 } from './transitionUtils';
 import { withTransition, deferredUpdates } from './updateUtils';
 import reRender from './reRender';
@@ -53,6 +54,11 @@ function getSuspenseManager(fiber, transition) {
   let suspenseManager = suspenseManagers[transitionId];
   if (!suspenseManager) {
     suspenseManager = suspenseManagers[transitionId] = new SuspenseManager(fiber, transition);
+  }
+
+  // if the transition is on start state (restarted), remove the earlier suspender
+  if (transition.transitionState === TRANSITION_STATE_START) {
+    suspenseManager.suspender = null;
   }
 
   return suspenseManager;
@@ -235,7 +241,7 @@ class SuspenseManager {
       } else {
         withTransition(transition, doSuspenseRerender);
       }
-    }, Date.now() % SUSPENSE_REVEAL_INTERVAL);
+    }, timestamp() % SUSPENSE_REVEAL_INTERVAL);
   }
 
   getChildrenSuspenders() {

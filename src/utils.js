@@ -43,6 +43,13 @@ export function now() {
   return initialTime++;
 }
 
+/**
+ * Function to return current timestamp
+ */
+export function timestamp() {
+  return Date.now();
+}
+
 // add brahmos data container to domNode
 export function addDataContainer(domNode) {
   // add brahmos data container

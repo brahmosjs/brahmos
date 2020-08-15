@@ -3,6 +3,7 @@
  */
 
 import Brahmos, { SuspenseList, Suspense, useEffect } from '../../src';
+import ReactCredit from '../common/ReactCredit';
 
 import { fetchProfileData } from './fakeApi';
 
@@ -13,14 +14,7 @@ function App() {
       <Suspense fallback={<h1>Loading...</h1>}>
         <ProfilePage resource={initialResource} />
       </Suspense>
-      <p className="attribute">
-        This demo is forked from Suspense List demo of React:
-        <br />
-        <strong>Source: </strong>
-        <a href="https://codesandbox.io/s/black-wind-byilt" target="_blank">
-          https://codesandbox.io/s/black-wind-byilt
-        </a>
-      </p>
+      <ReactCredit name="Suspense List" link="https://codesandbox.io/s/black-wind-byilt" />
     </>
   );
 }

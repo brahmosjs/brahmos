@@ -1,5 +1,5 @@
 import reRender from './reRender';
-import { getUpdateType, getPendingUpdatesKey, getCurrentTransition } from './updateUtils';
+import { guardedSetState } from './updateUtils';
 import { BRAHMOS_DATA_KEY } from './configs';
 
 export class Component {
@@ -17,31 +17,18 @@ export class Component {
       committedValues: {},
       memoizedValues: null,
       isDirty: false,
+      renderCount: 0,
     };
 
     this.context = undefined;
   }
 
   setState(newState, callback, type) {
-    const updateType = getUpdateType();
-    /**
-     * When setState is called batch all the state changes
-     * and call rerender asynchronously as next microTask.
-     *
-     * If the the newState is function pass the current
-     * uncommitted state to it and then merge the new state
-     * with uncommitted state.
-     */
-
-    const stateMeta = {
+    guardedSetState(this, (transitionId) => ({
       state: newState,
-      transitionId: getCurrentTransition().transitionId,
+      transitionId,
       callback,
-    };
-
-    const pendingUpdateKey = getPendingUpdatesKey(updateType);
-
-    this[BRAHMOS_DATA_KEY][pendingUpdateKey].push(stateMeta);
+    }));
 
     reRender(this);
   }
