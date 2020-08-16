@@ -56,22 +56,29 @@ export default function reRender(component) {
     // reset batch update so it can start taking new updates
     root.batchUpdates[currentUpdateSource] = null;
 
+    const isDeferredUpdate = currentUpdateSource === UPDATE_SOURCE_TRANSITION;
+
+    /**
+     * Don't try to do deferred rendering if a sync render is pending,
+     * as deferred rendering happens after sync render
+     */
+    if (isDeferredUpdate && root.lastCompleteTime < root.updateTime) return;
+
     root.updateSource = currentUpdateSource;
 
-    // if there is any work to done, perform the work else do deferred processing
-    if (root.lastCompleteTime < root.updateTime) {
+    if (isDeferredUpdate) {
+      doDeferredProcessing(root);
+    } else {
       /**
        * if the update source is event and we don't have any ongoing sync update
        * which we can figure out based on last updateType and if there is any requestIdleHandle
        * Start the processing from the fiber which cause the update.
        */
-      const hasOngoingSyncUpdates = root.updateType === UPDATE_TYPE_SYNC && root.requestIdleHandle;
+      const hasOngoingSyncUpdates = root.updateType === UPDATE_TYPE_SYNC && root.scheduleId;
       const startFromFiber =
         currentUpdateSource === UPDATE_SOURCE_IMMEDIATE_ACTION && !hasOngoingSyncUpdates;
 
       doSyncProcessing(startFromFiber ? fiber : root.current);
-    } else {
-      doDeferredProcessing(root);
     }
   });
 }

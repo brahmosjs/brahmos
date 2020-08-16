@@ -221,7 +221,6 @@ function handleAttributeEffect(fiber) {
   const { attributes, ref } = node;
   const oldAttributes = alternate && alternate.node.attributes;
 
-  // TODO: Fix svg case
   updateNodeAttributes(domNode, attributes, oldAttributes, isSvgPart);
 
   // set ref if present
@@ -232,6 +231,13 @@ export function resetEffectProperties(root) {
   root.tearDownFibers = [];
   root.postCommitEffects = [];
   root.hasUncommittedEffect = false;
+
+  /**
+   * reset retryFiber. A retryFiber might not get reset if
+   * the sync render happened while the fiber processing is
+   * scheduled
+   */
+  root.retryFiber = null;
 
   // reset after render callbacks
   root.resetRenderCallbacks();

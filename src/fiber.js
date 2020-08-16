@@ -309,13 +309,13 @@ export function getFiberFromComponent(component) {
  * (which points to the committed one)
  */
 export function resetToCommittedChild(fiber) {
-  const { root, child, alternate } = fiber;
+  const { root, child } = fiber;
   /**
    * if the child fiber is created but not committed yet,
    * reset the child fiber to alternate child
    */
   if (child && child.createdAt > root.lastCompleteTime) {
-    fiber.child = alternate && alternate.child;
+    fiber.child = child.alternate;
   }
 }
 

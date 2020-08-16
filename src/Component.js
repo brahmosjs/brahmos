@@ -24,13 +24,13 @@ export class Component {
   }
 
   setState(newState, callback, type) {
-    guardedSetState(this, (transitionId) => ({
+    const shouldRerender = guardedSetState(this, (transitionId) => ({
       state: newState,
       transitionId,
       callback,
     }));
 
-    reRender(this);
+    if (shouldRerender) reRender(this);
   }
 
   forceUpdate(callback) {

@@ -134,6 +134,7 @@ function getComponentFiberInWorkingTree(fiber, nodeInstance) {
  */
 export function guardedSetState(componentInstance, getStateMeta) {
   let updateType, currentTransition;
+  let shouldRerender = true;
   const brahmosData = componentInstance[BRAHMOS_DATA_KEY];
 
   const fiber = getCurrentComponentFiber();
@@ -157,6 +158,9 @@ export function guardedSetState(componentInstance, getStateMeta) {
 
     updateType = root.updateType;
     currentTransition = root.currentTransition || PREDEFINED_TRANSITION_SYNC;
+
+    // we do not want to rerender in this case as the component fiber will be retried
+    shouldRerender = false;
   } else {
     // reset the renderCount if not called during the render phase
     brahmosData.renderCount = 0;
@@ -169,4 +173,6 @@ export function guardedSetState(componentInstance, getStateMeta) {
   const stateMeta = getStateMeta(currentTransition.transitionId);
 
   brahmosData[pendingUpdateKey].push(stateMeta);
+
+  return shouldRerender;
 }

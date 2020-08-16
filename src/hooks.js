@@ -33,6 +33,8 @@ function getCurrentComponent() {
  * clone hooks, syncHooks to deferredHooks
  */
 function cloneHooks(component) {
+  const { renderCount } = component[BRAHMOS_DATA_KEY];
+
   component.deferredHooks = component.syncHooks.map((hook, index) => {
     if (Array.isArray(hook)) {
       return [...hook];
@@ -42,6 +44,13 @@ function cloneHooks(component) {
        * so use the same instance of hook don't clone it
        */
       return hook;
+      // eslint-disable-next-line no-prototype-builtins
+    } else if (hook.hasOwnProperty('current') && renderCount > 1) {
+      /**
+       * In case of useRef we need to retain the the reference if there if the
+       * render is getting called multiple times in one render cycle
+       */
+      return component.deferredHooks[index] || hook;
     }
     return { ...hook };
   });
@@ -171,7 +180,7 @@ function useStateBase(initialState, getNewState) {
         const lastState = currentHook[0];
         const state = getNewState(param, lastState);
 
-        guardedSetState(component, (transitionId) => ({
+        const shouldRerender = guardedSetState(component, (transitionId) => ({
           transitionId,
           updater() {
             /**
@@ -185,7 +194,7 @@ function useStateBase(initialState, getNewState) {
           },
         }));
 
-        reRenderComponentIfRequired(component, state, lastState);
+        if (shouldRerender) reRenderComponentIfRequired(component, state, lastState);
       },
     ];
 
@@ -381,7 +390,7 @@ export function useTransition({ timeoutMs }) {
         updatePendingState(isPending, updateSource) {
           hook.isPending = isPending;
 
-          // mark component to force update as isPending is not treated as state
+          // mark component to force update as isPending is not treated as state change
           component[BRAHMOS_DATA_KEY].isDirty = true;
 
           const reRenderCb = () => {
@@ -439,20 +448,23 @@ export function useTransition({ timeoutMs }) {
 export function useDeferredValue(value, { timeoutMs }) {
   const [startTransition] = useTransition({ timeoutMs });
   const [deferredValue, setDeferredValue] = useState(value);
-  const timeStampRef = useRef(timestamp());
+  const timeStampRef = useRef(0);
 
   /**
    * If there is a timestamp that denotes the timestamp form where the data
    * went stale, timestamp 0 means the data is not stale.
-   * So when data is stale and stale data timed-out, update the value
-   * And if it isn't stale the new data will go as stale value,
    */
   const { current: staleTime } = timeStampRef;
   const currentTime = timestamp();
 
-  if (staleTime === 0) {
+  if (value === deferredValue) {
+    // if value is not stale reset timestamp
+    timeStampRef.current = 0;
+  } else if (staleTime === 0) {
+    // if the value just got stale mark the stale time
     timeStampRef.current = currentTime;
   } else if (currentTime > staleTime + timeoutMs) {
+    // when ever the stale data times out update the deferred value
     timeStampRef.current = 0;
     setDeferredValue(value);
   }
