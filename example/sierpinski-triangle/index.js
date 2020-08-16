@@ -208,8 +208,12 @@ export default class DemoApp extends Component {
     this.updateElapsed();
   }
 
+  componentWillUnmount() {
+    cancelAnimationFrame(this.animationFrameId);
+  }
+
   updateElapsed() {
-    requestAnimationFrame(() => {
+    this.animationFrameId = requestAnimationFrame(() => {
       unstable_syncUpdates(() => {
         this.setState({
           elapsed: Date.now() - this.start,
