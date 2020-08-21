@@ -39,7 +39,7 @@ import {
 import processArrayFiber from './processArrayFiber';
 import tearDown from './tearDown';
 import { now } from './utils';
-import schedule from './schedular';
+import schedule from './scheduler';
 
 function fiberHasUnprocessedUpdates(fiber) {
   const { node, nodeInstance } = fiber;
@@ -166,7 +166,6 @@ export default function workLoop(fiber, topFiber) {
        * process the current fiber, and then move to next
        * and keep doing it till we are out of time.
        */
-      // if (deadline) console.log(deadline.timeRemaining());
       if (timeRemaining() > 0) {
         processFiber(fiber);
 

@@ -132,7 +132,7 @@ export function createHostFiber(domNode) {
   return {
     updateType: 'sync',
     updateSource: 'js',
-    scheduleId: 0,
+    cancelSchedule: null,
     domNode,
     forcedUpdateWith: null,
     current: null,

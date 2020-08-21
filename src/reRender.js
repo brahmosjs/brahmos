@@ -74,7 +74,7 @@ export default function reRender(component) {
        * which we can figure out based on last updateType and if there is any requestIdleHandle
        * Start the processing from the fiber which cause the update.
        */
-      const hasOngoingSyncUpdates = root.updateType === UPDATE_TYPE_SYNC && root.scheduleId;
+      const hasOngoingSyncUpdates = root.updateType === UPDATE_TYPE_SYNC && root.cancelSchedule;
       const startFromFiber =
         currentUpdateSource === UPDATE_SOURCE_IMMEDIATE_ACTION && !hasOngoingSyncUpdates;
 
