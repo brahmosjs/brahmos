@@ -4,6 +4,7 @@ import SierpinskiTriangleDemo from './sierpinski-triangle';
 import ConcurrentModeDemo from './concurrent-mode';
 import SuspenseListDemo from './suspense-list';
 import UseDeferredValueDemo from './use-deferred-value';
+import UseDeferredValueSuspenseDemo from './use-deferred-value-suspense';
 import SVGDemo from './svg-chart';
 
 import './App.scss';
@@ -35,14 +36,28 @@ const examples = [
     Component: UseDeferredValueDemo,
   },
   {
+    title: 'useDeferredValue with Suspense Demo',
+    id: 'use-deferred-value-suspense',
+    Component: UseDeferredValueSuspenseDemo,
+  },
+  {
     title: 'SVG Chart',
     id: 'svg-chart',
     Component: SVGDemo,
   },
 ];
 
+function getCurrentComponent() {
+  const currentHash = document.location.hash.replace(/^#/, '');
+  const routeIndex = Math.max(
+    examples.findIndex((route) => route.id === currentHash),
+    0,
+  );
+  return examples[routeIndex].Component;
+}
+
 export default function App() {
-  const [CurrentComponent, setCurrentComponent] = useState(() => examples[0].Component);
+  const [CurrentComponent, setCurrentComponent] = useState(getCurrentComponent);
 
   return (
     <div className="app-container">

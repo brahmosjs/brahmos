@@ -1,71 +1,43 @@
-/**
- * Forked from: https://codesandbox.io/s/vigorous-keller-3ed2b
- */
-
-import Brahmos, { useDeferredValue, useState, useTransition, Suspense } from '../../src';
+import Brahmos, { useDeferredValue, useState, useEffect } from '../../src';
+import MySlowList from './MySlowList';
 import ReactCredit from '../common/ReactCredit';
 
-import { fetchProfileData } from './fakeApi';
+/**
+ * Forked from:
+ * https://codesandbox.io/s/infallible-dewdney-9fkv9
+ */
 
-function getNextId(id) {
-  return id === 3 ? 0 : id + 1;
-}
+export default function App() {
+  const [text, setText] = useState('hello');
 
-const initialResource = fetchProfileData(0);
-
-function App() {
-  const [resource, setResource] = useState(initialResource);
-  const [startTransition, isPending] = useTransition({
-    timeoutMs: 3000,
+  // This is a new feature in Concurrent Mode.
+  // This value is allowed to "lag behind" the text input:
+  const deferredText = useDeferredValue(text, {
+    timeoutMs: 5000,
   });
+
+  function handleChange(e) {
+    setText(e.target.value);
+  }
+
   return (
-    <>
-      <button
-        disabled={isPending}
-        onClick={() => {
-          startTransition(() => {
-            const nextUserId = getNextId(resource.userId);
-            setResource(fetchProfileData(nextUserId));
-          });
-        }}
-      >
-        Next
-      </button>
-      {isPending ? ' Loading...' : null}
-      <ProfilePage resource={resource} />
-      <ReactCredit name="useDeferredValue" link="https://codesandbox.io/s/vigorous-keller-3ed2b" />
-    </>
+    <div className="App">
+      <h1>Brahmos With Concurrent Mode</h1>
+      <ReactCredit
+        name="useDeferredValue hook"
+        link="https://codesandbox.io/s/infallible-dewdney-9fkv9"
+      />
+      <label>
+        Type into the input: <input value={text} onChange={handleChange} />
+      </label>
+      <p>
+        Even though each list item in this demo completely blocks the main thread for 3
+        milliseconds, the app is able to stay responsive in Concurrent Mode.
+      </p>
+      <hr />
+      {/* Pass the "lagging" value to the list */}
+      <MySlowList text={deferredText} />
+      <div id="observerElm">{deferredText === 'hell' ? <span>Something</span> : null}</div>
+    </div>
   );
 }
-
-function ProfilePage({ resource }) {
-  const deferredResource = useDeferredValue(resource, {
-    timeoutMs: 1000,
-  });
-  return (
-    <Suspense fallback={<h1>Loading profile...</h1>}>
-      <ProfileDetails resource={resource} />
-      <Suspense fallback={<h1>Loading posts...</h1>}>
-        <ProfileTimeline resource={deferredResource} isStale={deferredResource !== resource} />
-      </Suspense>
-    </Suspense>
-  );
-}
-
-function ProfileDetails({ resource }) {
-  const user = resource.user.read();
-  return <h1>{user.name}</h1>;
-}
-
-function ProfileTimeline({ isStale, resource }) {
-  const posts = resource.posts.read();
-  return (
-    <ul style={{ opacity: isStale ? 0.7 : 1 }}>
-      {posts.map((post) => (
-        <li key={post.id}>{post.text}</li>
-      ))}
-    </ul>
-  );
-}
-
-export default App;
