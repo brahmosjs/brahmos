@@ -175,7 +175,9 @@ function useStateBase(initialState, getNewState) {
       initialState,
       (param) => {
         const updateType = getUpdateType();
-        const currentHook = getCurrentHook(updateType, hookIndex, component);
+
+        // get committed lastState, which will be up to date in sync hook list
+        const currentHook = getCurrentHook(UPDATE_TYPE_SYNC, hookIndex, component);
 
         const lastState = currentHook[0];
         const state = getNewState(param, lastState);

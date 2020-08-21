@@ -8,7 +8,7 @@ import {
 
 import functionalComponentInstance from './functionalComponentInstance';
 import { CLASS_COMPONENT_NODE } from './brahmosNode';
-import { getClosestSuspenseFiber } from './circularDep';
+import { getClosestSuspenseFiber, resetSiblingFibers } from './circularDep';
 
 import { cleanEffects } from './hooks';
 import { callLifeCycle } from './utils';
@@ -256,6 +256,11 @@ export default function processComponentFiber(fiber) {
       const hasNonHandledError = childFiberError && !Component.getDerivedStateFromError;
       const childNodes = hasNonHandledError ? null : nodeInstance.__render(props);
 
+      // if it class component reset the state and prop to committed value
+      if (isClassComponent && isDeferredUpdate) {
+        Object.assign(nodeInstance, brahmosData.committedValues);
+      }
+
       // once render is called reset the current component fiber
       setCurrentComponentFiber(null);
 
@@ -281,8 +286,9 @@ export default function processComponentFiber(fiber) {
 
         suspenseFiber.nodeInstance.handleSuspender(error, suspenseFiber);
 
-        // reset the work loop to suspense fiber
-        resetLoopToComponentsFiber(suspenseFiber);
+        // reset the work loop to suspense fiber or suspense list fiber, if it has suspense list as parent
+        const resetFiber = resetSiblingFibers(suspenseFiber);
+        resetLoopToComponentsFiber(resetFiber);
         /**
          * else if there is any error boundary handle the error in error boundary
          * It should not handle error if its already been handled once

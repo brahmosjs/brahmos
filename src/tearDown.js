@@ -1,4 +1,4 @@
-import { callLifeCycle, remove, getNextSibling } from './utils';
+import { callLifeCycle, remove, getNextSibling, isMounted } from './utils';
 
 import {
   isComponentNode,
@@ -11,7 +11,6 @@ import {
 import { setRef } from './refs';
 
 import { cleanEffects } from './hooks';
-import { BRAHMOS_DATA_KEY } from './configs';
 
 function tearDownChild(child, part, _isTagNode, removeDOM) {
   /**
@@ -33,6 +32,13 @@ function tearDownChild(child, part, _isTagNode, removeDOM) {
 
 function tearDownFiber(fiber, removeDOM) {
   const { node, part, nodeInstance } = fiber;
+
+  /**
+   * mark the fiber shouldTearDown to false to avoid extra teardown in case
+   * same fiber is pushed twice, this can happen when we looped in between the
+   * render cycle
+   */
+  fiber.shouldTearDown = false;
 
   // bail out shouldTearDown is false or if node is non-renderable node
   if (!isRenderableNode(node)) return;
@@ -86,7 +92,7 @@ function tearDownFiber(fiber, removeDOM) {
     if (removeDOM) remove(domNodes);
   }
   // if its a component node and is mounted then call lifecycle methods
-  else if (isComponentNode(node) && nodeInstance[BRAHMOS_DATA_KEY].mounted) {
+  else if (isComponentNode(node) && isMounted(nodeInstance)) {
     // for class component call componentWillUnmount and for functional comp clean effects
     if (node.nodeType === CLASS_COMPONENT_NODE) {
       callLifeCycle(nodeInstance, 'componentWillUnmount');

@@ -1,7 +1,7 @@
 import { createElement, Component } from './circularDep';
 
 import { forwardRef } from './refs';
-import { getPromiseSuspendedValue, timestamp } from './utils';
+import { getPromiseSuspendedValue, timestamp, resolvedPromise, isMounted } from './utils';
 import {
   TRANSITION_STATE_SUSPENDED,
   TRANSITION_STATE_TIMED_OUT,
@@ -31,6 +31,35 @@ export function getClosestSuspenseFiber(fiber, includeSuspenseList) {
     if (fiber === root) return null;
 
     nodeInstance = fiber.nodeInstance;
+  }
+
+  return fiber;
+}
+
+export function resetSiblingFibers(fiber) {
+  const parentSuspenseFiber = getClosestSuspenseFiber(fiber.parent, true);
+  const isSuspenseList =
+    parentSuspenseFiber && parentSuspenseFiber.nodeInstance instanceof SuspenseList;
+
+  // if parent is not a suspense list we don't have to do anything
+  if (!isSuspenseList) return fiber;
+
+  const { nodeInstance: component } = parentSuspenseFiber;
+  const { childManagers } = component.suspenseManagers[getTransitionFromFiber(fiber).transitionId];
+  const { revealOrder } = component.props;
+
+  /**
+   * If a Suspense is suspended in case of backwards and together we should reset all
+   * siblings as dirty as they might need processing again.
+   * For forwards revealOrder we don't have to do anything as we in work loop we loop
+   * in forward direction only
+   */
+  if (revealOrder === 'backwards' || revealOrder === 'together') {
+    childManagers.forEach((manager) => {
+      manager.component[BRAHMOS_DATA_KEY].isDirty = true;
+    });
+
+    return childManagers[0].fiber;
   }
 
   return fiber;
@@ -178,6 +207,47 @@ class SuspenseManager {
     return tail !== 'hidden';
   }
 
+  shouldRenderChildren() {
+    const suspenseListManager = getClosestSuspenseListManager(this);
+    const { suspender } = this;
+    // if there is no closest suspense list manager then return based on it has suspender
+    if (!suspenseListManager) return !suspender;
+
+    /**
+     * Also, if component is rendered without suspend once, we should not bring it
+     * to suspended state
+     */
+    if (isMounted(this.component) && !suspender) return true;
+
+    /**
+     * if parent suspenseList has a reveal order and sibling (based on reveal order)
+     * is not resolved yet, we need to wait for the sibling to resolve
+     */
+    const {
+      component: {
+        props: { revealOrder },
+      },
+      childManagers,
+    } = suspenseListManager;
+
+    const suspenseIndex = childManagers.indexOf(this);
+
+    const hasSuspendedSibling = childManagers.some((manager, index) => {
+      const { suspender } = manager;
+      if (suspender) {
+        return (
+          revealOrder === 'together' ||
+          (revealOrder === 'forwards' && index <= suspenseIndex) ||
+          (revealOrder === 'backwards' && index >= suspenseIndex)
+        );
+      }
+
+      return false;
+    });
+
+    return !hasSuspendedSibling;
+  }
+
   resolve(resolvedWithSuspender) {
     const { component, transition, suspender, childManagers } = this;
     const pendingSuspense = transition.pendingSuspense || [];
@@ -294,12 +364,12 @@ class SuspenseManager {
         childManagers.forEach((manager) => manager.handleSuspense());
       });
     } else if (revealOrder === 'forwards') {
-      let promise = Promise.resolve();
+      let promise = resolvedPromise;
       for (let i = 0, ln = childManagers.length; i < ln; i++) {
         promise = handleManagerInOrder(promise, childManagers[i]);
       }
     } else if (revealOrder === 'backwards') {
-      let promise = Promise.resolve();
+      let promise = resolvedPromise;
       for (let i = childManagers.length - 1; i >= 0; i--) {
         promise = handleManagerInOrder(promise, childManagers[i]);
       }
@@ -370,14 +440,14 @@ export class Suspense extends Component {
   }
 
   render() {
+    const { fallback, children } = this.props;
+
     const transition = getActiveTransition(this);
     const fiber = getCurrentComponentFiber();
 
     const suspenseManager = getSuspenseManager(fiber, transition);
 
-    const resolved = !suspenseManager.suspender;
-    const { fallback, children } = this.props;
-    if (resolved) return children;
+    if (suspenseManager.shouldRenderChildren()) return children;
     else if (suspenseManager.shouldShowFallback()) return fallback;
     else return null;
   }

@@ -134,6 +134,11 @@ function handleComponentEffect(fiber) {
   const brahmosData = nodeInstance[BRAHMOS_DATA_KEY];
 
   if (nodeType === CLASS_COMPONENT_NODE) {
+    // if it is deferredUpdate set the memoizedValues into nodeInstance state and prop
+    if (updateType === UPDATE_TYPE_DEFERRED) {
+      Object.assign(nodeInstance, brahmosData.memoizedValues);
+    }
+
     const { props: prevProps, state: prevState } = brahmosData.committedValues;
 
     brahmosData.lastSnapshot = callLifeCycle(nodeInstance, 'getSnapshotBeforeUpdate', [

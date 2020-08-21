@@ -1,3 +1,5 @@
+import { BRAHMOS_DATA_KEY } from './configs';
+
 /**
  * Method to identify if a jsx element is a html element or custom component
  * Taken from https://github.com/babel/babel/blob/master/packages/babel-types/src/validators/react/isCompatTag.js
@@ -91,7 +93,9 @@ export function remove(nodes) {
   if (!Array.isArray(nodes)) nodes = [nodes];
   for (let i = nodes.length - 1; i >= 0; i--) {
     const node = nodes[i];
-    node.parentNode.removeChild(node);
+    // if node is not a detached node
+    const { parentNode } = node;
+    if (parentNode) parentNode.removeChild(node);
   }
 }
 
@@ -213,7 +217,7 @@ export function createEmptyTextNode(element) {
 /**
  * Put a code execution in micro task, so that it's executed after current stack
  */
-const resolvedPromise = Promise.resolve();
+export const resolvedPromise = Promise.resolve();
 export function afterCurrentStack(cb) {
   return resolvedPromise.then(cb);
 }
@@ -252,4 +256,9 @@ export function getPromiseSuspendedValue(promise) {
       }
     },
   };
+}
+
+/** function to check if component is mounted */
+export function isMounted(component) {
+  return component[BRAHMOS_DATA_KEY].mounted;
 }
