@@ -1,12 +1,8 @@
 import { createElement } from './circularDep';
-
+import { BrahmosRootComponent } from './utils';
 import { createFiber, createHostFiber, setUpdateTime } from './fiber';
 import { doSyncProcessing } from './workLoop';
 import { syncUpdates, getCurrentUpdateSource } from './updateUtils';
-
-function BrahmosRootComponent({ children }) {
-  return children;
-}
 
 /**
  * Method to render a node

@@ -262,3 +262,15 @@ export function getPromiseSuspendedValue(promise) {
 export function isMounted(component) {
   return component[BRAHMOS_DATA_KEY].mounted;
 }
+
+/** function to get component name by its constructor */
+export function getComponentName(Component) {
+  return Component.displayName || Component.name;
+}
+
+/**
+ * A wrapper component which wraps the render elements
+ */
+export function BrahmosRootComponent({ children }) {
+  return children;
+}

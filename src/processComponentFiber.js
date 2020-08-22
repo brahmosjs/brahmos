@@ -7,11 +7,11 @@ import {
 } from './fiber';
 
 import functionalComponentInstance from './functionalComponentInstance';
-import { CLASS_COMPONENT_NODE } from './brahmosNode';
+import { CLASS_COMPONENT_NODE, isComponentNode } from './brahmosNode';
 import { getClosestSuspenseFiber, resetSiblingFibers } from './circularDep';
 
 import { cleanEffects } from './hooks';
-import { callLifeCycle } from './utils';
+import { callLifeCycle, getComponentName, BrahmosRootComponent } from './utils';
 import { getPendingUpdates } from './updateUtils';
 
 import shallowEqual from './helpers/shallowEqual';
@@ -35,13 +35,15 @@ export function getErrorBoundaryFiber(fiber) {
 }
 
 export function getErrorInfo(fiber) {
-  const {
-    node: { type: Component },
-  } = fiber;
-  const componentName = Component.displayName || Component.name;
-  const error = `The above error occurred in the <${componentName}> component:`;
+  let error = '';
+  while (fiber) {
+    const { node } = fiber;
+    if (node && isComponentNode(node) && node.type !== BrahmosRootComponent) {
+      error += `    at ${getComponentName(node.type)} \n`;
+    }
+    fiber = fiber.parent;
+  }
 
-  // TODO: write error stack information here.
   return {
     componentStack: error,
   };
@@ -297,7 +299,11 @@ export default function processComponentFiber(fiber) {
         const errorInfo = getErrorInfo(fiber);
         // log the error and retry rendering
         console.error(error);
-        console.error(errorInfo.componentStack);
+
+        const errorDetail = `The above error occurred in the <${getComponentName(
+          node.type,
+        )}> component: \n${errorInfo.componentStack}`;
+        console.error(errorDetail);
         errorBoundary.childFiberError = { error, errorInfo };
 
         // reset the work loop to errorBoundary fiber
