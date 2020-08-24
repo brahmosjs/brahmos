@@ -7,6 +7,7 @@ import {
   UPDATE_TYPE_DEFERRED,
   UPDATE_SOURCE_TRANSITION,
   BRAHMOS_DATA_KEY,
+  UPDATE_SOURCE_IMMEDIATE_ACTION,
 } from './configs';
 
 import {
@@ -110,7 +111,11 @@ function isDependenciesChanged(deps, oldDeps) {
  * Function to rerender component if state is changed
  */
 function reRenderComponentIfRequired(component, state, lastState) {
-  if (!Object.is(state, lastState)) {
+  /**
+   * check if state are different before rerendering, for seState triggered by event
+   * we should always reRerender as event can have some side effects which are controlled
+   */
+  if (getCurrentUpdateSource() === UPDATE_SOURCE_IMMEDIATE_ACTION || !Object.is(state, lastState)) {
     reRender(component);
   }
 }
