@@ -32,6 +32,11 @@ function App() {
         >
           https://reactjs.org/docs/concurrent-mode-patterns.html#deferring-a-value
         </a>
+        <br />
+        <br />
+        Here the profile detail API is mocked to respond in 300ms and post API is mocked to respond
+        in 1500ms. The app will keep showing stale content for post data until its loaded or for max
+        5 seconds if you keep pressing next before a post gets a chance to load.
       </p>
       <div className="control-wrap">
         <button
@@ -56,7 +61,7 @@ function App() {
 
 function ProfilePage({ resource }) {
   const deferredResource = useDeferredValue(resource, {
-    timeoutMs: 1000,
+    timeoutMs: 5000,
   });
   return (
     <Suspense fallback={<h1>Loading profile...</h1>}>
