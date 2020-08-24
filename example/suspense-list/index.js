@@ -2,36 +2,10 @@
  * Forked from: https://codesandbox.io/s/black-wind-byilt
  */
 
-import Brahmos, { SuspenseList, Suspense, useEffect } from '../../src';
+import Brahmos, { SuspenseList, Suspense, useEffect, useState } from 'brahmos';
 import ReactCredit from '../common/ReactCredit';
 
 import { fetchProfileData } from './fakeApi';
-
-function App() {
-  const initialResource = fetchProfileData(0);
-  return (
-    <>
-      <Suspense fallback={<h1>Loading...</h1>}>
-        <ProfilePage resource={initialResource} />
-      </Suspense>
-      <ReactCredit name="Suspense List" link="https://codesandbox.io/s/black-wind-byilt" />
-    </>
-  );
-}
-
-function ProfilePage({ resource }) {
-  return (
-    <SuspenseList revealOrder="forwards">
-      <ProfileDetails resource={resource} />
-      <Suspense fallback={<h2>Loading posts...</h2>}>
-        <ProfileTimeline resource={resource} />
-      </Suspense>
-      <Suspense fallback={<h2>Loading fun facts...</h2>}>
-        <ProfileTrivia resource={resource} />
-      </Suspense>
-    </SuspenseList>
-  );
-}
 
 function ProfileDetails({ resource }) {
   const user = resource.user.read();
@@ -59,6 +33,77 @@ function ProfileTrivia({ resource }) {
           <li key={fact.id}>{fact.text}</li>
         ))}
       </ul>
+    </>
+  );
+}
+
+function ProfilePage({ revealOrder = 'forwards', tail }) {
+  const [resource, setResource] = useState();
+  return (
+    <div style={{ minHeight: resource ? 250 : 0 }}>
+      <Suspense fallback={<h1>Loading...</h1>}>
+        <button
+          className="button is-primary"
+          onClick={() => {
+            setResource(fetchProfileData(0));
+          }}
+        >
+          Load/Reload
+        </button>
+        {resource && (
+          <>
+            <ProfileDetails resource={resource} />
+            <SuspenseList revealOrder={revealOrder} tail={tail}>
+              <Suspense fallback={<h2>Loading posts...</h2>}>
+                <ProfileTimeline resource={resource} />
+              </Suspense>
+              <Suspense fallback={<h2>Loading fun facts...</h2>}>
+                <ProfileTrivia resource={resource} />
+              </Suspense>
+            </SuspenseList>
+          </>
+        )}
+      </Suspense>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <>
+      <p>
+        This demo demonstrates Suspense List Implementation on Brahmos.
+        <br />
+        The APIs are mocked to respond in between 0-3000ms.
+      </p>
+      <div>
+        <hr />
+        <h3>Suspense list with forwards reveal order.</h3>
+        <ProfilePage revealOrder="forwards" />
+      </div>
+      <div>
+        <hr />
+        <h3>Suspense list with backwards reveal order.</h3>
+        <ProfilePage revealOrder="backwards" />
+      </div>
+      <div>
+        <hr />
+        <h3>Suspense list with together reveal order.</h3>
+        <ProfilePage revealOrder="together" />
+      </div>
+      <div>
+        <hr />
+        <h3>Suspense list with collapsed loading state.</h3>
+        <p>Only one loading will be shown inside the SuspenseList at a time.</p>
+        <ProfilePage tail="collapsed" />
+      </div>
+      <div>
+        <hr />
+        <h3>Suspense list with no loading state.</h3>
+        <p>No loading will be shown inside the SuspenseList when tail prop is set to hidden.</p>
+        <ProfilePage tail="hidden" />
+      </div>
+      <ReactCredit name="Suspense List" link="https://codesandbox.io/s/black-wind-byilt" />
     </>
   );
 }

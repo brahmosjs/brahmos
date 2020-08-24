@@ -1,11 +1,17 @@
-import Brahmos, { render, Component, useState } from '../src';
-import TodoList from './todo-list/TodoList';
-import SierpinskiTriangleDemo from './sierpinski-triangle';
+import Brahmos, { useState, useEffect } from 'brahmos';
+
+import BrahmosLogo from './BrahmosLogo';
+import TodoList from './todo-list';
 import ConcurrentModeDemo from './concurrent-mode';
 import SuspenseListDemo from './suspense-list';
 import UseDeferredValueDemo from './use-deferred-value';
 import UseDeferredValueSuspenseDemo from './use-deferred-value-suspense';
+import LazyComponentDemo from './lazy-component';
+import PortalDemo from './portals';
+import ErrorBoundariesDemo from './error-boundaries';
 import SVGDemo from './svg-chart';
+import HooksDemo from './hooks';
+import ContextDemo from './context-api';
 
 import './App.scss';
 
@@ -16,9 +22,29 @@ const examples = [
     Component: TodoList,
   },
   {
-    title: 'Sierpinski Triangle Demo',
-    id: 'sierpinski-triangle',
-    Component: SierpinskiTriangleDemo,
+    title: 'Context API',
+    id: 'context-api',
+    Component: ContextDemo,
+  },
+  {
+    title: 'Hooks Demo',
+    id: 'hooks',
+    Component: HooksDemo,
+  },
+  {
+    title: 'Error Boundaries Demo',
+    id: 'error-boundaries',
+    Component: ErrorBoundariesDemo,
+  },
+  {
+    title: 'SVG Support Demo',
+    id: 'svg-support',
+    Component: SVGDemo,
+  },
+  {
+    title: 'Portal Demo',
+    id: 'portals',
+    Component: PortalDemo,
   },
   {
     title: 'Concurrent Mode Demo',
@@ -31,54 +57,75 @@ const examples = [
     Component: SuspenseListDemo,
   },
   {
-    title: 'useDeferredValue Demo',
-    id: 'use-deferred-value',
-    Component: UseDeferredValueDemo,
-  },
-  {
-    title: 'useDeferredValue with Suspense Demo',
+    title: 'Suspense with useDeferredValue',
     id: 'use-deferred-value-suspense',
     Component: UseDeferredValueSuspenseDemo,
   },
   {
-    title: 'SVG Chart',
-    id: 'svg-chart',
-    Component: SVGDemo,
+    title: 'Time slicing with useDeferredValue',
+    id: 'use-deferred-value',
+    Component: UseDeferredValueDemo,
+  },
+  {
+    title: 'Lazy Component Demo',
+    id: 'lazy-component',
+    Component: LazyComponentDemo,
   },
 ];
 
-function getCurrentComponent() {
+function getCurrentExample() {
   const currentHash = document.location.hash.replace(/^#/, '');
   const routeIndex = Math.max(
     examples.findIndex((route) => route.id === currentHash),
     0,
   );
-  return examples[routeIndex].Component;
+  return examples[routeIndex];
 }
 
 export default function App() {
-  const [CurrentComponent, setCurrentComponent] = useState(getCurrentComponent);
+  const [currentExample, setCurrentExample] = useState(getCurrentExample);
+  const { Component: CurrentComponent, title } = currentExample;
 
   return (
     <div className="app-container">
-      <header className="header">
-        <h1>Brahmos Examples</h1>
+      <header class="hero is-primary">
+        <div class="hero-body">
+          <div className="logo">
+            <BrahmosLogo width="100" />
+          </div>
+          <div>
+            <h1 class="title">Brahmos Demo</h1>
+            <h2 class="subtitle">
+              Brahmos is a Super charged UI library with exact same declarative APIs of React. But
+              unlike the React's Virtual DOM, Brahmos uses templates internally to separate Static
+              and Dynamic parts of an application, and only traverse dynamic parts on updates.
+            </h2>
+          </div>
+        </div>
       </header>
-      <div className="body">
-        <nav className="nav-list">
-          <ul className="nav-list-container">
-            {examples.map(({ title, id, Component }) => {
-              return (
-                <li class="nav-list-item">
-                  <a href={`#${id}`} onClick={() => setCurrentComponent(() => Component)}>
-                    {title}
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-        <div className="component-container">
+      <div className="body row">
+        <aside className="menu has-background-light column is-one-quarter">
+          <nav className="menu-list">
+            <ul>
+              {examples.map((example) => {
+                const { title, id } = example;
+                return (
+                  <li className="menu-list-item">
+                    <a
+                      href={`#${id}`}
+                      className={example === currentExample ? 'is-active' : ''}
+                      onClick={() => setCurrentExample(example)}
+                    >
+                      {title}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        </aside>
+        <div className="example-container content column">
+          <h2>{title}</h2>
           <CurrentComponent />
         </div>
       </div>

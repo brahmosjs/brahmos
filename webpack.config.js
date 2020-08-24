@@ -17,6 +17,13 @@ module.exports = {
       template: './example/index.html',
     }),
   ],
+  resolve: {
+    alias: {
+      brahmos: path.resolve(__dirname, 'src'),
+      react: path.resolve(__dirname, 'src'),
+      'react-dom': path.resolve(__dirname, 'src'),
+    },
+  },
   module: {
     rules: [
       {

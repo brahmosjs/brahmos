@@ -2,7 +2,7 @@
  * Forked from: https://codesandbox.io/s/vigorous-keller-3ed2b
  */
 
-import Brahmos, { useDeferredValue, useState, useTransition, Suspense } from '../../src';
+import Brahmos, { useDeferredValue, useState, useTransition, Suspense } from 'brahmos';
 import ReactCredit from '../common/ReactCredit';
 
 import { fetchProfileData } from './fakeApi';
@@ -20,18 +20,34 @@ function App() {
   });
   return (
     <>
-      <button
-        disabled={isPending}
-        onClick={() => {
-          startTransition(() => {
-            const nextUserId = getNextId(resource.userId);
-            setResource(fetchProfileData(nextUserId));
-          });
-        }}
-      >
-        Next
-      </button>
-      {isPending ? ' Loading...' : null}
+      <p>
+        This demo demonstrates how we can use useDeferredValue to prevent loading state on non
+        important data.
+        <br />
+        Read more about it in official React Docs.
+        <a
+          href="https://reactjs.org/docs/concurrent-mode-patterns.html#deferring-a-value"
+          target="_blank"
+          rel="noopener"
+        >
+          https://reactjs.org/docs/concurrent-mode-patterns.html#deferring-a-value
+        </a>
+      </p>
+      <div className="control-wrap">
+        <button
+          className="button is-primary"
+          disabled={isPending}
+          onClick={() => {
+            startTransition(() => {
+              const nextUserId = getNextId(resource.userId);
+              setResource(fetchProfileData(nextUserId));
+            });
+          }}
+        >
+          Next
+        </button>
+        {isPending ? ' Loading...' : null}
+      </div>
       <ProfilePage resource={resource} />
       <ReactCredit name="useDeferredValue" link="https://codesandbox.io/s/vigorous-keller-3ed2b" />
     </>

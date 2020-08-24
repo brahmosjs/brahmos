@@ -67,7 +67,7 @@ export function fetchUser(userId) {
         default:
           throw Error('Unknown user.');
       }
-    }, 2000 * Math.random());
+    }, 1000 * Math.random());
   });
 }
 

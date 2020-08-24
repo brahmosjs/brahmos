@@ -1,4 +1,4 @@
-import Brahmos, { render } from '../src';
+import Brahmos, { render } from 'brahmos';
 
 import App from './App.js';
 

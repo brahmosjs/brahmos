@@ -1,10 +1,10 @@
-import Brahmos, { PureComponent } from '../../src';
+import Brahmos, { PureComponent } from 'brahmos';
 
 // Note: this file is exactly the same in both examples.
 
 function ListItem({ children }) {
   const now = performance.now();
-  while (performance.now() - now < 1) {
+  while (performance.now() - now < 3) {
     // Note: this is an INTENTIONALLY EMPTY loop that
     // DOES NOTHING for 3 milliseconds for EACH ITEM.
     //

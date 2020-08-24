@@ -1,4 +1,4 @@
-import Brahmos, { Component } from '../../src';
+import Brahmos, { Component } from 'brahmos';
 
 function Rect({ height, index }) {
   return (
@@ -45,8 +45,11 @@ class SVGExample extends Component {
     const { data } = this.state;
     return (
       <div>
+        <p>This demo demonstrate usage of dynamic svg in Brahmos.</p>
         <Chart data={data} />
-        <button onClick={this.shuffule}>Suffule</button>
+        <button className="button is-primary" onClick={this.shuffule}>
+          Suffule
+        </button>
       </div>
     );
   }

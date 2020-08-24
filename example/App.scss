@@ -1,24 +1,64 @@
+@import url('https://fonts.googleapis.com/css?family=Nunito:400,700');
+
+/** Colors **/
+$primary: #323330;
+// $primary-invert: #efdc4f;
+$primary-light: white;
+$text: #323330;
+$link: #2060c3;
+$menu-item-active-background-color: #efdc4f;
+$menu-item-active-color: #323330;
+$family-sans-serif: 'Nunito', sans-serif;
+// $background: #02030e;
+
+@import '../node_modules/bulma/bulma.sass';
+
 .app-container {
-  .header {
-    text-align: center;
-    padding: 20px;
+  min-height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+
+  .hero-body {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+  }
+
+  .logo {
+    margin-right: 1rem;
   }
 
   .body {
     display: flex;
+    flex: 1;
   }
 
-  .nav-list {
-    width: 200px;
+  .menu-list a:not(.is-active) {
+    border-bottom: 1px solid $border;
+  }
 
-    &-container {
-      margin: 0;
-      padding: 0;
-    }
+  .small-width {
+    width: 300px;
+  }
 
-    &-item {
-      list-style: none;
-      padding: 10px;
-    }
+  .control-wrap {
+    display: flex;
+    align-items: center;
+  }
+
+  .example-container {
+    padding-bottom: 100px;
+    position: relative;
+  }
+
+  .react-credit {
+    background: white;
+    position: fixed;
+    padding: 1rem 0.75rem;
+    border-top: 1px solid $border;
+    bottom: 0;
+    left: 25%;
+    width: 75%;
   }
 }

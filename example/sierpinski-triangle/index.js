@@ -1,4 +1,4 @@
-import Brahmos, { Component, unstable_deferredUpdates, unstable_syncUpdates } from '../../src';
+import Brahmos, { Component, unstable_deferredUpdates, unstable_syncUpdates } from 'brahmos';
 
 /**
  * Source: https://github.com/facebook/react/blob/master/fixtures/fiber-triangle/index.html
@@ -116,14 +116,14 @@ class Toggle extends Component {
   render() {
     const value = this.props.value;
     return (
-      <label onChange={this.onChange}>
-        <label>
-          {this.props.onLabel}
+      <label className="control" onChange={this.onChange}>
+        <label className="radio">
           <input type="radio" name="value" value="on" checked={value} />
+          {this.props.onLabel}
         </label>
-        <label>
-          {this.props.offLabel}
+        <label className="radio">
           <input type="radio" name="value" value="off" checked={!value} />
+          {this.props.offLabel}
         </label>
       </label>
     );
@@ -185,7 +185,7 @@ class SierpinskiWrapper extends Component {
         </div>
         <div style={{ ...containerStyle, transform }}>
           <div className="dot-container">
-            <SierpinskiTriangle x={0} y={0} s={800}>
+            <SierpinskiTriangle x={0} y={0} s={500}>
               {seconds}
             </SierpinskiTriangle>
           </div>

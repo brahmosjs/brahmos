@@ -1,8 +1,8 @@
-import Brahmos from '../../src';
+import Brahmos from 'brahmos';
 
 export default function ReactCredit({ name, link }) {
   return (
-    <p className="attribute">
+    <p className="react-credit">
       This demo is forked from {name} demo of React:
       <br />
       <strong>Source: </strong>
