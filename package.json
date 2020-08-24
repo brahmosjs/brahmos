@@ -1,9 +1,9 @@
 {
   "name": "brahmos",
-  "version": "0.10.0",
+  "version": "0.10.0-alpha3",
   "description": "Super charged UI library with modern React API and native templates.",
   "main": "dist/brahmos.js",
-  "module": "dist/brahmos.mjs",
+  "module": "dist/brahmos.es.js",
   "author": "s-yadav <sudhanshuyadav2@gmail.com>",
   "license": "MIT",
   "scripts": {

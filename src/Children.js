@@ -1,6 +1,5 @@
 import { isTagElementNode, isComponentNode, isTagNode } from './brahmosNode';
-
-const { isNil } = require('./utils');
+import { isNil } from './utils';
 
 function isPlaceholderTagNode(children) {
   /**

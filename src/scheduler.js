@@ -33,21 +33,29 @@ if (typeof MessageChannel !== 'undefined') {
   port = channel.port2;
 }
 
-function schedule(cb, useTimeout) {
-  /* If Message channel is not available, fallback to set timeouts */
-  if (!port || useTimeout) {
-    const timeoutId = setTimeout(cb);
-
-    return () => clearTimeout(timeoutId);
-  }
-
+function schedule(cb) {
   /**
-   * During schedule if we don't have much time left on a frame,
-   * schedule it in next frame (when CPU is idle) using requestIdleCallback
+   * If Message channel is not available or frame is about to end use combination of timeout and requestIdleCallback,
    */
-  if (frameRemainingTime(getTime()) < 1) {
-    const ricId = requestIdleCallback(cb);
-    return () => cancelIdleCallback(ricId);
+  if (!port || frameRemainingTime(getTime()) < 1) {
+    const scheduleCb = () => {
+      cancelSchedule();
+      cb();
+    };
+
+    /**
+     * Start both timer and request idle callback to schedule processing in next frame
+     * and which ever is called first cancel the other one
+     */
+    const timeoutId = setTimeout(scheduleCb, 1);
+    const ricId = requestIdleCallback(scheduleCb);
+
+    const cancelSchedule = () => {
+      clearTimeout(timeoutId);
+      cancelIdleCallback(ricId);
+    };
+
+    return cancelSchedule;
   }
 
   // If we have enough time use message channel as message channels are called more often
