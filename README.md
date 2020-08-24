@@ -3,6 +3,7 @@
 </p>
 
 # Brahmos
+
 Supercharged JavaScript library to build user interfaces with modern React API and native templates.
 
 ## Installation
@@ -10,12 +11,14 @@ Supercharged JavaScript library to build user interfaces with modern React API a
 [Create a New Brahmos App](https://www.npmjs.com/package/create-brahmos-app) if you're looking for a powerful JavaScript toolchain.
 
 ## Features
+
 - Lightweight and Fast.
 - Exact same React's Declarative APIs with JSX.
 - Fast alternative to Virtual DOM. (JSX without VDOM).
 - Smaller transpiled footprint of your source code, than traditional JSX.
 
 ## Idea
+
 It is inspired by the rendering patterns used on hyperHTML and lit-html.
 
 It has the same declarative API like React, but instead of working with VDOM, it uses tagged template literals and HTML's template tag for faster rendering and updates.
@@ -27,10 +30,11 @@ Even though tagged template literals are the key to static and dynamic part sepa
 Using the babel-plugin-brahmos it transforms JSX into tagged template literals which are optimized for render/updates and the output size.
 
 Consider this example,
+
 ```jsx
 class TodoList extends Component {
   state = { todos: [], text: '' };
-  setText = e => {
+  setText = (e) => {
     this.setState({ text: e.target.value });
   };
   addTodo = () => {
@@ -40,16 +44,16 @@ class TodoList extends Component {
       text: '',
     });
   };
-  render () {
+  render() {
     const { todos, text } = this.state;
     return (
       <form className="todo-form" onSubmit={this.addTodo} action="javascript:">
         <input value={text} onChange={this.setText} />
         <button type="submit">Add</button>
         <ul className="todo-list">
-          { todos.map(todo => (
+          {todos.map((todo) => (
             <li className="todo-item">{todo}</li>
-          )) }
+          ))}
         </ul>
       </form>
     );
@@ -58,10 +62,11 @@ class TodoList extends Component {
 ```
 
 It will be transformed to
+
 ```js
 class TodoList extends Component {
   state = { todos: [], text: '' };
-  setText = e => {
+  setText = (e) => {
     this.setState({ text: e.target.value });
   };
   addTodo = () => {
@@ -71,16 +76,21 @@ class TodoList extends Component {
       text: '',
     });
   };
-  render () {
+  render() {
     const { todos, text } = this.state;
-    return html`<form class="todo-form" ${{ onSubmit: this.addTodo }}
-      action="javascript:">
+    return html`
+      <form class="todo-form" ${{ onSubmit: this.addTodo }} action="javascript:">
         <input ${{ value: text }} ${{ onChange: this.setText }} />
         <button type="submit">Add</button>
         <ul class="todo-list">
-          ${todos.map(todo => html`<li class="todo-item">${todo}</li>`())}
+          ${todos.map((todo) =>
+            html`
+              <li class="todo-item">${todo}</li>
+            `(),
+          )}
         </ul>
-      </form>`;
+      </form>
+    `;
   }
 }
 ```
@@ -91,20 +101,19 @@ Tagged template literals also have a unique property where the reference of the 
 Taking advantage of this behavior Brahmos uses literal parts as a cache key to keep the intermediate states to avoid the work done to process a template literal again.
 
 Tagged template is natively supported by the browser, unlike the React's JSX which has to be transformed to React.createElement calls. So the output generated to run Brahmos has a smaller footprint than the output generated for the react.
-For the above example, the Brahmos output is 685 bytes, compared to 824 bytes from the React output. More the static part of an HTML,  greater the difference will be.
-
-
-## How it works?
-Check how it internally works [HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md)
+For the above example, the Brahmos output is 685 bytes, compared to 824 bytes from the React output. More the static part of an HTML, greater the difference will be.
 
 ## Demo
+
 Todo MVC with Brahmos
 [https://brahmosjs.github.io/brahmos-todo-mvc](https://brahmosjs.github.io/brahmos-todo-mvc)
 
 ## Slack Channel
+
 https://join.slack.com/t/brahmoscommunity/shared_invite/enQtODM5NDMwODgwMzQyLTc4YjJlZjY3Mzk1ODJkNTRkODljYjhmM2NhMGIxNzFjMjZjODk0MmVjZTVkNmE5Y2MwYzZkMzk5NTUxYmI5OWE
 
 ## Progress
+
 - [x] Babel Plugin to transpile JSX to tagged template
 - [x] Class components with all life cycle methods (Except deprecated methods)
 - [x] Functional Component
