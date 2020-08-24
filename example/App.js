@@ -1,6 +1,6 @@
 import Brahmos, { useState, useEffect } from 'brahmos';
 
-import BrahmosLogo from './BrahmosLogo';
+import { BrahmosLogo, GithubLogo } from './Logos';
 import TodoList from './todo-list';
 import ConcurrentModeDemo from './concurrent-mode';
 import SuspenseListDemo from './suspense-list';
@@ -97,15 +97,30 @@ export default function App() {
     <div className="app-container">
       <header class="hero is-primary">
         <div class="hero-body">
-          <div className="logo">
-            <BrahmosLogo width="100" />
-          </div>
+          <a href="https://github.com/brahmosjs/brahmos" target="_blank" rel="noopener">
+            <div className="logo">
+              <BrahmosLogo class="brahmos-logo" />
+              <GithubLogo class="github-logo" />
+            </div>
+          </a>
+
           <div>
-            <h1 class="title">Brahmos Demo</h1>
+            <h1 class="title">
+              Brahmos Demo{' '}
+              <iframe
+                src="https://ghbtns.com/github-btn.html?user=brahmosjs&repo=brahmos&type=fork&count=false&size=large"
+                frameborder="0"
+                scrolling="0"
+                width="170"
+                height="30"
+                className="star-btn"
+                title="GitHub"
+              ></iframe>
+            </h1>
             <h2 class="subtitle">
-              Brahmos is a Super charged UI library with exact same declarative APIs of React. But
-              unlike the React's Virtual DOM, Brahmos uses templates internally to separate Static
-              and Dynamic parts of an application, and only traverse dynamic parts on updates.
+              Brahmos is a Super charged UI library with exact same declarative APIs of React which
+              uses native templates to separate static and dynamic parts of an application for
+              faster updates.
             </h2>
           </div>
         </div>
