@@ -144,6 +144,6 @@ export function fetchPosts(userId) {
         default:
           throw Error('Unknown user.');
       }
-    }, 1000);
+    }, 1500);
   });
 }

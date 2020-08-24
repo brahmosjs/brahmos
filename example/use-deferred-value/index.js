@@ -24,7 +24,7 @@ function Toggle({ concurrentMode, setConcurrentMode }) {
 }
 
 export default function App() {
-  const [text, setText] = useState('hello');
+  const [text, setText] = useState('');
   const [concurrentMode, setConcurrentMode] = useState(true);
 
   // This is a new feature in Concurrent Mode.
@@ -47,8 +47,13 @@ export default function App() {
         <input className="input small-width" value={text} onChange={handleChange} />
       </label>
       <p>
-        Even though each list item in this demo completely blocks the main thread for 3
-        milliseconds, the app is able to stay responsive in Concurrent Mode.
+        Here we create 5 list item for each character in text box. Plus each of the list item
+        completely blocks the main thread for 1.5 milliseconds.
+        <br />
+        <br />
+        On concurrent mode we can see the app is able to stay responsive even the number of list
+        increases and only delays displaying the list. While in normal mode the input starts getting
+        janky as soon as the size of list grows.
       </p>
       <hr />
       {/* Pass the "lagging" value to the list */}

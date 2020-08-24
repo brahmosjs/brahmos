@@ -86,6 +86,13 @@ export default function App() {
   const [currentExample, setCurrentExample] = useState(getCurrentExample);
   const { Component: CurrentComponent, title } = currentExample;
 
+  useEffect(() => {
+    window.addEventListener('popstate', () => {
+      const newExample = getCurrentExample();
+      setCurrentExample(newExample);
+    });
+  }, []);
+
   return (
     <div className="app-container">
       <header class="hero is-primary">
@@ -111,11 +118,7 @@ export default function App() {
                 const { title, id } = example;
                 return (
                   <li className="menu-list-item">
-                    <a
-                      href={`#${id}`}
-                      className={example === currentExample ? 'is-active' : ''}
-                      onClick={() => setCurrentExample(example)}
-                    >
+                    <a href={`#${id}`} className={example === currentExample ? 'is-active' : ''}>
                       {title}
                     </a>
                   </li>

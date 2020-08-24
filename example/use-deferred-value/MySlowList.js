@@ -4,9 +4,9 @@ import Brahmos, { PureComponent } from 'brahmos';
 
 function ListItem({ children }) {
   const now = performance.now();
-  while (performance.now() - now < 3) {
+  while (performance.now() - now < 1.5) {
     // Note: this is an INTENTIONALLY EMPTY loop that
-    // DOES NOTHING for 3 milliseconds for EACH ITEM.
+    // DOES NOTHING for 1.5 milliseconds for EACH ITEM.
     //
     // It's meant to emulate what happens in a deep
     // component tree with calculations and other
@@ -20,7 +20,8 @@ export default class MySlowList extends PureComponent {
   render() {
     const { text } = this.props;
     const items = [];
-    for (let i = 0; i < 80; i++) {
+    const ln = text.length * 5;
+    for (let i = 0; i < ln; i++) {
       items.push(
         <ListItem key={i}>
           Result #{i} for "{text}"
