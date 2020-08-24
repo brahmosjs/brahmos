@@ -8,7 +8,7 @@ import {
 import { callLifeCycle, insertBefore, getNextSibling } from './utils';
 import { getTransitionFromFiber } from './transitionUtils';
 import { getPendingUpdatesKey } from './updateUtils';
-import { runEffects } from './hooks';
+import { runEffects, cleanEffects } from './hooks';
 
 import updateNodeAttributes from './updateAttribute';
 import {
@@ -145,6 +145,9 @@ function handleComponentEffect(fiber) {
       prevProps,
       prevState,
     ]);
+  } else {
+    // clean the existing effect
+    cleanEffects(fiber);
   }
 
   // remove all the pending updates associated with current transition

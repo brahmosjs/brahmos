@@ -43,6 +43,9 @@ import unmountComponentAtNode from './unmountComponentAtNode';
 /** unstableBatchedUpdate */
 import { deferredUpdates, syncUpdates } from './updateUtils';
 
+/** import top level api */
+import { Children, isValidElement, cloneElement } from './Children';
+
 const Brahmos = {
   createElement,
   render,
@@ -67,6 +70,9 @@ const Brahmos = {
   Suspense,
   SuspenseList,
   lazy,
+  Children,
+  isValidElement,
+  cloneElement,
   unstable_deferredUpdates: deferredUpdates,
   unstable_syncUpdates: syncUpdates,
 };
@@ -95,6 +101,9 @@ export {
   Suspense,
   SuspenseList,
   lazy,
+  Children,
+  isValidElement,
+  cloneElement,
   deferredUpdates as unstable_deferredUpdates,
   syncUpdates as unstable_syncUpdates,
 };

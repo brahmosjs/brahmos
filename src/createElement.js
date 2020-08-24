@@ -1,4 +1,4 @@
-import { getNormalizedProps } from './utils';
+import { getNormalizedProps, toArray } from './utils';
 import { isClassComponent } from './circularDep';
 import {
   brahmosNode,
@@ -22,17 +22,24 @@ export function createTagElement(element, configs, children) {
 }
 
 export function createElement(element, configs, children) {
+  configs = configs || {};
+  /**
+   * If there is single children no need to keep it as an array
+   */
+  const argLn = arguments.length;
+  const _children = argLn > 3 ? toArray(arguments, 2, argLn) : children;
+
   /**
    * If the create element is receiving an string element it means it is not a component,
    * but a simple tag instead. In that case return a tagElement instance.
    */
-  if (typeof element === 'string') return createTagElement(element, configs, children);
+  if (typeof element === 'string') return createTagElement(element, configs, _children);
 
   // create a prop object excluding the key and ref prop and adding children prop
   const props = {
     ...element.defaultProps,
     ...getNormalizedProps(configs, element.__isForwardRef),
-    children,
+    children: _children,
   };
 
   // if the element is a lazy component, start fetching the underlying component

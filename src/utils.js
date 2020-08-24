@@ -103,8 +103,9 @@ export function remove(nodes) {
  * Convert an array like object to array
  */
 
-export function toArray(list) {
-  return Array.prototype.slice.call(list);
+export function toArray(list, start) {
+  start = start || 0;
+  return Array.prototype.slice.call(list, start);
 }
 
 /**

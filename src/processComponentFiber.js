@@ -54,7 +54,6 @@ function getCurrentContext(fiber) {
     node: { type: Component },
     nodeInstance,
     parent,
-    context: currentContext,
   } = fiber;
 
   // if component has createContext index, we treat it as provider
@@ -64,15 +63,7 @@ function getCurrentContext(fiber) {
   // if component is not a provider return the same context
   if (!__ccId) return context;
 
-  /**
-   * if there is a context on fiber node and the nodeInstance
-   * is reused we can always return that context,
-   * if provider in parent hierarchy is changed, the whole child hierarchy will
-   * be different and nodeInstance are not reused.
-   */
-  if (currentContext) return currentContext;
-
-  // for new provider instance create a new context extending the parent context
+  // for new provider instance create a new context by extending the parent context
   const newContext = Object.create(context);
 
   // store the nodeInstance
@@ -238,11 +229,6 @@ export default function processComponentFiber(fiber) {
         transitionId: currentTransition.transitionId,
       };
     }
-  } else if (!isFirstRender) {
-    // for functional component call cleanEffect only on second render
-    // alternate will be set on second render
-    // NOTE: This is buggy, cleanEffects should be called before commit phase, check the behavior of react.
-    cleanEffects(fiber);
   }
 
   // render the nodes

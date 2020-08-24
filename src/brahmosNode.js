@@ -6,6 +6,10 @@ export const CLASS_COMPONENT_NODE = Symbol('class-component');
 export const FUNCTIONAL_COMPONENT_NODE = Symbol('functional-component');
 export const ATTRIBUTE_NODE = Symbol('attribute');
 
+export function isTagElementNode({ nodeType }) {
+  return nodeType === TAG_ELEMENT_NODE;
+}
+
 export function isTagNode({ nodeType }) {
   return nodeType === TAG_NODE || nodeType === TAG_ELEMENT_NODE;
 }
