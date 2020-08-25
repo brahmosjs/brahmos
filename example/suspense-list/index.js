@@ -79,16 +79,30 @@ function App() {
       <div>
         <hr />
         <h3>Suspense list with forwards reveal order.</h3>
+        <p>
+          Though api response time can defer, in forwards reveal order, it guarantees the second
+          suspense will not reveal before the first suspense. In this example fun facts will never
+          be revealed before the post.
+          <br />
+          <strong>Click on button multiple times to see the effect.</strong>
+        </p>
         <ProfilePage revealOrder="forwards" />
       </div>
       <div>
         <hr />
         <h3>Suspense list with backwards reveal order.</h3>
+        <p>
+          In backwards reveal order, it guarantees the suspense are revealed from last to first. In
+          this example post will never be revealed before the fun fact.
+          <br />
+          <strong>Click on button multiple times to see the effect.</strong>
+        </p>
         <ProfilePage revealOrder="backwards" />
       </div>
       <div>
         <hr />
         <h3>Suspense list with together reveal order.</h3>
+        <p>In together reveal order, all the suspense are revealed together.</p>
         <ProfilePage revealOrder="together" />
       </div>
       <div>
