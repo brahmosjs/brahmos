@@ -6,6 +6,8 @@
 
 Supercharged JavaScript library to build user interfaces with modern React API and native templates.
 
+Brahmos supports all the APIs of React including the upcoming concurrent mode APIs and the existing ones. It has its own custom fiber architecture and concurrent mode implementation to support the concurrent UI patterns.
+
 ## Installation
 
 [Create a New Brahmos App](https://www.npmjs.com/package/create-brahmos-app) if you're looking for a powerful JavaScript toolchain.
