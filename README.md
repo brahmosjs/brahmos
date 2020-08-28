@@ -103,17 +103,18 @@ Taking advantage of this behavior Brahmos uses literal parts as a cache key to k
 Tagged template is natively supported by the browser, unlike the React's JSX which has to be transformed to React.createElement calls. So the output generated to run Brahmos has a smaller footprint than the output generated for the react.
 For the above example, the Brahmos output is 685 bytes, compared to 824 bytes from the React output. More the static part of an HTML, greater the difference will be.
 
-## Walk-through on Brahmos
+## Demo
+
+The following demo demonstrates the support of all the APIs coming in future version of React like Concurrent mode, suspense list, suspense for data fetch, and also for the existing APIs like states, hooks, context api, refs etc.
+
+[https://codesandbox.io/s/brahmos-demo-3t8r6](https://codesandbox.io/s/brahmos-demo-3t8r6)
+
+## Talk on the Idea of Brahmos
 
 <a href="https://www.youtube.com/watch?v=GUrL5ovCWyw&t" target="_blank" rel="noopener">
   <img src="https://unpkg.com/brahmos@0.10.0-alpha4/brahmos_talk.jpg" alt="Brahmos.js: React without VDOM"
 	title="Brahmos.js: React without VDOM" width="400px" />
 </a>
-
-## Demo
-
-Brahmos Demo
-[https://codesandbox.io/s/brahmos-demo-3t8r6](https://codesandbox.io/s/brahmos-demo-3t8r6)
 
 ## Slack Channel
 
