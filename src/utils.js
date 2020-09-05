@@ -20,7 +20,10 @@ export function getNodeName(node) {
   return node.nodeName.toLowerCase();
 }
 
-export function getEventName(attrName) {
+export function getEventName(attrName, isCaptureEvent) {
+  if(isCaptureEvent) {
+    attrName = attrName.replace(/Capture$/, '');
+  }
   return attrName.replace('on', '').toLowerCase();
 }
 

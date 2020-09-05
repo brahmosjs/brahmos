@@ -44,19 +44,19 @@ function setAttribute(node, attrName, attrValue, oldAttrValue, isSvgAttribute) {
 
   // Handle event attributes
   if (isEventAttr) {
-    let eventName = getEventName(attrName);
+    const isCaptureEvent = attrName.substr(-7) === 'Capture' && attrName.substr(-14, 7) !== 'Pointer';
+    let eventName = getEventName(attrName, isCaptureEvent);
     eventName = getEffectiveEventName(eventName, node);
 
     // get patched event handler
     const patchedHandler = getPatchedEventHandler(node, attrName, attrValue);
-
+    
     // if new event handler is not there but it had old handler, remove the old one
     if (oldAttrValue && !attrValue) {
-      node.removeEventListener(eventName, patchedHandler);
-
+      node.removeEventListener(eventName, patchedHandler, isCaptureEvent);
       // if the event is getting added first time add a listener
     } else if (!oldAttrValue && attrValue) {
-      node.addEventListener(eventName, patchedHandler);
+      node.addEventListener(eventName, patchedHandler, isCaptureEvent);
     }
 
     // handle style attributes
