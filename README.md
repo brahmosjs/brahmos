@@ -97,7 +97,7 @@ class TodoList extends Component {
 }
 ```
 
-With the tagged template literal we get a clear separating of the static and dynamic part. And on updates it needs has to apply changes only on the changed dynamic parts.
+With the tagged template literal we get a clear separating of the static and dynamic part. And on updates it needs to apply changes only on the changed dynamic parts.
 
 Tagged template literals also have a unique property where the reference of the literal part (array of static strings) remain the same for every call of that tag with a given template.
 Taking advantage of this behavior Brahmos uses literal parts as a cache key to keep the intermediate states to avoid the work done to process a template literal again.
