@@ -44,7 +44,8 @@ function setAttribute(node, attrName, attrValue, oldAttrValue, isSvgAttribute) {
 
   // Handle event attributes
   if (isEventAttr) {
-    const isCaptureEvent = attrName.substr(-7) === 'Capture' && attrName.substr(-14, 7) !== 'Pointer';
+    // Reference https://github.com/facebook/react/blob/master/packages/react-dom/src/events/DOMPluginEventSystem.js#L498
+    const isCaptureEvent = attrName.substr(-7) === 'Capture' && attrName.substr(-14, 7) === 'Pointer';
     let eventName = getEventName(attrName, isCaptureEvent);
     eventName = getEffectiveEventName(eventName, node);
 
