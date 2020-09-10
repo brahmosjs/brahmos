@@ -1,39 +1,46 @@
+// @flow
 import { BRAHMOS_DATA_KEY } from './configs';
+import type {
+  ObjectLiteral,
+  AnyComponentInstance,
+  FunctionalComponent,
+  ClassComponent,
+} from './flow.types';
 
 /**
  * Method to identify if a jsx element is a html element or custom component
  * Taken from https://github.com/babel/babel/blob/master/packages/babel-types/src/validators/react/isCompatTag.js
  * */
-export function isHTMLElement(tagName) {
+export function isHTMLElement(tagName: string): boolean {
   // Must start with a lowercase ASCII letter
   return !!tagName && /^[a-z]/.test(tagName);
 }
 
-export function isEventAttribute(attrName) {
+export function isEventAttribute(attrName: string): boolean {
   // must start with on prefix
   // used indexOf for cross browser support
   return attrName.indexOf('on') === 0;
 }
 
 // get the node name from the node in lowercase format
-export function getNodeName(node) {
+export function getNodeName(node: HTMLElement): string {
   return node.nodeName.toLowerCase();
 }
 
-export function getEventName(attrName, isCaptureEvent) {
-  if(isCaptureEvent) {
+export function getEventName(attrName: string, isCaptureEvent: boolean): string {
+  if (isCaptureEvent) {
     attrName = attrName.replace(/Capture$/, '');
   }
   return attrName.replace('on', '').toLowerCase();
 }
 
-export function isCustomElement(tagName) {
+export function isCustomElement(tagName: string): boolean {
   // Must match html tag check and have a hyphen in the tag name
   return isHTMLElement(tagName) && tagName.indexOf('-') !== -1;
 }
 
 // check if value is null or undefined
-export function isNil(val) {
+export function isNil(val: any): boolean {
   return val === undefined || val === null;
 }
 
@@ -44,20 +51,21 @@ export function isNil(val) {
  * not let this initialTime grow infinitely
  */
 let initialTime = 0;
-export function now() {
+export function now(): number {
   return initialTime++;
 }
 
 /**
  * Function to return current timestamp
  */
-export function timestamp() {
+export function timestamp(): number {
   return Date.now();
 }
 
 // add brahmos data container to domNode
-export function addDataContainer(domNode) {
+export function addDataContainer(domNode: Node): void {
   // add brahmos data container
+  // $FlowFixMe: Adding a key is intentional here
   domNode.__brahmosData = {
     events: {},
   };
@@ -66,7 +74,7 @@ export function addDataContainer(domNode) {
 /**
  * function to separate props, key and ref
  */
-export function getNormalizedProps(props, includeRef) {
+export function getNormalizedProps(props: ObjectLiteral, includeRef: boolean): ObjectLiteral {
   const newObj = {};
   let key;
   for (key in props) {
@@ -78,7 +86,7 @@ export function getNormalizedProps(props, includeRef) {
 /**
  * Function to loop over object entries
  */
-export function loopEntries(obj, cb) {
+export function loopEntries(obj: ObjectLiteral, cb: (key: string, value: any) => void) {
   const keys = Object.keys(obj);
 
   for (let i = 0, ln = keys.length; i < ln; i++) {
@@ -92,7 +100,7 @@ export function loopEntries(obj, cb) {
  * Remove nodes from parent
  */
 
-export function remove(nodes) {
+export function remove(nodes: Array<Node> | Node): void {
   if (!Array.isArray(nodes)) nodes = [nodes];
   for (let i = nodes.length - 1; i >= 0; i--) {
     const node = nodes[i];
@@ -106,23 +114,15 @@ export function remove(nodes) {
  * Convert an array like object to array
  */
 
-export function toArray(list, start) {
+export function toArray(list: Iterable<any>, start: ?number) {
   start = start || 0;
   return Array.prototype.slice.call(list, start);
 }
 
 /**
- * Function to return lastItem in the list
- */
-export function lastItem(list) {
-  if (!Array.isArray(list)) return list;
-  return list[list.length - 1];
-}
-
-/**
  * Given a object/string crate a node which can be appended.
  */
-export function changeToNode(value) {
+export function changeToNode(value: Array<Node> | NodeList<Node> | Node | string): Node {
   const isNodeList = value instanceof NodeList;
 
   if (value instanceof Node) {
@@ -134,6 +134,7 @@ export function changeToNode(value) {
     let i = 0;
 
     while (value[i]) {
+      // $FlowFixMe: Flow Not able to identify condition if `value instanceof NodeList` stored as value
       fragment.appendChild(value[i]);
 
       // no need to increment on nodeList as nodeList is spliced when elements are moved
@@ -143,6 +144,7 @@ export function changeToNode(value) {
   }
 
   // In other case it will be string so return a text node
+  // $FlowFixMe: Flow Not able to identify condition if `value instanceof NodeList` stored as value
   return document.createTextNode(value);
 }
 
@@ -150,8 +152,7 @@ export function changeToNode(value) {
  * Function to add child nodes before endNode, if it is not defined or null
  * It will add nodes on the last
  */
-export function insertBefore(parent, end, value) {
-  end = end === undefined ? null : end;
+export function insertBefore(parent: Element, end: ?Node, value: any): Node {
   const node = changeToNode(value);
 
   /**
@@ -165,29 +166,15 @@ export function insertBefore(parent, end, value) {
   return persistentNode;
 }
 
-/**
- * Function to unwrap children from its parent
- */
-export function unwrap(el) {
-  // get the element's parent node
-  var parent = el.parentNode;
-
-  // move all children out of the element
-  while (el.firstChild) parent.insertBefore(el.firstChild, el);
-
-  // remove the empty element
-  parent.removeChild(el);
-}
-
 // function to get next sibling based on parent node and previous sibling
-export function getNextSibling(parentNode, previousSibling) {
+export function getNextSibling(parentNode: Element, previousSibling: ?Node): ?Node {
   return previousSibling ? previousSibling.nextSibling : parentNode.firstChild;
 }
 
 /**
  * Merge newState with old state for components
  */
-export function mergeState(state, newState) {
+export function mergeState(state: ObjectLiteral, newState: any): ObjectLiteral {
   // if new state is not present or any falsy value, just return the state
   if (!newState) return state;
 
@@ -202,7 +189,7 @@ export function mergeState(state, newState) {
 /**
  * Function to call life cycle of a given component, or component instance
  */
-export function callLifeCycle(object, method, args) {
+export function callLifeCycle(object: any, method: string, args: ?Array<any>): void {
   if (object[method]) {
     return object[method].apply(object, args);
   }
@@ -211,8 +198,9 @@ export function callLifeCycle(object, method, args) {
 /**
  * Create an empty text node before a given node
  */
-export function createEmptyTextNode(element) {
+export function createEmptyTextNode(element: Node): ?Node {
   const { parentNode } = element;
+  if (!parentNode) return null;
   const textNode = document.createTextNode('');
   parentNode.insertBefore(textNode, element);
   return textNode;
@@ -222,21 +210,21 @@ export function createEmptyTextNode(element) {
  * Put a code execution in micro task, so that it's executed after current stack
  */
 export const resolvedPromise = Promise.resolve();
-export function afterCurrentStack(cb) {
+export function afterCurrentStack(cb: Function): Promise<void> {
   return resolvedPromise.then(cb);
 }
 
 /**
  * Function to create a unique id
  */
-export function getUniqueId() {
+export function getUniqueId(): string {
   return now() + '-' + Math.random() * 1000000;
 }
 
 /**
  * Method to get a promise which support suspension of rendering
  */
-export function getPromiseSuspendedValue(promise) {
+export function getPromiseSuspendedValue<T>(promise: Promise<T>) {
   let status = 'pending';
   let result;
   const suspender = promise.then(
@@ -263,18 +251,18 @@ export function getPromiseSuspendedValue(promise) {
 }
 
 /** function to check if component is mounted */
-export function isMounted(component) {
+export function isMounted(component: AnyComponentInstance): boolean {
   return component[BRAHMOS_DATA_KEY].mounted;
 }
 
 /** function to get component name by its constructor */
-export function getComponentName(Component) {
+export function getComponentName(Component: ClassComponent | FunctionalComponent): string {
   return Component.displayName || Component.name;
 }
 
 /**
  * A wrapper component which wraps the render elements
  */
-export function BrahmosRootComponent({ children }) {
+export function BrahmosRootComponent({ children }: ObjectLiteral): any {
   return children;
 }

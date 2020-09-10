@@ -1,7 +1,11 @@
+// @flow
+
 import { markPendingEffect } from './fiber';
 import { EFFECT_TYPE_OTHER } from './configs';
 
-export function processTextFiber(fiber) {
+import type { Fiber } from './flow.types';
+
+export function processTextFiber(fiber: Fiber): void {
   const { node, alternate } = fiber;
   const oldNode = alternate && alternate.node;
 

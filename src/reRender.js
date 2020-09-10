@@ -1,3 +1,4 @@
+// @flow
 import {
   UPDATE_SOURCE_IMMEDIATE_ACTION,
   UPDATE_SOURCE_TRANSITION,
@@ -9,16 +10,19 @@ import { setUpdateTime, getFiberFromComponent } from './fiber';
 import { doSyncProcessing, doDeferredProcessing } from './workLoop';
 import { afterCurrentStack } from './utils';
 
+import type { AnyComponentInstance } from './flow.types';
+
 /**
  * Method to rerender a given component
  * In case of reRender, start from the root,
  * clone the current fiber to wip, and use the wip which is pointing
  * to children of current tree.
  */
-export default function reRender(component) {
+export default function reRender(component: AnyComponentInstance): void {
   const fiber = getFiberFromComponent(component);
 
   const { root } = fiber;
+  const { pendingTransitions } = root;
 
   const currentUpdateSource = getCurrentUpdateSource();
   const currentTransition = getCurrentTransition();
@@ -28,21 +32,24 @@ export default function reRender(component) {
   // set updateTime on fiber parent hierarchy based on updateType
   setUpdateTime(fiber, updateType);
 
-  // if the update source is transition add the transition in pending transition
-  if (currentUpdateSource === UPDATE_SOURCE_TRANSITION) {
-    const { pendingTransitions } = root;
-
+  /**
+   * if the update source is transition, and the transition is not already present in pending list
+   * add the transition in pending transition
+   */
+  if (
+    currentUpdateSource === UPDATE_SOURCE_TRANSITION &&
+    !pendingTransitions.includes(currentTransition)
+  ) {
     /**
      * If it is predefined deferred transition, we need to add current transition
      * as first item as PREDEFINED_TRANSITION_DEFERRED has more priority
      * or else add it in last of pendingTransitions
      */
-    const arrayAddMethod =
-      currentTransition === PREDEFINED_TRANSITION_DEFERRED ? 'unshift' : 'push';
 
-    // add the current transition to pending transition if it isn't already there.
-    if (!pendingTransitions.includes(currentTransition)) {
-      pendingTransitions[arrayAddMethod](currentTransition);
+    if (currentTransition === PREDEFINED_TRANSITION_DEFERRED) {
+      pendingTransitions.unshift(currentTransition);
+    } else {
+      pendingTransitions.push(currentTransition);
     }
   }
 
@@ -71,7 +78,7 @@ export default function reRender(component) {
     } else {
       /**
        * if the update source is event and we don't have any ongoing sync update
-       * which we can figure out based on last updateType and if there is any requestIdleHandle
+       * which we can figure out based on last updateType and if there is any cancelSchedule
        * Start the processing from the fiber which cause the update.
        */
       const hasOngoingSyncUpdates = root.updateType === UPDATE_TYPE_SYNC && root.cancelSchedule;

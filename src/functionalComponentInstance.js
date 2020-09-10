@@ -1,13 +1,18 @@
+// @flow
 import { prepareHooksForRender } from './hooks';
 import { BRAHMOS_DATA_KEY } from './configs';
+import type { FunctionalComponentInstance, ObjectLiteral } from './flow.types';
 
-export default function functionalComponentInstance(FuncComponent) {
+export default function functionalComponentInstance(
+  FuncComponent: Function,
+): FunctionalComponentInstance {
   return {
     syncHooks: [],
     deferredHooks: [],
+    context: undefined,
     pointer: 0,
-    __render(props) {
-      prepareHooksForRender(this);
+    __render(props: ObjectLiteral) {
+      prepareHooksForRender();
       const nodes = FuncComponent(props);
 
       this[BRAHMOS_DATA_KEY].nodes = nodes;

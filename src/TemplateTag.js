@@ -1,4 +1,5 @@
-import { unwrap } from './utils';
+// @flow
+import type { PartMeta, TemplateTagType } from './flow.types';
 
 const TAG_QUOTE_REGEX = /[<>"]/g;
 
@@ -16,10 +17,10 @@ export const attrMarker = 'data-brahmos-attr';
 export const marker = '{{brahmos}}';
 export const nodeMarker = `<!--${marker}-->`;
 
-function extractAttributeName (str) {
+function extractAttributeName(str) {
   let result;
   const names = [];
-  while ((result = ATTR_NAME_REGEX.exec(str)) !== null) {
+  while ((result = ATTR_NAME_REGEX.exec(str))) {
     const attrName = result[2];
 
     if (attrName) {
@@ -29,15 +30,27 @@ function extractAttributeName (str) {
   return names;
 }
 
-export default class TemplateTag {
-  constructor (strings) {
+export default class TemplateTag implements TemplateTagType {
+  $key: 'svgTemplate' | 'template';
+
+  $value: ?HTMLTemplateElement;
+
+  strings: Array<string>;
+
+  template: ?HTMLTemplateElement;
+
+  svgTemplate: ?HTMLTemplateElement;
+
+  partsMeta: Array<PartMeta>;
+
+  constructor(strings: Array<string>) {
     this.strings = strings;
     this.template = null;
     this.svgTemplate = null;
     this.partsMeta = [];
   }
 
-  create (isSvgPart) {
+  create(isSvgPart: boolean) {
     if (isSvgPart && this.svgTemplate) return;
 
     if (this.template) return;
@@ -47,9 +60,10 @@ export default class TemplateTag {
     this.createTemplate(isSvgPart);
   }
 
-  getPartsMeta () {
+  getPartsMeta() {
     const { strings } = this;
-    let tagStarted, quoteStart;
+    let tagStarted = false;
+    let quoteStart;
     let tagAttrs = [];
     const partsMeta = [];
     /**
@@ -63,7 +77,9 @@ export default class TemplateTag {
     for (let i = 0, l = strings.length; i < l; i++) {
       const str = strings[i];
 
-      let result, isAttribute, isNode, subStrIndex, subEndIndex;
+      let result;
+      let subStrIndex;
+      let subEndIndex;
 
       const pushToTagAttr = () => {
         const subStr = str.substring(subStrIndex || 0, subEndIndex || str.length);
@@ -71,7 +87,7 @@ export default class TemplateTag {
         tagAttrs.push.apply(tagAttrs, extractAttributeName(subStr));
       };
 
-      while ((result = TAG_QUOTE_REGEX.exec(str)) !== null) {
+      while ((result = TAG_QUOTE_REGEX.exec(str))) {
         /**
          * Once we find < we assume tag is started and we will keep the tagStarted until we find >.
          * On tag start we reset the tag attributes
@@ -112,26 +128,19 @@ export default class TemplateTag {
         pushToTagAttr();
       }
 
-      /**
-       * If tag is started the next expression part will be an attribute spread value
-       *  Otherwise it will be a node expression.
-       */
-      if (tagStarted) {
-        isAttribute = true;
-      } else {
-        isNode = true;
-      }
-
       /*
-      * Push expression/value metadata to partsMeta,
-      * as the expressions value length will be str.length - 1 add check for that.
-      */
+       * Push expression/value metadata to partsMeta,
+       * as the expressions value length will be str.length - 1 add check for that.
+       */
       if (i < l - 1) {
         partsMeta.push({
           tagAttrs,
           attrIndex: tagAttrs.length,
-          isAttribute,
-          isNode,
+          /**
+           * If tag is started the next expression part will be an attribute spread value
+           *  Otherwise it will be a node expression.
+           */
+          isAttribute: tagStarted,
         });
       }
     }
@@ -139,7 +148,7 @@ export default class TemplateTag {
     return partsMeta;
   }
 
-  createTemplate (isSvgPart) {
+  createTemplate(isSvgPart: boolean) {
     const { partsMeta, strings } = this;
     const template = document.createElement('template');
 
@@ -148,12 +157,12 @@ export default class TemplateTag {
     for (let i = 0, l = strings.length - 1; i < l; i++) {
       const str = strings[i];
       const part = partsMeta[i];
-      const { isNode } = part;
+      const { isAttribute } = part;
 
-      if (isNode) {
-        htmlStr = htmlStr + str + nodeMarker;
-      } else {
+      if (isAttribute) {
         htmlStr = htmlStr + str + attrMarker;
+      } else {
+        htmlStr = htmlStr + str + nodeMarker;
       }
     }
 
@@ -171,7 +180,16 @@ export default class TemplateTag {
      * Once added to template unwrap the element from svg wrap
      */
     if (isSvgPart) {
-      unwrap(template.content.firstChild);
+      const { content } = template;
+
+      // $FlowFixMe: In this case there will always have a wrap.
+      const svgWrap: SVGElement = content.firstChild;
+
+      // move all children out of the element
+      while (svgWrap.firstChild) content.insertBefore(svgWrap.firstChild, svgWrap);
+
+      // remove the empty element
+      content.removeChild(svgWrap);
     }
 
     const templateKey = isSvgPart ? 'svgTemplate' : 'template';

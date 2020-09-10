@@ -1,3 +1,4 @@
+// @flow
 import { TAG_ELEMENT_NODE, ATTRIBUTE_NODE } from './brahmosNode';
 import { createAndLink, cloneChildrenFibers, markPendingEffect } from './fiber';
 import getTagNode from './TagNode';
@@ -5,13 +6,15 @@ import TemplateNode from './TemplateNode';
 import { loopEntries } from './utils';
 import { RESERVED_ATTRIBUTES, MODIFIED_ATTRIBUTES, EFFECT_TYPE_OTHER } from './configs';
 
-export function isAttrOverridden(tagAttrs, attrName, attrIndex) {
+import type { Fiber, AttributePart } from './flow.types';
+
+function isAttrOverridden(tagAttrs, attrName, attrIndex) {
   const lastIndex = tagAttrs.lastIndexOf(attrName);
   // if attrIndex is before the last attribute with same name it means its overridden
   return attrIndex <= lastIndex;
 }
 
-export function attributeNode(attributes, ref) {
+function attributeNode(attributes, ref) {
   return {
     nodeType: ATTRIBUTE_NODE,
     attributes,
@@ -19,7 +22,7 @@ export function attributeNode(attributes, ref) {
   };
 }
 
-export function partsToFiber(parts, values, parentFiber) {
+function partsToFiber(parts, values, parentFiber) {
   let refFiber = parentFiber;
   let oldChildFiber = parentFiber.child;
 
@@ -27,11 +30,9 @@ export function partsToFiber(parts, values, parentFiber) {
     let part = parts[i];
     const value = values[i];
 
-    const { isAttribute, isNode } = part;
-
     let node;
 
-    if (isAttribute) {
+    if (part.isAttribute) {
       const { domNode } = part;
 
       // mix all the consecutive attributes if they belong to same domNode
@@ -39,11 +40,12 @@ export function partsToFiber(parts, values, parentFiber) {
       let refValue;
       while (part && domNode === part.domNode) {
         loopEntries(values[i], (attrName, attrValue) => {
+          const attributePart = ((part: any): AttributePart);
           const overrideAttrNameCheck = MODIFIED_ATTRIBUTES[attrName];
           const isOverridden = isAttrOverridden(
-            part.tagAttrs,
+            attributePart.tagAttrs,
             overrideAttrNameCheck,
-            part.attrIndex,
+            attributePart.attrIndex,
           );
           if (!isOverridden && !RESERVED_ATTRIBUTES[attrName]) {
             dynamicAttributes[attrName] = attrValue;
@@ -61,9 +63,8 @@ export function partsToFiber(parts, values, parentFiber) {
 
       node = attributeNode(dynamicAttributes, refValue);
 
-      // TODO: Put updateNodeAttributes as an effect
-      // updateNodeAttributes(domNode, dynamicAttributes, oldDynamicAttributes, isSvgPart);
-    } else if (isNode) {
+      // $FlowFixMe: Not sure why flow is not able to infer this
+    } else if (part.isNode) {
       node = value;
     }
 
@@ -81,7 +82,7 @@ export function partsToFiber(parts, values, parentFiber) {
 /**
  * Update tagged template node
  */
-export default function processTagFiber(fiber) {
+export default function processTagFiber(fiber: Fiber): void {
   const { node } = fiber;
   const {
     part,
@@ -121,6 +122,7 @@ export default function processTagFiber(fiber) {
    * This can happen if the parent node is fragment, or it is the first or last item
    */
   if (!isTagElement) {
+    // $FlowFixMe: We only patchParts in TemplateNode
     nodeInstance.patchParts(part);
   }
 

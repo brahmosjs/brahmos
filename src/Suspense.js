@@ -1,22 +1,43 @@
+// @flow
 import { createElement, Component } from './circularDep';
 
 import { forwardRef } from './refs';
 import { getPromiseSuspendedValue, timestamp, resolvedPromise, isMounted } from './utils';
 import {
-  TRANSITION_STATE_SUSPENDED,
-  TRANSITION_STATE_TIMED_OUT,
-  TRANSITION_STATE_RESOLVED,
   PREDEFINED_TRANSITION_DEFERRED,
   getTransitionFromFiber,
   isTransitionCompleted,
-  TRANSITION_STATE_START,
 } from './transitionUtils';
 import { withTransition, deferredUpdates } from './updateUtils';
 import reRender from './reRender';
-import { BRAHMOS_DATA_KEY, UPDATE_TYPE_DEFERRED, SUSPENSE_REVEAL_INTERVAL } from './configs';
+import {
+  BRAHMOS_DATA_KEY,
+  UPDATE_TYPE_DEFERRED,
+  SUSPENSE_REVEAL_INTERVAL,
+  TRANSITION_STATE_SUSPENDED,
+  TRANSITION_STATE_TIMED_OUT,
+  TRANSITION_STATE_RESOLVED,
+  TRANSITION_STATE_START,
+} from './configs';
 import { getCurrentComponentFiber, getFiberFromComponent, setUpdateTime } from './fiber';
 
-export function getClosestSuspenseFiber(fiber, includeSuspenseList) {
+import type {
+  Fiber,
+  Transition,
+  AnyTransition,
+  SuspenseProps,
+  SuspenseListProps,
+  SuspenseInstance,
+  SuspenseListInstance,
+  ClassComponent,
+  FunctionalComponent,
+} from './flow.types';
+
+type LazyComponentModule = {
+  default: ClassComponent | FunctionalComponent,
+};
+
+export function getClosestSuspenseFiber(fiber: Fiber, includeSuspenseList: boolean): ?Fiber {
   const { root } = fiber;
   let { nodeInstance } = fiber;
   while (
@@ -36,7 +57,7 @@ export function getClosestSuspenseFiber(fiber, includeSuspenseList) {
   return fiber;
 }
 
-export function resetSiblingFibers(fiber) {
+export function resetSiblingFibers(fiber: Fiber): Fiber {
   const parentSuspenseFiber = getClosestSuspenseFiber(fiber.parent, true);
   const isSuspenseList =
     parentSuspenseFiber && parentSuspenseFiber.nodeInstance instanceof SuspenseList;
@@ -44,8 +65,11 @@ export function resetSiblingFibers(fiber) {
   // if parent is not a suspense list we don't have to do anything
   if (!isSuspenseList) return fiber;
 
+  // $FlowFixMe: This will not come here if parentSuspenseFiber is not present.
   const { nodeInstance: component } = parentSuspenseFiber;
-  const { childManagers } = component.suspenseManagers[getTransitionFromFiber(fiber).transitionId];
+  const { childManagers } = component.suspenseManagers[
+    getTransitionFromFiber(fiber, null).transitionId
+  ];
   const { revealOrder } = component.props;
 
   /**
@@ -65,16 +89,16 @@ export function resetSiblingFibers(fiber) {
   return fiber;
 }
 
-export function getClosestSuspenseListManager(manager) {
+function getClosestSuspenseListManager(manager) {
   const { parentSuspenseManager } = manager;
   return parentSuspenseManager && parentSuspenseManager.isSuspenseList
     ? parentSuspenseManager
     : null;
 }
 
-function getSuspenseManager(fiber, transition) {
+// eslint-disable-next-line no-use-before-define
+function getSuspenseManager(fiber: Fiber, transition: AnyTransition): SuspenseManager {
   const { nodeInstance: component } = fiber;
-  if (!component) return null;
 
   const { suspenseManagers } = component;
 
@@ -93,7 +117,7 @@ function getSuspenseManager(fiber, transition) {
   return suspenseManager;
 }
 
-function markComponentDirty(component) {
+function markComponentDirty(component: SuspenseInstance | SuspenseListInstance) {
   component[BRAHMOS_DATA_KEY].isDirty = true;
 }
 
@@ -106,6 +130,24 @@ function markManagerDirty(manager) {
 }
 
 class SuspenseManager {
+  fiber: Fiber;
+
+  component: SuspenseInstance | SuspenseListInstance;
+
+  transition: AnyTransition;
+
+  childManagers: Array<SuspenseManager>;
+
+  suspender: ?Promise<any>;
+
+  isSuspenseList: boolean;
+
+  parentSuspenseManager: ?SuspenseManager;
+
+  rootSuspenseManager: SuspenseManager;
+
+  handleSuspense: () => Promise<any>;
+
   constructor(fiber, transition) {
     const { nodeInstance } = fiber;
     this.fiber = fiber; // this is just for reference for suspense which gets resolved before committed
@@ -118,7 +160,6 @@ class SuspenseManager {
     const parentSuspenseFiber = getClosestSuspenseFiber(fiber.parent, true);
     this.parentSuspenseManager =
       parentSuspenseFiber && getSuspenseManager(parentSuspenseFiber, transition);
-    this.rootSuspenseManager = null;
     this.recordChildSuspense();
 
     // bind handleSuspense
@@ -177,6 +218,9 @@ class SuspenseManager {
     if (!suspenseListManager) return true;
 
     const { component: suspenseList, childManagers: siblingManagers } = suspenseListManager;
+
+    // get the parent of suspenseListManger
+    // $FlowFixMe: It comes here only for suspense list, so can be ignored
     const { tail } = suspenseList.props;
 
     // get the parent of suspenseListManger
@@ -225,6 +269,7 @@ class SuspenseManager {
      */
     const {
       component: {
+        // $FlowFixMe: It comes here only for suspense list, so can be ignored
         props: { revealOrder },
       },
       childManagers,
@@ -285,6 +330,7 @@ class SuspenseManager {
      * have any unresolved sibling
      */
     if (!transitionTimedOut && !transitionHasUnresolvedSuspense) {
+      // $FlowFixMe: We have check for not timed out, so error can be ignored
       transition.transitionState = TRANSITION_STATE_RESOLVED;
     }
     /**
@@ -299,6 +345,7 @@ class SuspenseManager {
        * In which case there must be some parent which has pending update.
        * So we just need to restart deferred workLoop, which we can do by rerendering from wip fiber.
        */
+      // $FlowFixMe: wip node will always be present after first render
       if (!getFiberFromComponent(component)) targetComponent = this.fiber.root.wip.nodeInstance;
 
       reRender(targetComponent);
@@ -329,6 +376,7 @@ class SuspenseManager {
 
   handleSuspenseList() {
     const { component, childManagers } = this;
+    // $FlowFixMe: It comes here only for suspense list, so can be ignored
     const { revealOrder = 'together', tail } = component.props;
 
     // resolve the child managers based on reveal order
@@ -379,7 +427,7 @@ class SuspenseManager {
   }
 }
 
-function getActiveTransition(component) {
+function getActiveTransition(component: SuspenseList): AnyTransition {
   const fiber = getCurrentComponentFiber();
   let transition = getTransitionFromFiber(fiber, PREDEFINED_TRANSITION_DEFERRED);
 
@@ -399,7 +447,7 @@ function getActiveTransition(component) {
 }
 
 export class SuspenseList extends Component {
-  constructor(props) {
+  constructor(props: SuspenseListProps) {
     super(props);
     this.suspenseManagers = {};
   }
@@ -409,14 +457,19 @@ export class SuspenseList extends Component {
   }
 }
 
-export class Suspense extends Component {
-  constructor(props) {
+export class Suspense extends Component implements SuspenseInstance {
+  constructor(props: SuspenseProps) {
     super(props);
+
     this.suspenseManagers = {};
   }
 
-  handleSuspender(suspender, suspenseFiber) {
-    const transition = getActiveTransition(this);
+  handleSuspender(suspender: Promise<any>, suspenseFiber: Fiber) {
+    /**
+     * $FlowFixMe: We only care about custom transition in this function
+     * For predefined transition we don't wait, and we don't have to mark them pending
+     */
+    const transition: Transition = getActiveTransition(this);
 
     const suspenseManager = getSuspenseManager(suspenseFiber, transition);
 
@@ -453,12 +506,13 @@ export class Suspense extends Component {
   }
 }
 
-export const lazy = (lazyCallback) => {
+export const lazy = (lazyCallback: () => Promise<LazyComponentModule>) => {
   let componentSuspender;
 
-  const LazyComponent = forwardRef((props, ref) => {
+  const LazyComponent: FunctionalComponent = forwardRef((props, ref) => {
     const ComponentModule = componentSuspender.read();
 
+    // $FlowFixMe: lazy
     return createElement(ComponentModule.default, { ...props, ref: ref }, props.children);
   });
 

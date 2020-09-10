@@ -1,3 +1,4 @@
+// @flow
 import {
   isTagNode,
   isComponentNode,
@@ -12,6 +13,7 @@ import { runEffects, cleanEffects } from './hooks';
 
 import updateNodeAttributes from './updateAttribute';
 import {
+  EFFECT_TYPE_NONE,
   BRAHMOS_DATA_KEY,
   UPDATE_TYPE_DEFERRED,
   LAST_ARRAY_DOM_KEY,
@@ -21,11 +23,24 @@ import {
 import { getUpdateTimeKey, getLastCompleteTimeKey } from './fiber';
 import { setRef } from './refs';
 
+import type {
+  HostFiber,
+  Fiber,
+  NodePart,
+  ArrayPart,
+  TemplateNodeType,
+  ExtendedElement,
+} from './flow.types';
+
 /**
  * Updater to handle text node
  */
-function updateTextNode(fiber) {
-  const { part, node, alternate } = fiber;
+function updateTextNode(fiber: Fiber): void {
+  const { node, alternate } = fiber;
+
+  // $FlowFixMe: We come to this method only as node part/array part so we don't need to handle Attribute part
+  const part: ArrayPart | NodePart = fiber.part;
+
   const { parentNode, previousSibling } = part;
   /**
    * Get the next sibling before which we need to append the text node.
@@ -36,7 +51,7 @@ function updateTextNode(fiber) {
    * The nextSibling will point to text node if the tag fiber is already rendered
    * In which case we just have to update the node value of the nextSibling
    */
-  if (alternate) {
+  if (alternate && nextSibling) {
     // if we have text node just update the text node
     nextSibling.nodeValue = node;
   } else {
@@ -45,18 +60,18 @@ function updateTextNode(fiber) {
   }
 }
 
-function getTagChild(fiber) {
-  while (fiber.node && !isTagNode(fiber.node)) fiber = fiber.child;
+function getTagChild(fiber: Fiber): Fiber {
+  while (fiber.child && fiber.node && !isTagNode(fiber.node)) fiber = fiber.child;
 
   return fiber;
 }
 
-function setLastItemInParentDOM(parentNode, nodeInstance) {
+function setLastItemInParentDOM(parentNode: ExtendedElement, nodeInstance: TemplateNodeType): void {
   const { domNodes } = nodeInstance;
   parentNode[LAST_ARRAY_DOM_KEY] = domNodes[domNodes.length - 1];
 }
 
-function getCorrectPreviousSibling(part) {
+function getCorrectPreviousSibling(part: NodePart | ArrayPart): ?Node {
   let { previousSibling } = part;
   if (part.isArrayNode) {
     previousSibling = part.nodeIndex === 0 ? previousSibling : part.parentNode[LAST_ARRAY_DOM_KEY];
@@ -65,15 +80,16 @@ function getCorrectPreviousSibling(part) {
   return previousSibling;
 }
 
-function reArrangeExistingNode(fiber, alternate) {
-  const { part } = fiber;
+function reArrangeExistingNode(fiber: Fiber, alternate: Fiber): void {
+  // $FlowFixMe: We only handle ArrayPart in this function so can ignore other types
+  const { part }: { part: ArrayPart } = fiber;
 
   if (!part.isArrayNode) return;
 
   const { nodeIndex, parentNode } = part;
-  const {
-    part: { nodeIndex: oldNodeIndex },
-  } = alternate;
+
+  // $FlowFixMe: We only handle ArrayPart in this function so can ignore other types
+  const oldNodeIndex = alternate.part.nodeIndex;
 
   const tagChild = getTagChild(fiber);
   const { nodeInstance } = tagChild;
@@ -104,8 +120,11 @@ function reArrangeExistingNode(fiber, alternate) {
   setLastItemInParentDOM(parentNode, nodeInstance);
 }
 
-function updateTagNode(fiber) {
-  const { part, nodeInstance, alternate } = fiber;
+function updateTagNode(fiber: Fiber) {
+  const { nodeInstance, alternate } = fiber;
+
+  // $FlowFixMe: TagNode will always be inside Array part of node part
+  const part: ArrayPart | NodePart = fiber.part;
   const { parentNode } = part;
 
   // if the alternate node is there rearrange the element if required, or else just add the new node
@@ -147,11 +166,11 @@ function handleComponentEffect(fiber) {
     ]);
   } else {
     // clean the existing effect
-    cleanEffects(fiber);
+    cleanEffects(fiber, false);
   }
 
   // remove all the pending updates associated with current transition
-  const { transitionId } = getTransitionFromFiber(fiber);
+  const { transitionId } = getTransitionFromFiber(fiber, null);
   const pendingUpdatesKey = getPendingUpdatesKey(updateType);
   brahmosData[pendingUpdatesKey] = brahmosData[pendingUpdatesKey].filter(
     (stateMeta) => stateMeta.transitionId !== transitionId,
@@ -224,7 +243,9 @@ function handleComponentPostCommitEffect(fiber) {
 }
 
 function handleAttributeEffect(fiber) {
-  const { part, node, alternate, isSvgPart } = fiber;
+  const { node, alternate, isSvgPart } = fiber;
+  // $FlowFixMe: attribute will always be inside attribute part
+  const part: AttributePart = fiber.part;
   const { domNode } = part;
   const { attributes, ref } = node;
   const oldAttributes = alternate && alternate.node.attributes;
@@ -235,7 +256,7 @@ function handleAttributeEffect(fiber) {
   if (ref) setRef(ref, domNode);
 }
 
-export function resetEffectProperties(root) {
+export function resetEffectProperties(root: HostFiber) {
   root.tearDownFibers = [];
   root.postCommitEffects = [];
   root.hasUncommittedEffect = false;
@@ -262,7 +283,7 @@ function resetAlternate(alternate) {
   alternate.sibling = null;
 }
 
-export function removeTransitionFromRoot(root) {
+export function removeTransitionFromRoot(root: HostFiber): void {
   const { currentTransition, pendingTransitions } = root;
   const currentTransitionIndex = pendingTransitions.indexOf(currentTransition);
   if (currentTransitionIndex !== -1) {
@@ -293,7 +314,7 @@ function handleFiberEffect(fiber) {
     }
 
     // reset the hasUncommittedEffect flag
-    fiber.hasUncommittedEffect = false;
+    fiber.hasUncommittedEffect = EFFECT_TYPE_NONE;
   }
 
   /**
@@ -309,7 +330,7 @@ function handleFiberEffect(fiber) {
 /**
  * Fix pointers on fibers, and return the fibers with effects
  */
-export function preCommitBookkeeping(root) {
+export function preCommitBookkeeping(root: HostFiber): Array<Fiber> {
   const { updateType, wip, current } = root;
   const updateTimeKey = getUpdateTimeKey(updateType);
   const lastCompleteTime = root[getLastCompleteTimeKey(updateType)];
@@ -363,7 +384,7 @@ export function preCommitBookkeeping(root) {
   return fibersWithEffect;
 }
 
-export default function effectLoop(root, fibersWithEffect) {
+export default function effectLoop(root: HostFiber, fibersWithEffect: Array<Fiber>): void {
   // loop on new fibers hand call if effect needs to be called
   for (let i = 0, ln = fibersWithEffect.length; i < ln; i++) {
     handleFiberEffect(fibersWithEffect[i]);
@@ -382,7 +403,6 @@ export default function effectLoop(root, fibersWithEffect) {
   // once all effect has been processed update root's last effect node and postCommitEffects
   resetEffectProperties(root);
 
-  // clear the requestIdleHandle abd force update node from root only after the effect
-  root.requestIdleHandle = null;
+  // clear the force update node from root only after the effect
   root.forcedUpdateWith = null;
 }

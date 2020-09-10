@@ -1,12 +1,16 @@
+// @flow
 import { getNextChildFiber, createAndLink, markToTearDown, markPendingEffect } from './fiber';
 import { getKey } from './brahmosNode';
 import { EFFECT_TYPE_PLACEMENT, EFFECT_TYPE_OTHER } from './configs';
 
+import type { Fiber } from './flow.types';
+
 // handle array nodes
-export default function processArrayFiber(fiber) {
+export default function processArrayFiber(fiber: Fiber): void {
   const { node: nodes, part } = fiber;
   let refFiber = fiber;
 
+  // $FlowFixMe: part will always be node part on array fiber
   const { parentNode, previousSibling } = part;
 
   const childKeyMap = new Map();
@@ -43,6 +47,7 @@ export default function processArrayFiber(fiber) {
     // create fiber if required and link it
     refFiber = createAndLink(
       node,
+      // $FlowFixMe: property a is added for some weird chrome de-optimizaion issue
       {
         parentNode,
         previousSibling,
@@ -70,6 +75,7 @@ export default function processArrayFiber(fiber) {
      * if current fiber nodeIndex is different than new index,or if it is a new fiber without any alternate
      * mark fiber and its previous fiber to have uncommitted placement effect
      */
+    // $FlowFixMe: we only have to check for array part here
     if (currentFiber && currentFiber.part.nodeIndex !== index) {
       markPendingEffect(refFiber, EFFECT_TYPE_PLACEMENT);
 

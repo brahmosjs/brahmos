@@ -1,3 +1,4 @@
+// @flow
 import {
   cloneChildrenFibers,
   createAndLink,
@@ -10,7 +11,6 @@ import functionalComponentInstance from './functionalComponentInstance';
 import { CLASS_COMPONENT_NODE, isComponentNode } from './brahmosNode';
 import { getClosestSuspenseFiber, resetSiblingFibers } from './circularDep';
 
-import { cleanEffects } from './hooks';
 import { callLifeCycle, getComponentName, BrahmosRootComponent } from './utils';
 import { getPendingUpdates } from './updateUtils';
 
@@ -18,7 +18,17 @@ import shallowEqual from './helpers/shallowEqual';
 import { BRAHMOS_DATA_KEY, EFFECT_TYPE_OTHER, UPDATE_TYPE_DEFERRED } from './configs';
 import { Component } from './Component';
 
-export function getErrorBoundaryFiber(fiber) {
+import type {
+  Fiber,
+  ErrorInfo,
+  AllContext,
+  ClassComponentBrahmosData,
+  ComponentBrahmosData,
+  ComponentClassInstance,
+  ClassComponentUpdate,
+} from './flow.types';
+
+export function getErrorBoundaryFiber(fiber: Fiber): ?Fiber {
   const { root } = fiber;
 
   while (
@@ -34,7 +44,7 @@ export function getErrorBoundaryFiber(fiber) {
   return fiber;
 }
 
-export function getErrorInfo(fiber) {
+export function getErrorInfo(fiber: Fiber): ErrorInfo {
   let error = '';
   while (fiber) {
     const { node } = fiber;
@@ -49,7 +59,7 @@ export function getErrorInfo(fiber) {
   };
 }
 
-function getCurrentContext(fiber) {
+function getCurrentContext(fiber: Fiber): AllContext {
   const {
     node: { type: Component },
     nodeInstance,
@@ -90,7 +100,7 @@ function resetLoopToComponentsFiber(fiber) {
   root.retryFiber = fiber;
 }
 
-export default function processComponentFiber(fiber) {
+export default function processComponentFiber(fiber: Fiber): void {
   const { node, part, root, childFiberError } = fiber;
   const { type: Component, nodeType, props = {} } = node;
   const { currentTransition } = root;
@@ -119,7 +129,8 @@ export default function processComponentFiber(fiber) {
     isFirstRender = true;
   }
 
-  const brahmosData = nodeInstance[BRAHMOS_DATA_KEY];
+  //
+  const brahmosData: ComponentBrahmosData = nodeInstance[BRAHMOS_DATA_KEY];
 
   // get current context
   const context = getCurrentContext(fiber);
@@ -133,16 +144,18 @@ export default function processComponentFiber(fiber) {
    * and call all the life cycle method which comes before rendering.
    */
   if (isClassComponent) {
-    const { committedValues, memoizedValues } = brahmosData;
+    const componentClassInstance = ((nodeInstance: any): ComponentClassInstance);
+    const classBrahmosData = ((brahmosData: any): ClassComponentBrahmosData);
+    const { committedValues, memoizedValues } = classBrahmosData;
 
     // if it is first render we should store the initial state on committedValues
-    if (isFirstRender) committedValues.state = nodeInstance.state;
+    if (isFirstRender) committedValues.state = componentClassInstance.state;
 
     let { props: prevProps, state: prevState } = committedValues;
 
     if (
       memoizedValues &&
-      isDeferredUpdate &&
+      currentTransition &&
       currentTransition.transitionId === memoizedValues.transitionId
     ) {
       ({ props: prevProps, state: prevState } = memoizedValues);
@@ -156,15 +169,15 @@ export default function processComponentFiber(fiber) {
      * For sync render it should point to previous committed value, and for
      * deferred render it should point to memoized values
      */
-    nodeInstance.props = prevProps;
-    nodeInstance.state = prevState;
+    componentClassInstance.props = prevProps;
+    componentClassInstance.state = prevState;
 
-    const { shouldComponentUpdate } = nodeInstance;
+    const { shouldComponentUpdate } = componentClassInstance;
 
     let state = prevState;
 
     // apply the pending updates in state if
-    const pendingUpdates = getPendingUpdates(fiber);
+    const pendingUpdates = ((getPendingUpdates(fiber): any): Array<ClassComponentUpdate>);
     if (pendingUpdates.length) state = getUpdatedState(prevState, pendingUpdates);
 
     const checkShouldUpdate = !isFirstRender && root.forcedUpdateWith !== nodeInstance;
@@ -176,9 +189,10 @@ export default function processComponentFiber(fiber) {
       ? callLifeCycle(Component, 'getDerivedStateFromError', [childFiberError.error])
       : undefined;
 
-    if (derivedState || derivedErrorState)
+    if (derivedState || derivedErrorState) {
+      // $FlowFixMe
       state = { ...state, ...derivedState, ...derivedErrorState };
-
+    }
     // call callbacks of setState with new state
     pendingUpdates.forEach(({ callback }) => {
       if (callback) callback(state);
@@ -188,7 +202,7 @@ export default function processComponentFiber(fiber) {
      * do shallow check for props and states
      */
 
-    if (nodeInstance.isPureReactComponent && checkShouldUpdate) {
+    if (componentClassInstance.isPureReactComponent && checkShouldUpdate) {
       shouldUpdate = !shallowEqual(state, prevState) || !shallowEqual(props, prevProps);
     }
 
@@ -198,7 +212,7 @@ export default function processComponentFiber(fiber) {
      * Also we shouldn't call shouldComponentUpdate on first render
      */
     if (shouldComponentUpdate && shouldUpdate && checkShouldUpdate) {
-      shouldUpdate = shouldComponentUpdate.call(nodeInstance, props, state);
+      shouldUpdate = shouldComponentUpdate.call(componentClassInstance, props, state);
     }
 
     /**
@@ -212,18 +226,20 @@ export default function processComponentFiber(fiber) {
 
       // if it is a first render subscribe component for provider value change
       if (provider && isFirstRender) {
-        provider.sub(nodeInstance);
+        provider.sub(componentClassInstance);
       }
       nodeInstance.context = contextValue;
     }
 
     // set the new state, props, context and reset uncommitted state
-    nodeInstance.state = state;
-    nodeInstance.props = props;
+    componentClassInstance.state = state;
+
+    // $FlowFixMe: We are just setting the existing prop, so we can ignore the error
+    componentClassInstance.props = props;
 
     // store the state and props on memoized value as well
-    if (isDeferredUpdate) {
-      brahmosData.memoizedValues = {
+    if (currentTransition) {
+      classBrahmosData.memoizedValues = {
         state,
         props,
         transitionId: currentTransition.transitionId,
@@ -246,7 +262,8 @@ export default function processComponentFiber(fiber) {
 
       // if it class component reset the state and prop to committed value
       if (isClassComponent && isDeferredUpdate) {
-        Object.assign(nodeInstance, brahmosData.committedValues);
+        const { committedValues } = ((brahmosData: any): ClassComponentBrahmosData);
+        Object.assign(((nodeInstance: any): ComponentClassInstance), committedValues);
       }
 
       // once render is called reset the current component fiber
