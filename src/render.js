@@ -1,13 +1,18 @@
+// @flow
 import { createElement } from './circularDep';
 import { BrahmosRootComponent } from './utils';
 import { createFiber, createHostFiber, setUpdateTime } from './fiber';
 import { doSyncProcessing } from './workLoop';
 import { syncUpdates, getCurrentUpdateSource } from './updateUtils';
 
+import { UPDATE_TYPE_SYNC } from './configs';
+
+import type { ExtendedElement } from './flow.types';
+
 /**
  * Method to render a node
  */
-export default function render(node, target) {
+export default function render(node: any, target: ExtendedElement) {
   let { __rootFiber: rootFiber } = target;
 
   let fiber;
@@ -17,6 +22,7 @@ export default function render(node, target) {
 
     const part = {
       parentNode: target,
+      previousSibling: null,
       isNode: true,
     };
 
@@ -25,6 +31,7 @@ export default function render(node, target) {
     fiber = createFiber(rootFiber, rootNode, part);
 
     // make the rootFiber parent of fiber
+    // $FlowFixMe: rootFiber can only be parent in case of rootNode
     fiber.parent = rootFiber;
 
     // make the root fiber the wip fiber of rootFiber
@@ -40,7 +47,7 @@ export default function render(node, target) {
     fiber = rootFiber.current;
     fiber.node.props.children = node;
     fiber.processedTime = 0;
-    setUpdateTime(fiber);
+    setUpdateTime(fiber, UPDATE_TYPE_SYNC);
   }
 
   /**

@@ -1,14 +1,19 @@
+// @flow
 import { Component } from './circularDep';
 import { setUpdateTime, getFiberFromComponent } from './fiber';
 
+import type { Fiber, AnyComponentInstance, ContextType } from './flow.types';
+
+type ConsumerCallbackReturn = (value: any) => void;
+
 let ctxId = 1;
-export function getConsumerCallback(component) {
-  return function(value) {
+export function getConsumerCallback(component: AnyComponentInstance): ConsumerCallbackReturn {
+  return function(value: any): void {
     /**
      * just set the correct update time on subscribed component,
      * and then workloop will take care of updating them.
      */
-    const fiber = getFiberFromComponent(component);
+    const fiber: Fiber = getFiberFromComponent(component);
     const { updateType } = fiber.root;
 
     // update time only when context value has been changed
@@ -18,7 +23,7 @@ export function getConsumerCallback(component) {
   };
 }
 
-export default function createContext(defaultValue) {
+export default function createContext(defaultValue: any): ContextType {
   const id = `cC${ctxId++}`;
 
   class Provider extends Component {

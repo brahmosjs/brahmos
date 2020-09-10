@@ -1,3 +1,4 @@
+// @flow
 import { afterCurrentStack } from './utils';
 import {
   PREDEFINED_TRANSITION_SYNC,
@@ -14,6 +15,18 @@ import {
 } from './configs';
 import { getCurrentComponentFiber } from './fiber';
 
+import type {
+  AnyComponentInstance,
+  HostFiber,
+  Fiber,
+  UpdateSource,
+  AnyTransition,
+  UpdateType,
+  PendingUpdates,
+  ClassComponentUpdate,
+  FunctionalComponentUpdate,
+} from './flow.types';
+
 export const deferredMeta = {
   initialized: false,
   timeout: 0,
@@ -26,7 +39,7 @@ export function getDeferredMeta() {
   return { ...deferredMeta };
 }
 
-export function setUpdateSource(source) {
+export function setUpdateSource(source: UpdateSource) {
   updateSource = source;
 }
 
@@ -52,13 +65,13 @@ export function resetUpdateSource() {
 /**
  * Function to execute something in context of custom source
  */
-export function withUpdateSource(source, cb) {
+export function withUpdateSource(source: UpdateSource, cb: Function): void {
   updateSource = source;
   cb();
   resetUpdateSource();
 }
 
-export function withTransition(transition, cb) {
+export function withTransition(transition: AnyTransition, cb: Function): void {
   const prevTransition = currentTransition;
   currentTransition = transition;
   // set update source as a transition before calling callback
@@ -66,16 +79,16 @@ export function withTransition(transition, cb) {
   currentTransition = prevTransition;
 }
 
-export function shouldPreventSchedule(root) {
+export function shouldPreventSchedule(root: HostFiber): boolean {
   // it should prevent scheduling if immediate update is required
   return root.updateSource === UPDATE_SOURCE_IMMEDIATE_ACTION;
 }
 
-export function isDeferredUpdate() {
+export function isDeferredUpdate(): boolean {
   return updateSource === UPDATE_SOURCE_TRANSITION;
 }
 
-export function getUpdateType() {
+export function getUpdateType(): UpdateType {
   return isDeferredUpdate() ? UPDATE_TYPE_DEFERRED : UPDATE_TYPE_SYNC;
 }
 
@@ -83,20 +96,20 @@ export function getUpdateType() {
  * Get the pendingUpdates key in class component instance
  */
 
-export function getPendingUpdatesKey(updateType) {
+export function getPendingUpdatesKey(updateType: UpdateType) {
   return updateType === UPDATE_TYPE_DEFERRED ? 'pendingDeferredUpdates' : 'pendingSyncUpdates';
 }
 
 /**
  * Get pending states based on update type and current transition
  */
-export function getPendingUpdates(fiber) {
+export function getPendingUpdates(fiber: Fiber): PendingUpdates {
   const {
     root: { updateType },
     nodeInstance: component,
   } = fiber;
   const brahmosData = component[BRAHMOS_DATA_KEY];
-  const currentTransitionId = getTransitionFromFiber(fiber).transitionId;
+  const currentTransitionId = getTransitionFromFiber(fiber, null).transitionId;
   const pendingUpdatesKey = getPendingUpdatesKey(updateType);
 
   return brahmosData[pendingUpdatesKey].filter(
@@ -105,7 +118,7 @@ export function getPendingUpdates(fiber) {
 }
 
 // function to trigger deferred updates
-export function deferredUpdates(cb) {
+export function deferredUpdates(cb: Function): void {
   withTransition(PREDEFINED_TRANSITION_DEFERRED, cb);
 }
 
@@ -113,7 +126,7 @@ export function deferredUpdates(cb) {
  * function to trigger sync updates which doesn't schedule
  * And rendered and committed synchronously
  */
-export function syncUpdates(cb) {
+export function syncUpdates(cb: Function): void {
   withUpdateSource(UPDATE_SOURCE_IMMEDIATE_ACTION, cb);
 }
 
@@ -132,7 +145,10 @@ function getComponentFiberInWorkingTree(fiber, nodeInstance) {
  * get guarded update meta details. Through error if setState is called
  * too many times
  */
-export function guardedSetState(componentInstance, getStateMeta) {
+export function guardedSetState(
+  componentInstance: AnyComponentInstance,
+  getStateMeta: (transitionId: string) => ClassComponentUpdate | FunctionalComponentUpdate,
+): boolean {
   let updateType, currentTransition;
   let shouldRerender = true;
   const brahmosData = componentInstance[BRAHMOS_DATA_KEY];

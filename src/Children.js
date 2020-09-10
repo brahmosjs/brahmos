@@ -1,17 +1,20 @@
+// @flow
 import { isTagElementNode, isComponentNode, isTagNode } from './brahmosNode';
 import { isNil } from './utils';
+import type { BrahmosNode, ArrayCallback, ObjectLiteral } from './flow.types';
 
-function isPlaceholderTagNode(children) {
+function isPlaceholderTagNode(children: BrahmosNode): boolean {
   /**
    * if the template string for a tag node does not have any thing,
    * it means the tag node is just used to wrap children.
    * Note: We always wrap the children except when children is already an array
    * or there is single child. We do this to make the all the children positional
    * */
+  // $FlowFixMe: We are checking for tag node so template key will be present
   return isTagNode(children) && !children.template.strings.some(Boolean);
 }
 
-function getChildrenArray(children) {
+function getChildrenArray(children: any): ?Array<any> {
   if (isNil(children)) return undefined;
   else if (typeof children === 'boolean') return [];
 
@@ -25,7 +28,7 @@ function getChildrenArray(children) {
   return children;
 }
 
-function map(children, cb) {
+function map(children: any, cb: ArrayCallback): ?Array<any> {
   const _children = getChildrenArray(children);
   if (!_children) return children;
   const newChildren = _children.map(cb);
@@ -41,7 +44,7 @@ function map(children, cb) {
   return newChildren;
 }
 
-function toArray(children) {
+function toArray(children: any): Array<any> {
   const _children = getChildrenArray(children) || [];
 
   return _children.map((child, index) => {
@@ -49,19 +52,19 @@ function toArray(children) {
      * As we have converted children to a flat array node
      * assign key to each elements if it isn't already present
      */
-    if (child.key === undefined) {
+    if (child && child.key === undefined) {
       child.key = index;
     }
     return child;
   });
 }
 
-function forEach(children, cb) {
+function forEach(children: any, cb: ArrayCallback): void {
   const _children = getChildrenArray(children) || [];
   _children.forEach(cb);
 }
 
-function only(children) {
+function only(children: any) {
   const _children = getChildrenArray(children);
   return _children && children.length === 1;
 }
@@ -73,11 +76,11 @@ export const Children = {
   only,
 };
 
-export function isValidElement(node) {
+export function isValidElement(node: any) {
   return node && (isComponentNode(node) || isTagElementNode(node));
 }
 
-export function cloneElement(node, props, children) {
+export function cloneElement(node: any, props: ObjectLiteral, children: any): ?BrahmosNode {
   if (node) {
     if (isTagElementNode(node)) {
       const newProps = { ...node.values[0], ...props };

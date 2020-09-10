@@ -5,6 +5,7 @@ import license from 'rollup-plugin-license';
 import replace from 'rollup-plugin-replace';
 import resolve from 'rollup-plugin-node-resolve';
 import buble from 'rollup-plugin-buble';
+import flow from 'rollup-plugin-flow';
 import PACKAGE from './package.json';
 
 const fullYear = new Date().getFullYear();
@@ -30,6 +31,7 @@ const defaultConfig = {
     },
   ],
   plugins: [
+    flow(),
     buble({
       objectAssign: true,
     }),

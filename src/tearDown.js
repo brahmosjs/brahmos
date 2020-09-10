@@ -1,3 +1,4 @@
+// @flow
 import { callLifeCycle, remove, getNextSibling, isMounted } from './utils';
 
 import {
@@ -11,6 +12,8 @@ import {
 import { setRef } from './refs';
 
 import { cleanEffects } from './hooks';
+
+import type { HostFiber } from './flow.types';
 
 function tearDownChild(child, part, _isTagNode, removeDOM) {
   /**
@@ -59,7 +62,7 @@ function tearDownFiber(fiber, removeDOM) {
   // if it is primitive node we need to delete the text node associated with it
   if (isPrimitiveNode(node) && removeDOM) {
     const textNode = getNextSibling(part.parentNode, part.previousSibling);
-    remove(textNode);
+    if (textNode) remove(textNode);
     return;
   }
 
@@ -102,7 +105,7 @@ function tearDownFiber(fiber, removeDOM) {
   }
 }
 
-export default function(root) {
+export default function(root: HostFiber): void {
   const { tearDownFibers } = root;
 
   tearDownFibers.forEach((fiber) => {

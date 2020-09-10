@@ -5,9 +5,10 @@
   },
   "parser": "babel-eslint",
   "extends": ["standard", "prettier"],
-  "plugins": ["jest"],
+  "plugins": ["flowtype", "jest"],
   "rules": {
     "comma-dangle": ["error", "always-multiline"],
-    "semi": ["error", "always"]
+    "semi": ["error", "always"],
+    "flowtype/define-flow-type": 1
   }
 }

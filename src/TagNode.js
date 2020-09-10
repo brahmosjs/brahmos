@@ -1,4 +1,6 @@
+// @flow
 import { addDataContainer } from './utils';
+import type { BrahmosNode, TagNodeType, AttributePart, NodePart } from './flow.types';
 /**
  * Generate a similar structure as Template node from BrahmosTagElement,
  * so that it can be processed in a same way tagged template literals.
@@ -8,8 +10,8 @@ import { addDataContainer } from './utils';
  * And this parts will be pointing to two values [attributes, children];
  */
 
-export default function getTagNode (node, isSvgPart) {
-  const { element, values } = node;
+export default function getTagNode(node: BrahmosNode, isSvgPart: boolean): TagNodeType {
+  const { element } = node;
 
   const domElement = isSvgPart
     ? document.createElementNS('http://www.w3.org/2000/svg', element)
@@ -17,22 +19,22 @@ export default function getTagNode (node, isSvgPart) {
 
   addDataContainer(domElement);
 
-  const attributePart = {
+  const attributePart: AttributePart = {
     isAttribute: true,
     tagAttrs: [],
     attrIndex: 0,
     domNode: domElement,
   };
 
-  const nodePart = {
+  const nodePart: NodePart = {
+    previousSibling: null,
     parentNode: domElement,
     isNode: true,
   };
 
   return {
     fragment: domElement,
-    nodes: [domElement],
+    domNodes: [domElement],
     parts: [attributePart, nodePart],
-    values,
   };
 }

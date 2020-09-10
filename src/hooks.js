@@ -1,3 +1,5 @@
+// @flow
+
 import reRender from './reRender';
 import { getConsumerCallback } from './createContext';
 import { getUniqueId, timestamp } from './utils';
@@ -8,6 +10,9 @@ import {
   UPDATE_SOURCE_TRANSITION,
   BRAHMOS_DATA_KEY,
   UPDATE_SOURCE_IMMEDIATE_ACTION,
+  TRANSITION_STATE_INITIAL,
+  TRANSITION_STATE_START,
+  TRANSITION_STATE_TIMED_OUT,
 } from './configs';
 
 import {
@@ -19,12 +24,28 @@ import {
   guardedSetState,
 } from './updateUtils';
 
-import {
-  TRANSITION_STATE_INITIAL,
-  TRANSITION_STATE_START,
-  TRANSITION_STATE_TIMED_OUT,
-} from './transitionUtils';
 import { getFiberFromComponent, getCurrentComponentFiber } from './fiber';
+
+import type {
+  Fiber,
+  Transition,
+  ObjectRef,
+  StateCallback,
+  ContextType,
+  FunctionalComponentUpdate,
+} from './flow.types';
+
+type DeferredValueHookOptions = {
+  timeoutMs: number,
+};
+
+type TransitionOptions = {
+  timeoutMs: number,
+};
+
+type StateHookResult = [any, (state: any) => any];
+
+type UseTransitionResult = [(cb: Function) => void, boolean];
 
 function getCurrentComponent() {
   return getCurrentComponentFiber().nodeInstance;
@@ -125,8 +146,22 @@ function reRenderComponentIfRequired(component, state, lastState) {
  * and if not available create a new pane
  * We also pass a method to get value from the hook which is passed to the component
  * Plus a method to check if hook has to be updated
+ *
+ * H: Hook, R: Hook result
  */
-function getHook(createHook, shouldUpdate = (hook) => false, reduce = (hook) => hook) {
+function defaultShouldUpdate<H>(hook: H): boolean {
+  return false;
+}
+
+function defaultReduce<H, R>(hook: H): H | R {
+  return hook;
+}
+
+function getHook<+H, R>(
+  createHook: () => H,
+  shouldUpdate: (hook: H) => boolean,
+  reduce: (hook: H) => R,
+): R {
   const fiber = getCurrentComponentFiber();
   const { nodeInstance: component } = fiber;
   const { pointer } = component;
@@ -158,7 +193,7 @@ export function prepareHooksForRender() {
   }
 
   // call all the pending update before trying to render,
-  const pendingUpdates = getPendingUpdates(fiber);
+  const pendingUpdates = ((getPendingUpdates(fiber): any): Array<FunctionalComponentUpdate>);
   pendingUpdates.forEach((task) => task.updater());
 }
 
@@ -166,53 +201,60 @@ export function prepareHooksForRender() {
  * Base logic for state hooks
  */
 
-function useStateBase(initialState, getNewState) {
+function useStateBase(
+  initialState: any,
+  getNewState: (state: any, lastState: any) => any,
+): StateHookResult {
   const component = getCurrentComponent();
   const { pointer: hookIndex } = component;
-  return getHook(() => {
-    /**
-     * create a state hook
-     */
+  return getHook(
+    (): StateHookResult => {
+      /**
+       * create a state hook
+       */
 
-    if (typeof initialState === 'function') initialState = initialState();
+      if (typeof initialState === 'function') initialState = initialState();
 
-    const hook = [
-      initialState,
-      (param) => {
-        const updateType = getUpdateType();
+      const hook = [
+        initialState,
+        (param: any): void => {
+          const updateType = getUpdateType();
 
-        // get committed lastState, which will be up to date in sync hook list
-        const currentHook = getCurrentHook(UPDATE_TYPE_SYNC, hookIndex, component);
+          // get committed lastState, which will be up to date in sync hook list
+          const currentHook = getCurrentHook(UPDATE_TYPE_SYNC, hookIndex, component);
 
-        const lastState = currentHook[0];
-        const state = getNewState(param, lastState);
+          const lastState = currentHook[0];
+          const state = getNewState(param, lastState);
 
-        const shouldRerender = guardedSetState(component, (transitionId) => ({
-          transitionId,
-          updater() {
-            /**
-             * get the hook again inside, as the reference of currentHook might change
-             * if we clone sync hook to deferred hook
-             */
-            const stateHook = getCurrentHook(updateType, hookIndex, component);
+          const shouldRerender = guardedSetState(component, (transitionId) => ({
+            transitionId,
+            updater() {
+              /**
+               * get the hook again inside, as the reference of currentHook might change
+               * if we clone sync hook to deferred hook
+               */
+              const stateHook = getCurrentHook(updateType, hookIndex, component);
 
-            // call getNewState again as currentHook[0] might change if there are multiple setState
-            stateHook[0] = getNewState(param, currentHook[0]);
-          },
-        }));
+              // call getNewState again as currentHook[0] might change if there are multiple setState
+              stateHook[0] = getNewState(param, currentHook[0]);
+            },
+          }));
 
-        if (shouldRerender) reRenderComponentIfRequired(component, state, lastState);
-      },
-    ];
+          if (shouldRerender) reRenderComponentIfRequired(component, state, lastState);
+        },
+      ];
 
-    return hook;
-  });
+      return hook;
+    },
+    defaultShouldUpdate,
+    defaultReduce,
+  );
 }
 
 /**
  * Use state hook
  */
-export function useState(initialState) {
+export function useState(initialState: any): [any, StateCallback] {
   return useStateBase(initialState, (state, lastState) => {
     if (typeof state === 'function') state = state(lastState);
     return state;
@@ -222,21 +264,29 @@ export function useState(initialState) {
 /**
  * Use ref hook
  */
-export function useRef(initialValue) {
-  return getHook(() => {
-    /**
-     * create a ref hook
-     */
-    return {
-      current: initialValue,
-    };
-  });
+export function useRef(initialValue: any): ObjectRef {
+  return getHook(
+    (): ObjectRef => {
+      /**
+       * create a ref hook
+       */
+      return {
+        current: initialValue,
+      };
+    },
+    defaultShouldUpdate,
+    defaultReduce,
+  );
 }
 
 /**
  * Use reducer hook
  */
-export function useReducer(reducer, initialState, getInitialState) {
+export function useReducer(
+  reducer: (state: any, action: any) => any,
+  initialState: any,
+  getInitialState: (initialState: any) => any,
+): StateHookResult {
   /**
    * If getInitialState method is provided, use that to form correct initial state
    * Or else use passed initialState
@@ -253,7 +303,7 @@ export function useReducer(reducer, initialState, getInitialState) {
 /**
  * use memo hook
  */
-export function useMemo(create, dependencies) {
+export function useMemo(create: () => any, dependencies: Array<any>): any {
   const createHook = () => {
     return {
       value: create(),
@@ -271,7 +321,7 @@ export function useMemo(create, dependencies) {
 /**
  * Use callback hook
  */
-export function useCallback(callback, dependencies) {
+export function useCallback(callback: Function, dependencies: Array<any>): Function {
   return useMemo(() => callback, dependencies);
 }
 
@@ -308,7 +358,7 @@ function useEffectBase(effectHandler, dependencies) {
 /**
  * Use effect hook
  */
-export function useEffect(callback, dependencies) {
+export function useEffect(callback: () => ?Function, dependencies: Array<any>): void {
   useEffectBase((hook) => {
     /**
      * Run effect asynchronously after the paint cycle is finished
@@ -326,7 +376,7 @@ export function useEffect(callback, dependencies) {
   }, dependencies);
 }
 
-export function useLayoutEffect(callback, dependencies) {
+export function useLayoutEffect(callback: () => ?Function, dependencies: Array<any>): void {
   useEffectBase((hook) => {
     // run effect synchronously
     hook.cleanEffect = callback();
@@ -344,9 +394,14 @@ export function useDebugValue() {
 /**
  * Create context hook
  */
-export function useContext(Context) {
+export function useContext(Context: ContextType): any {
   const { nodeInstance: component, context } = getCurrentComponentFiber();
   const { id, defaultValue } = Context;
+
+  /**
+   * $FlowFixMe: Context will always be present in component fiber
+   * We have kept it optional for fiber as we don't want to create new object for each fiber
+   */
   const provider = context[id];
 
   const value = provider ? provider.props.value : defaultValue;
@@ -375,7 +430,7 @@ export function useContext(Context) {
 /**
  * Transition hook
  */
-export function useTransition({ timeoutMs }) {
+export function useTransition({ timeoutMs }: TransitionOptions): UseTransitionResult {
   const component = getCurrentComponent();
 
   return getHook(
@@ -384,7 +439,7 @@ export function useTransition({ timeoutMs }) {
        * create a transition hook
        */
 
-      const hook = {
+      const hook: Transition = {
         transitionId: getUniqueId(),
         tryCount: 0,
         isPending: false,
@@ -410,7 +465,7 @@ export function useTransition({ timeoutMs }) {
             withUpdateSource(updateSource, reRenderCb);
           }
         },
-        startTransition(cb) {
+        startTransition(cb: Function) {
           const initialUpdateSource = getCurrentUpdateSource();
           const { root } = getFiberFromComponent(component);
 
@@ -444,15 +499,18 @@ export function useTransition({ timeoutMs }) {
 
       return hook;
     },
-    undefined,
-    ({ startTransition, isPending }) => [startTransition, isPending],
+    defaultShouldUpdate,
+    ({ startTransition, isPending }: Transition): UseTransitionResult => [
+      startTransition,
+      isPending,
+    ],
   );
 }
 
 /**
  * A hook to have deferred value
  */
-export function useDeferredValue(value, { timeoutMs }) {
+export function useDeferredValue(value: any, { timeoutMs }: DeferredValueHookOptions): any {
   const [startTransition] = useTransition({ timeoutMs });
   const [deferredValue, setDeferredValue] = useState(value);
   const timeStampRef = useRef(0);
@@ -488,7 +546,7 @@ export function useDeferredValue(value, { timeoutMs }) {
 /**
  * Method to run all the effects of a component
  */
-export function runEffects(fiber) {
+export function runEffects(fiber: Fiber) {
   const hooks = getHooksListFromFiber(fiber);
 
   for (let i = 0, ln = hooks.length; i < ln; i++) {
@@ -502,7 +560,7 @@ export function runEffects(fiber) {
 /**
  * Method to run cleanup all the effects of a component
  */
-export function cleanEffects(fiber, unmount) {
+export function cleanEffects(fiber: Fiber, unmount: boolean): void {
   const hooks = getHooksListFromFiber(fiber);
 
   for (let i = 0, ln = hooks.length; i < ln; i++) {

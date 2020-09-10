@@ -1,8 +1,21 @@
+// @flow
 import { attrMarker, marker } from './TemplateTag';
 import { remove, toArray, createEmptyTextNode, addDataContainer } from './utils';
 
-export default class TemplateNode {
-  constructor(templateResult, isSvgPart) {
+import type { TemplateNodeType, TemplateTagType, Part, NodePart } from './flow.types';
+
+export default class TemplateNode implements TemplateNodeType {
+  templateResult: TemplateTagType;
+
+  fragment: Node;
+
+  parts: Array<Part>;
+
+  domNodes: Array<Node>;
+
+  patched: boolean;
+
+  constructor(templateResult: TemplateTagType, isSvgPart: boolean) {
     this.templateResult = templateResult;
 
     // create the template first time the element is used
@@ -20,17 +33,19 @@ export default class TemplateNode {
     this.patched = false;
   }
 
-  createNode(isSvgPart) {
+  createNode(isSvgPart: boolean): DocumentFragment {
     const { template, svgTemplate } = this.templateResult;
     const templateElement = isSvgPart ? svgTemplate : template;
+    // $FlowFixMe: createNode will be called only after create method call, so templateElement will always be present
     return document.importNode(templateElement.content, true);
   }
 
-  createWalker(node) {
+  createWalker(node: Node): TreeWalker<Node, HTMLElement | Comment> {
     /**
      * Only walk through elements and comment node,
      * as we add attribute markers on elements and node maker as comment
      */
+    // $FlowFixMe: Flow error doesn't make sense the node number is correct here
     return document.createTreeWalker(
       node,
       129, // NodeFilter.SHOW_ELEMENT + NodeFilter.COMMENT
@@ -39,11 +54,11 @@ export default class TemplateNode {
     );
   }
 
-  isBrahmosCommentNode(node) {
-    return node && node.nodeType === 8 && node.textContent === marker;
+  isBrahmosCommentNode(node: ?Node): boolean {
+    return !!node && node.nodeType === 8 && node.textContent === marker;
   }
 
-  getParts() {
+  getParts(): Array<Part> {
     const { fragment, templateResult, isBrahmosCommentNode } = this;
 
     const { partsMeta } = templateResult;
@@ -73,8 +88,10 @@ export default class TemplateNode {
        * tagAttr list. Same tag parts will shared same tagAttr list
        */
 
+      // $FlowFixMe: we are adding nodeType === 1 check so hasAttribute method will be available
       if (nodeType === 1 && current.hasAttribute(attrMarker)) {
         // remove the attribute to keep the html clean
+        // $FlowFixMe: we are adding nodeType === 1 check so removeAttribute method will be available
         current.removeAttribute(attrMarker);
         const { tagAttrs } = partMeta;
         while (
@@ -107,7 +124,7 @@ export default class TemplateNode {
         }
 
         parts.push({
-          ...partMeta, // Spread object is slow, but bublejs compiles it to Object.assign which is optimized
+          isNode: true,
           parentNode,
           previousSibling,
         });
@@ -120,17 +137,19 @@ export default class TemplateNode {
 
     remove(markerNodes);
 
+    // $FlowFixMe: parts are getting added properly based on condition, flow not able to understand nodeType
     return parts;
   }
 
-  patchParts(nodePart) {
+  patchParts(nodePart: NodePart) {
     const { parts } = this;
     const { parentNode, previousSibling } = nodePart;
 
     if (this.patched) return;
 
     for (let i = 0, ln = parts.length; i < ln; i++) {
-      const part = parts[i];
+      // $FlowFixMe: We only care of NodePart and isNode check will properly check for it
+      const part: NodePart = parts[i];
       if (part.isNode && part.parentNode instanceof DocumentFragment) {
         part.parentNode = parentNode;
         part.previousSibling = part.previousSibling || previousSibling;

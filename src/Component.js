@@ -1,12 +1,33 @@
+// @flow
 import reRender from './reRender';
 import { guardedSetState } from './updateUtils';
 import { BRAHMOS_DATA_KEY } from './configs';
 
-export class Component {
-  constructor(props) {
+import type {
+  ComponentInstance,
+  PureComponentInstance,
+  NewState,
+  StateCallback,
+  ObjectLiteral,
+} from './flow.types';
+
+export class Component implements ComponentInstance {
+  $key: any;
+
+  $value: any;
+
+  props: ObjectLiteral;
+
+  state: ?ObjectLiteral;
+
+  context: any;
+
+  constructor(props: ObjectLiteral) {
     this.props = props;
 
     this.state = undefined;
+    this.context = undefined;
+
     this[BRAHMOS_DATA_KEY] = {
       lastSnapshot: null,
       pendingSyncUpdates: [],
@@ -19,11 +40,9 @@ export class Component {
       isDirty: false,
       renderCount: 0,
     };
-
-    this.context = undefined;
   }
 
-  setState(newState, callback, type) {
+  setState(newState: NewState, callback: StateCallback) {
     const shouldRerender = guardedSetState(this, (transitionId) => ({
       state: newState,
       transitionId,
@@ -33,7 +52,7 @@ export class Component {
     if (shouldRerender) reRender(this);
   }
 
-  forceUpdate(callback) {
+  forceUpdate(callback: StateCallback) {
     const brahmosData = this[BRAHMOS_DATA_KEY];
 
     // if there is no fiber (when component is not mounted) we don't need to do anything
@@ -48,6 +67,8 @@ export class Component {
     if (callback) callback(this.state);
   }
 
+  render() {}
+
   __render() {
     // get the new rendered node
     const nodes = this.render();
@@ -58,12 +79,14 @@ export class Component {
   }
 }
 
-export function isClassComponent(element) {
+export function isClassComponent(element: Function) {
   return element.prototype instanceof Component;
 }
 
-export class PureComponent extends Component {
-  constructor(props) {
+export class PureComponent extends Component implements PureComponentInstance {
+  isPureReactComponent: boolean;
+
+  constructor(props: ObjectLiteral) {
     super(props);
     this.isPureReactComponent = true;
   }

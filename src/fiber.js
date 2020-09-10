@@ -1,26 +1,42 @@
+// @flow
+
 import { isComponentNode, isTagNode, isPrimitiveNode, ATTRIBUTE_NODE } from './brahmosNode';
 import { UPDATE_TYPE_DEFERRED, BRAHMOS_DATA_KEY, EFFECT_TYPE_NONE } from './configs';
 import { now, isNil } from './utils';
 
+import type {
+  Fiber,
+  HostFiber,
+  BrahmosNode,
+  Part,
+  UpdateType,
+  EffectType,
+  AnyComponentInstance,
+  ExtendedElement,
+} from './flow.types';
+
 let currentComponentFiber;
 
-export function setCurrentComponentFiber(fiber) {
+export function setCurrentComponentFiber(fiber: ?Fiber) {
   currentComponentFiber = fiber;
 }
 
-export function getCurrentComponentFiber() {
+export function getCurrentComponentFiber(): Fiber {
+  // $FlowFixMe: Get current component is always called during render, where it will be present
   return currentComponentFiber;
 }
 
-export function getLastCompleteTimeKey(type) {
+export function getLastCompleteTimeKey(
+  type: string,
+): 'lastDeferredCompleteTime' | 'lastCompleteTime' {
   return type === UPDATE_TYPE_DEFERRED ? 'lastDeferredCompleteTime' : 'lastCompleteTime';
 }
 
-export function getUpdateTimeKey(type) {
+export function getUpdateTimeKey(type: string): 'deferredUpdateTime' | 'updateTime' {
   return type === UPDATE_TYPE_DEFERRED ? 'deferredUpdateTime' : 'updateTime';
 }
 
-export function setUpdateTime(fiber, type) {
+export function setUpdateTime(fiber: Fiber, type: UpdateType) {
   const key = getUpdateTimeKey(type);
   const time = now();
 
@@ -42,12 +58,17 @@ function linkFiber(fiber, refFiber, parentFiber) {
 }
 
 // function to mark pending effects on the fiber and root
-export function markPendingEffect(fiber, effectType) {
+export function markPendingEffect(fiber: Fiber, effectType: EffectType) {
   fiber.hasUncommittedEffect = effectType;
   fiber.root.hasUncommittedEffect = true;
 }
 
-export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
+export function cloneCurrentFiber(
+  fiber: Fiber,
+  wipFiber: ?Fiber,
+  refFiber: Fiber,
+  parentFiber: Fiber,
+): Fiber {
   const { root, node, part, nodeInstance, child } = fiber;
   const updateTimeKey = getUpdateTimeKey(root.updateType);
 
@@ -95,11 +116,11 @@ export function cloneCurrentFiber(fiber, wipFiber, refFiber, parentFiber) {
   return wipFiber;
 }
 
-export function getNextChildFiber(refFiber, parentFiber) {
+export function getNextChildFiber(refFiber: Fiber, parentFiber: Fiber): ?Fiber {
   return refFiber === parentFiber ? refFiber.child : refFiber.sibling;
 }
 
-export function cloneChildrenFibers(fiber) {
+export function cloneChildrenFibers(fiber: Fiber): void {
   let { child, root } = fiber;
 
   /**
@@ -126,7 +147,7 @@ export function cloneChildrenFibers(fiber) {
   }
 }
 
-export function createHostFiber(domNode) {
+export function createHostFiber(domNode: ExtendedElement): HostFiber {
   let afterRenderCallbacks = [];
 
   return {
@@ -135,6 +156,7 @@ export function createHostFiber(domNode) {
     cancelSchedule: null,
     domNode,
     forcedUpdateWith: null,
+    // $FlowFixMe: Current will be set as soon after we create host fiber
     current: null,
     wip: null,
     child: null,
@@ -168,9 +190,10 @@ export function createHostFiber(domNode) {
   };
 }
 
-export function createFiber(root, node, part) {
+export function createFiber(root: HostFiber, node: BrahmosNode, part: Part): Fiber {
   // if a node is ported node, update the part information
   if (node && node.portalContainer) {
+    // $FlowFixMe: If node has portal container, the fiber part has to be ArrayPart or NodePart
     part.parentNode = node.portalContainer;
   }
 
@@ -178,6 +201,7 @@ export function createFiber(root, node, part) {
     node,
     nodeInstance: null,
     root,
+    // $FlowFixMe: We always link fiber with its parent, so after creating parent will always be set
     parent: null,
     child: null,
     sibling: null,
@@ -198,14 +222,20 @@ export function createFiber(root, node, part) {
 /**
  * add to fibers as alternate to each other
  */
-export function addAlternates(current, wip) {
+export function addAlternates(current: Fiber, wip: Fiber): void {
   if (current) {
     current.alternate = wip;
   }
   wip.alternate = current;
 }
 
-export function createAndLink(node, part, currentFiber, refFiber, parentFiber) {
+export function createAndLink(
+  node: any,
+  part: Part,
+  currentFiber: ?Fiber,
+  refFiber: Fiber,
+  parentFiber: Fiber,
+): Fiber {
   const { root } = refFiber;
   const updateTimeKey = getUpdateTimeKey(root.updateType);
   let fiber;
@@ -241,7 +271,7 @@ export function createAndLink(node, part, currentFiber, refFiber, parentFiber) {
   return fiber;
 }
 
-function shouldClone(newNode, oldNode) {
+function shouldClone(newNode: any, oldNode: any): boolean {
   return (
     // if it is primitive node and old node is also primitive we can clone the previous fiber
     (isPrimitiveNode(newNode) && isPrimitiveNode(oldNode)) ||
@@ -272,7 +302,12 @@ function getFiberWhichRequiresProcessing(fiber, lastCompleteTime, updateTimeKey)
   return fiber;
 }
 
-export function getNextFiber(fiber, topFiber, lastCompleteTime, updateTimeKey) {
+export function getNextFiber(
+  fiber: Fiber,
+  topFiber: Fiber | HostFiber,
+  lastCompleteTime: number,
+  updateTimeKey: string,
+): Fiber {
   /**
    * Skip fibers which does not require processing
    */
@@ -298,7 +333,11 @@ export function getNextFiber(fiber, topFiber, lastCompleteTime, updateTimeKey) {
 }
 
 /** Function to get fiber from the component */
-export function getFiberFromComponent(component) {
+export function getFiberFromComponent(component: AnyComponentInstance): Fiber {
+  /**
+   * $FlowFixMe: Component will always fiber once its rendered, so we can assume fiber is not null here
+   * And this method is always called after component is mounted once
+   */
   return component[BRAHMOS_DATA_KEY].fiber;
 }
 
@@ -308,7 +347,7 @@ export function getFiberFromComponent(component) {
  * the wrong uncommitted fiber, in which case we reset it to the alternate
  * (which points to the committed one)
  */
-export function resetToCommittedChild(fiber) {
+export function resetToCommittedChild(fiber: Fiber): void {
   const { root, child } = fiber;
   /**
    * if the child fiber is created but not committed yet,
@@ -322,29 +361,7 @@ export function resetToCommittedChild(fiber) {
 /**
  * function to push a fiber for tearDown
  */
-export function markToTearDown(fiber) {
+export function markToTearDown(fiber: Fiber): void {
   fiber.shouldTearDown = true;
   fiber.root.tearDownFibers.push(fiber);
 }
-
-// NOTE: Delete this function
-// window.getBrokenLink = (fiber) => {
-//   const current = fiber.root.current;
-//   fiber = current;
-//   while (fiber) {
-//     if (fiber.child && fiber.child.parent !== fiber) return fiber;
-//     fiber = fiber.child;
-//   }
-// };
-
-// window.belongsTo = (fiber) => {
-//   while (fiber) {
-//     if (fiber.parent === fiber.root.wip) {
-//       return 'wip';
-//     } else if (fiber.parent === fiber.root.current) {
-//       return 'current';
-//     }
-
-//     fiber = fiber.parent;
-//   }
-// };

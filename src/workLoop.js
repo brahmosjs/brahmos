@@ -1,3 +1,4 @@
+// @flow
 import {
   isComponentNode,
   isPrimitiveNode,
@@ -41,6 +42,8 @@ import tearDown from './tearDown';
 import { now } from './utils';
 import schedule from './scheduler';
 
+import type { Fiber, HostFiber } from './flow.types';
+
 function fiberHasUnprocessedUpdates(fiber) {
   const { node, nodeInstance } = fiber;
 
@@ -53,7 +56,7 @@ function fiberHasUnprocessedUpdates(fiber) {
   return !!getPendingUpdates(fiber).length || nodeInstance[BRAHMOS_DATA_KEY].isDirty;
 }
 
-export function processFiber(fiber) {
+export function processFiber(fiber: Fiber) {
   const { node, alternate } = fiber;
 
   // if new node is null mark old node to tear down
@@ -94,8 +97,8 @@ export function processFiber(fiber) {
 }
 
 function shouldCommit(root) {
-  // if the update source is transition check if transition is completed
-  if (root.updateSource === UPDATE_SOURCE_TRANSITION) {
+  // if there is transition processed on work loop check if its completed
+  if (root.currentTransition) {
     /**
      * all sync changes should be committed before committing transition,
      * for a transition to be committed it shouldn't have any pending commits
@@ -137,6 +140,7 @@ function commitChanges(root) {
 
   // if it deferred swap the wip and current tree
   if (updateType === UPDATE_TYPE_DEFERRED) {
+    // $FlowFixMe: wip fiber is set after deferred render
     root.current = root.wip;
     root.wip = current;
   }
@@ -145,7 +149,7 @@ function commitChanges(root) {
   effectLoop(root, fibersWithEffect);
 }
 
-export default function workLoop(fiber, topFiber) {
+export default function workLoop(fiber: Fiber, topFiber: Fiber | HostFiber) {
   const { root } = fiber;
   const { updateType, currentTransition } = root;
   const lastCompleteTimeKey = getLastCompleteTimeKey(updateType);
@@ -166,7 +170,7 @@ export default function workLoop(fiber, topFiber) {
        * process the current fiber, and then move to next
        * and keep doing it till we are out of time.
        */
-      if (timeRemaining() > 0) {
+      if (timeRemaining()) {
         processFiber(fiber);
 
         /**
@@ -223,7 +227,7 @@ export default function workLoop(fiber, topFiber) {
   });
 }
 
-export function doDeferredProcessing(root) {
+export function doDeferredProcessing(root: HostFiber) {
   // if there is no deferred work or pending transition return
   const pendingTransition = getFirstTransitionToProcess(root);
 
@@ -239,12 +243,13 @@ export function doDeferredProcessing(root) {
 
   pendingTransition.tryCount += 1;
 
+  // $FlowFixMe: Passing root on top level component is exception
   root.wip = cloneCurrentFiber(root.current, root.wip, root, root);
 
   workLoop(root.wip, root);
 }
 
-export function doSyncProcessing(fiber) {
+export function doSyncProcessing(fiber: Fiber) {
   const { root, parent } = fiber;
   root.updateType = 'sync';
 
@@ -256,5 +261,3 @@ export function doSyncProcessing(fiber) {
 
   workLoop(fiber, parent);
 }
-
-export function doTransitionProcessing(fiber) {}

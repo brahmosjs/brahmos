@@ -1,4 +1,8 @@
+// @flow
 import { PREDEFINED_TRANSITION_DEFERRED } from './transitionUtils';
+
+import type { HostFiber } from './flow.types';
+type TimeRemaining = () => boolean;
 
 const RENDER_SLOT = 5;
 const MAX_RENDER_SLOT = 30; // We can allow to drop frame rate to minimum 30 fps
@@ -7,11 +11,13 @@ const DEFERRED_TRANSITION_MAX_RETRY = 300; // close to 5000ms -> 16 * 300 with s
 const OTHER_TRANSITION_MAX_RETRY = 600; // close to 10000ms -> 16 * 600 with some buffer
 
 let firstFrameTime;
-requestAnimationFrame((time) => (firstFrameTime = time));
+requestAnimationFrame((time) => {
+  firstFrameTime = time;
+});
 
 const getTime = () => performance.now();
 
-const timedOutRemaining = () => 1;
+const timedOutRemaining: TimeRemaining = () => true;
 
 const frameRemainingTime = (currentTime, frameDuration) => {
   frameDuration = frameDuration || FRAME_DURATION_DEFAULT;
@@ -68,7 +74,11 @@ function schedule(cb) {
   };
 }
 
-export default function scheduleTask(root, shouldSchedule, cb) {
+export default function scheduleTask(
+  root: HostFiber,
+  shouldSchedule: boolean,
+  cb: (timeRemaining: TimeRemaining) => void,
+) {
   const { cancelSchedule } = root;
 
   // cancel any existing scheduled task on root
@@ -121,7 +131,7 @@ export default function scheduleTask(root, shouldSchedule, cb) {
 
       // If we cross max allowed retry we need to flush render synchronously
       cb(tryCount > maxAllowedRetry ? timedOutRemaining : timeRemaining);
-    }, false);
+    });
 
     return;
   }
