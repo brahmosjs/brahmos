@@ -7,3 +7,4 @@ reference
 
 # editor specific files
 .vscode
+.package-lock.json
