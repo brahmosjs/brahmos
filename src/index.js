@@ -46,6 +46,8 @@ import { deferredUpdates, syncUpdates } from './updateUtils';
 /** import top level api */
 import { Children, isValidElement, cloneElement } from './Children';
 
+import memo from './memo';
+
 const Brahmos = {
   createElement,
   render,
@@ -75,6 +77,7 @@ const Brahmos = {
   cloneElement,
   unstable_deferredUpdates: deferredUpdates,
   unstable_syncUpdates: syncUpdates,
+  memo,
 };
 
 export {
@@ -106,6 +109,7 @@ export {
   cloneElement,
   deferredUpdates as unstable_deferredUpdates,
   syncUpdates as unstable_syncUpdates,
+  memo,
 };
 
 export default Brahmos;
