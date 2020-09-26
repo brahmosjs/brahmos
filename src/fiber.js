@@ -1,7 +1,13 @@
 // @flow
 
 import { isComponentNode, isTagNode, isPrimitiveNode, ATTRIBUTE_NODE } from './brahmosNode';
-import { UPDATE_TYPE_DEFERRED, BRAHMOS_DATA_KEY, EFFECT_TYPE_NONE } from './configs';
+import {
+  UPDATE_TYPE_DEFERRED,
+  BRAHMOS_DATA_KEY,
+  EFFECT_TYPE_NONE,
+  UPDATE_TYPE_SYNC,
+  UPDATE_SOURCE_DEFAULT,
+} from './configs';
 import { now, isNil } from './utils';
 
 import type {
@@ -126,7 +132,7 @@ export function cloneChildrenFibers(fiber: Fiber): void {
   /**
    * No need to clone children if the updateType is sync,
    */
-  if (root.updateType === 'sync') {
+  if (root.updateType === UPDATE_TYPE_SYNC) {
     return;
   }
 
@@ -151,8 +157,8 @@ export function createHostFiber(domNode: ExtendedElement): HostFiber {
   let afterRenderCallbacks = [];
 
   return {
-    updateType: 'sync',
-    updateSource: 'js',
+    updateType: UPDATE_TYPE_DEFERRED,
+    updateSource: UPDATE_SOURCE_DEFAULT,
     cancelSchedule: null,
     domNode,
     forcedUpdateWith: null,

@@ -152,9 +152,11 @@ function handleComponentEffect(fiber) {
   const { nodeType } = node;
   const brahmosData = nodeInstance[BRAHMOS_DATA_KEY];
 
+  const isDeferredUpdate = updateType === UPDATE_TYPE_DEFERRED;
+
   if (nodeType === CLASS_COMPONENT_NODE) {
     // if it is deferredUpdate set the memoizedValues into nodeInstance state and prop
-    if (updateType === UPDATE_TYPE_DEFERRED) {
+    if (isDeferredUpdate) {
       Object.assign(nodeInstance, brahmosData.memoizedValues);
     }
 
@@ -172,9 +174,9 @@ function handleComponentEffect(fiber) {
   // remove all the pending updates associated with current transition
   const { transitionId } = getTransitionFromFiber(fiber, null);
   const pendingUpdatesKey = getPendingUpdatesKey(updateType);
-  brahmosData[pendingUpdatesKey] = brahmosData[pendingUpdatesKey].filter(
-    (stateMeta) => stateMeta.transitionId !== transitionId,
-  );
+  brahmosData[pendingUpdatesKey] = isDeferredUpdate
+    ? brahmosData[pendingUpdatesKey].filter((stateMeta) => stateMeta.transitionId !== transitionId)
+    : [];
 
   // reset isDirty flag
   brahmosData.isDirty = false;

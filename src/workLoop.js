@@ -12,6 +12,7 @@ import {
   BRAHMOS_DATA_KEY,
   UPDATE_TYPE_DEFERRED,
   EFFECT_TYPE_OTHER,
+  UPDATE_TYPE_SYNC,
 } from './configs';
 
 import processComponentFiber from './processComponentFiber';
@@ -119,35 +120,38 @@ function shouldCommit(root) {
  * This is the part where all the changes are flushed on dom,
  * It will also take care of tearing the old nodes down
  */
-function commitChanges(root) {
-  const { updateType, current } = root;
-  const lastCompleteTimeKey = getLastCompleteTimeKey(updateType);
+// Use object notation to avoid inlining of commit changes fn in workloop
+const avoidInlineCommitChange = {
+  fn: (root) => {
+    const { updateType, current } = root;
+    const lastCompleteTimeKey = getLastCompleteTimeKey(updateType);
 
-  // tearDown old nodes
-  tearDown(root);
+    // tearDown old nodes
+    tearDown(root);
 
-  const fibersWithEffect = preCommitBookkeeping(root);
-  /**
-   * set the last updated time for render
-   * NOTE: We do it before effect loop so if there is
-   * setStates in effect updateTime for setState should not
-   * fall behind the complete time
-   *
-   * Also, lastCompleteTime should be marked always
-   * weather its deferred or sync updates
-   */
-  root[lastCompleteTimeKey] = root.lastCompleteTime = now();
+    const fibersWithEffect = preCommitBookkeeping(root);
+    /**
+     * set the last updated time for render
+     * NOTE: We do it before effect loop so if there is
+     * setStates in effect updateTime for setState should not
+     * fall behind the complete time
+     *
+     * Also, lastCompleteTime should be marked always
+     * weather its deferred or sync updates
+     */
+    root[lastCompleteTimeKey] = root.lastCompleteTime = now();
 
-  // if it deferred swap the wip and current tree
-  if (updateType === UPDATE_TYPE_DEFERRED) {
-    // $FlowFixMe: wip fiber is set after deferred render
-    root.current = root.wip;
-    root.wip = current;
-  }
+    // if it deferred swap the wip and current tree
+    if (updateType === UPDATE_TYPE_DEFERRED) {
+      // $FlowFixMe: wip fiber is set after deferred render
+      root.current = root.wip;
+      root.wip = current;
+    }
 
-  // After correcting the tree flush the effects on new fibers
-  effectLoop(root, fibersWithEffect);
-}
+    // After correcting the tree flush the effects on new fibers
+    effectLoop(root, fibersWithEffect);
+  },
+};
 
 export default function workLoop(fiber: Fiber, topFiber: Fiber | HostFiber) {
   const { root } = fiber;
@@ -214,7 +218,7 @@ export default function workLoop(fiber: Fiber, topFiber: Fiber | HostFiber) {
     }
 
     if (shouldCommit(root)) {
-      commitChanges(root);
+      avoidInlineCommitChange.fn(root);
     }
 
     // check if there are any pending transition, if yes try rendering them
@@ -233,7 +237,7 @@ export function doDeferredProcessing(root: HostFiber) {
 
   if (!pendingTransition) return;
 
-  root.updateType = 'deferred';
+  root.updateType = UPDATE_TYPE_DEFERREDs;
 
   // reset the effect list before starting new one
   resetEffectProperties(root);
@@ -251,7 +255,7 @@ export function doDeferredProcessing(root: HostFiber) {
 
 export function doSyncProcessing(fiber: Fiber) {
   const { root, parent } = fiber;
-  root.updateType = 'sync';
+  root.updateType = UPDATE_TYPE_SYNC;
 
   // set current transition as null for sync processing
   root.currentTransition = null;
