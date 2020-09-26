@@ -1,13 +1,13 @@
 import shallowEqual from './helpers/shallowEqual';
 
-export default function memo(Component, comperator) {
+export default function memo(Component, comparator) {
   let cachedComponent = null;
   let prevProps = null;
-  comperator = comperator || shallowEqual;
+  comparator = comparator || shallowEqual;
 
   return function MemoizedComponent(props) {
     // Compare with latest props
-    const isEqual = prevProps && comperator(prevProps, props);
+    const isEqual = prevProps && comparator(prevProps, props);
 
     // Return Caches version
     if (isEqual) return cachedComponent;

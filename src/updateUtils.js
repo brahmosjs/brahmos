@@ -109,8 +109,13 @@ export function getPendingUpdates(fiber: Fiber): PendingUpdates {
     nodeInstance: component,
   } = fiber;
   const brahmosData = component[BRAHMOS_DATA_KEY];
-  const currentTransitionId = getTransitionFromFiber(fiber, null).transitionId;
   const pendingUpdatesKey = getPendingUpdatesKey(updateType);
+
+  if (updateType === UPDATE_TYPE_SYNC) {
+    return brahmosData[pendingUpdatesKey];
+  }
+
+  const currentTransitionId = getTransitionFromFiber(fiber, null).transitionId;
 
   return brahmosData[pendingUpdatesKey].filter(
     (stateMeta) => stateMeta.transitionId === currentTransitionId,

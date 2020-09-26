@@ -1,11 +1,12 @@
-import { terser } from 'rollup-plugin-terser';
 import fileSize from 'rollup-plugin-filesize';
-import commonjs from 'rollup-plugin-commonjs';
+import commonjs from '@rollup/plugin-commonjs';
 import license from 'rollup-plugin-license';
-import replace from 'rollup-plugin-replace';
-import resolve from 'rollup-plugin-node-resolve';
-import buble from 'rollup-plugin-buble';
+import replace from '@rollup/plugin-replace';
+import resolve from '@rollup/plugin-node-resolve';
+import buble from '@rollup/plugin-buble';
 import flow from 'rollup-plugin-flow';
+import compiler from '@ampproject/rollup-plugin-closure-compiler';
+
 import PACKAGE from './package.json';
 
 const fullYear = new Date().getFullYear();
@@ -46,7 +47,9 @@ const defaultConfig = {
     license({
       banner,
     }),
-    terser(),
+    compiler({
+      compilationLevel: 'SIMPLE',
+    }),
   ],
 };
 

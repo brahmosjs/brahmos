@@ -104,9 +104,8 @@ export function remove(nodes: Array<Node> | Node): void {
   if (!Array.isArray(nodes)) nodes = [nodes];
   for (let i = nodes.length - 1; i >= 0; i--) {
     const node = nodes[i];
-    // if node is not a detached node
-    const { parentNode } = node;
-    if (parentNode) parentNode.removeChild(node);
+    // $FlowFixMe: remove is present on all browser except IE11
+    node.remove();
   }
 }
 
