@@ -108,7 +108,7 @@ export default function processComponentFiber(fiber: Fiber): void {
   const isDeferredUpdate = root.updateType === UPDATE_TYPE_DEFERRED;
 
   let shouldUpdate = true;
-  let usedMemoizedValue = false;
+  let usedMemoizedValues = false;
   const isClassComponent = nodeType === CLASS_COMPONENT_NODE;
 
   /**
@@ -159,7 +159,7 @@ export default function processComponentFiber(fiber: Fiber): void {
       currentTransition.transitionId === memoizedValues.transitionId
     ) {
       ({ props: prevProps, state: prevState } = memoizedValues);
-      usedMemoizedValue = true;
+      usedMemoizedValues = true;
     }
 
     //
@@ -249,28 +249,21 @@ export default function processComponentFiber(fiber: Fiber): void {
 
   // render the nodes
   if (shouldUpdate) {
+    // set the current component fiber we are processing
+    setCurrentComponentFiber(fiber);
+    // increment the render count. This is to track how many times a component is rendered in a render cycle
+    brahmosData.renderCount += 1;
+
+    // if the component is error boundary with error and it does not have getDerivedStateFromError, render null
+    const hasNonHandledError = childFiberError && !Component.getDerivedStateFromError;
+
     try {
-      // set the current component fiber we are processing
-      setCurrentComponentFiber(fiber);
-
-      // increment the render count. This is to track how many times a component is rendered in a render cycle
-      brahmosData.renderCount += 1;
-
-      // if the component is error boundary and it does not have getDerivedStateFromError, render null
-      const hasNonHandledError = childFiberError && !Component.getDerivedStateFromError;
-      const childNodes = hasNonHandledError ? null : nodeInstance.__render(props);
-
-      // if it class component reset the state and prop to committed value
-      if (isClassComponent && isDeferredUpdate) {
-        const { committedValues } = ((brahmosData: any): ClassComponentBrahmosData);
-        Object.assign(((nodeInstance: any): ComponentClassInstance), committedValues);
+      if (hasNonHandledError) {
+        brahmosData.nodes = null;
+      } else {
+        // else get the new elements
+        nodeInstance.__render(props);
       }
-
-      // once render is called reset the current component fiber
-      setCurrentComponentFiber(null);
-
-      // component will always return a single node so we can pass the previous child as current fiber
-      createAndLink(childNodes, part, fiber.child, fiber, fiber);
     } catch (error) {
       const errorBoundary = getErrorBoundaryFiber(fiber);
       // TODO: handle error boundaries
@@ -318,30 +311,45 @@ export default function processComponentFiber(fiber: Fiber): void {
       }
 
       return;
-    }
-    // mark that the fiber has uncommitted effects
-    markPendingEffect(fiber, EFFECT_TYPE_OTHER);
-    /**
-     * If we are using memoized values and shouldUpdate is false,
-     * we might have some pending nodes from last render, in which case
-     * we should create new child fibers with pending nodes.
-     */
-  } else if (usedMemoizedValue) {
-    const { child } = fiber;
+    } finally {
+      // reset the component fiber
+      setCurrentComponentFiber(null);
 
-    if (!child || child.node !== brahmosData.nodes) {
-      createAndLink(brahmosData.nodes, part, child, fiber, fiber);
+      // if it class component reset the state and prop to committed value
+      const brahmosData = nodeInstance[BRAHMOS_DATA_KEY];
+      if (isClassComponent && isDeferredUpdate) {
+        const { committedValues } = ((brahmosData: any): ClassComponentBrahmosData);
+        Object.assign(((nodeInstance: any): ComponentClassInstance), committedValues);
+      }
+    }
+  }
+
+  /**
+   * If the new rendered node is different from the previously render node
+   * create new child, link it and mark as pending effect
+   *
+   * shouldUpdate can be false in case we are using memoized value,
+   * so in such case as well try to create new child.
+   */
+  if (usedMemoizedValues || shouldUpdate) {
+    const { child } = fiber;
+    const { nodes: newNodes } = brahmosData;
+
+    if (!child || child.node !== newNodes) {
+      // component will always return a single node so we can pass the previous child as current fiber
+      createAndLink(newNodes, part, child, fiber, fiber);
 
       // mark that the fiber has uncommitted effects
       markPendingEffect(fiber, EFFECT_TYPE_OTHER);
+    } else if (!usedMemoizedValues) {
+      /**
+       * if we don't need to update the child fibers, we should clone the child fiber from current tree
+       * But if we have memoized props and states and no update is required, it means we already are
+       * pointing to correct child fibers, in which case we shouldn't clone the child
+       */
+      cloneChildrenFibers(fiber);
     }
-    /**
-     * if we don't need to update the child fibers, we should clone the child fiber from current tree
-     * But if had memoized props and states and no update is required, it means we already are
-     * pointing to correct child fibers, in which case we shouldn't clone the child
-     */
   } else {
-    // clone the existing nodes
     cloneChildrenFibers(fiber);
   }
 }
