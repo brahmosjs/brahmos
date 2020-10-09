@@ -1,13 +1,17 @@
 // @flow
-import { attrMarker, marker } from './TemplateTag';
-import { remove, toArray, createEmptyTextNode, addDataContainer } from './utils';
+import { BRAHMOS_PLACEHOLDER } from './configs';
+import { toArray, createEmptyTextNode, addDataContainer, remove } from './utils';
 
 import type { TemplateNodeType, TemplateTagType, Part, NodePart } from './flow.types';
+
+function isBrahmosCommentNode(node: ?Node): boolean {
+  return !!node && node.nodeType === 8 && node.textContent === BRAHMOS_PLACEHOLDER;
+}
 
 export default class TemplateNode implements TemplateNodeType {
   templateResult: TemplateTagType;
 
-  fragment: Node;
+  fragment: DocumentFragment;
 
   parts: Array<Part>;
 
@@ -40,104 +44,65 @@ export default class TemplateNode implements TemplateNodeType {
     return document.importNode(templateElement.content, true);
   }
 
-  createWalker(node: Node): TreeWalker<Node, HTMLElement | Comment> {
-    /**
-     * Only walk through elements and comment node,
-     * as we add attribute markers on elements and node maker as comment
-     */
-    // $FlowFixMe: Flow error doesn't make sense the node number is correct here
-    return document.createTreeWalker(
-      node,
-      129, // NodeFilter.SHOW_ELEMENT + NodeFilter.COMMENT
-      null, // Don't use tree walker filter function. Its painfully slow, try to find better filter code instead. You can add multiple filter type to form a number
-      false,
-    );
-  }
-
-  isBrahmosCommentNode(node: ?Node): boolean {
-    return !!node && node.nodeType === 8 && node.textContent === marker;
-  }
-
   getParts(): Array<Part> {
-    const { fragment, templateResult, isBrahmosCommentNode } = this;
+    const { fragment, templateResult } = this;
 
     const { partsMeta } = templateResult;
-    const walker = this.createWalker(fragment);
-
-    let partIndex = 0;
-    let partMeta = partsMeta[partIndex];
 
     const parts = [];
-    const markerNodes = [];
 
-    const goToNextPart = function() {
-      partIndex++;
-      partMeta = partsMeta[partIndex];
-    };
+    const elements = fragment.querySelectorAll('*');
 
-    /** walk on each filtered node and see if attribute marker or comment marker is there */
-    while (walker.nextNode()) {
-      const current = walker.currentNode;
-      const { nodeType, parentNode } = current;
-      /**
-       * If its a element check and if it has attribute marker as attribute
-       * remove the marker and create a part with the node info to it so we
-       * know which attribute that node belongs to.
-       * Also look for the consecutive parts to
-       * see if they exist on same node, we make that assumption based on
-       * tagAttr list. Same tag parts will shared same tagAttr list
-       */
+    // eslint-disable-next-line no-unmodified-loop-condition
+    for (let i = 0, ln = partsMeta.length; i < ln; i++) {
+      const partMeta = partsMeta[i];
+      const {
+        isAttribute,
+        attrIndex,
+        refNodeIndex,
+        prevChildIndex,
+        hasExpressionSibling,
+      } = partMeta;
+      let refNode = elements[refNodeIndex];
 
-      // $FlowFixMe: we are adding nodeType === 1 check so hasAttribute method will be available
-      if (nodeType === 1 && current.hasAttribute(attrMarker)) {
-        // remove the attribute to keep the html clean
-        // $FlowFixMe: we are adding nodeType === 1 check so removeAttribute method will be available
-        current.removeAttribute(attrMarker);
-        const { tagAttrs } = partMeta;
-        while (
-          // eslint-disable-next-line no-unmodified-loop-condition
-          partMeta &&
-          partMeta.isAttribute &&
-          partMeta.tagAttrs === tagAttrs
-        ) {
-          parts.push({
-            ...partMeta, // Spread object is slow, but bublejs compiles it to Object.assign which is optimized
-            domNode: current,
-          });
-          goToNextPart();
+      if (isAttribute) {
+        if (!partMeta.tagAttrs) partMeta.tagAttrs = toArray(refNode.attributes);
+        parts.push({
+          isAttribute: true,
+          tagAttrs: partMeta.tagAttrs,
+          domNode: refNode,
+          attrIndex,
+        });
+
+        addDataContainer(refNode);
+      } else {
+        refNode = refNode || fragment;
+        const hasPreviousSibling = prevChildIndex !== -1;
+
+        let previousSibling;
+
+        const possibleCommentNode = refNode.childNodes[prevChildIndex + 1];
+
+        if (hasPreviousSibling && isBrahmosCommentNode(possibleCommentNode)) {
+          remove(possibleCommentNode);
         }
 
-        addDataContainer(current);
-      } else if (isBrahmosCommentNode(current)) {
-        /**
-         * If the node is a node marker add previous sibling and parentNode details
-         * so later we can find the exact place where value has to come
-         */
-
-        /**
-         * Add a dummy text node before if the previous element is a Brahmos comment node
-         * This makes locating dynamic part easier
-         */
-        let { previousSibling } = current;
-        if (isBrahmosCommentNode(previousSibling)) {
-          previousSibling = createEmptyTextNode(current);
+        if (!hasPreviousSibling) {
+          previousSibling = null;
+        } else if (hasExpressionSibling) {
+          previousSibling = createEmptyTextNode(refNode, prevChildIndex);
+        } else {
+          previousSibling = refNode.childNodes[prevChildIndex];
         }
 
         parts.push({
           isNode: true,
-          parentNode,
+          parentNode: refNode,
           previousSibling,
         });
-        goToNextPart();
-
-        // add the comment node to the remove list
-        markerNodes.push(current);
       }
     }
 
-    remove(markerNodes);
-
-    // $FlowFixMe: parts are getting added properly based on condition, flow not able to understand nodeType
     return parts;
   }
 

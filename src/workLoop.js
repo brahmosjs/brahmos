@@ -237,7 +237,7 @@ export function doDeferredProcessing(root: HostFiber) {
 
   if (!pendingTransition) return;
 
-  root.updateType = UPDATE_TYPE_DEFERREDs;
+  root.updateType = UPDATE_TYPE_DEFERRED;
 
   // reset the effect list before starting new one
   resetEffectProperties(root);
