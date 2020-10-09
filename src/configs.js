@@ -1,4 +1,7 @@
 // @flow
+// Brahmos placeholder
+export const BRAHMOS_PLACEHOLDER = '{{brahmos}}';
+
 // reserved props which cannot be forward to component props
 export const RESERVED_ATTRIBUTES = {
   key: 1,

@@ -197,11 +197,11 @@ export function callLifeCycle(object: any, method: string, args: ?Array<any>): v
 /**
  * Create an empty text node before a given node
  */
-export function createEmptyTextNode(element: Node): ?Node {
-  const { parentNode } = element;
-  if (!parentNode) return null;
+export function createEmptyTextNode(parent: Node, index: number): ?Node {
+  const nextSibling = index === 0 ? parent.firstChild : parent.childNodes[index];
+
   const textNode = document.createTextNode('');
-  parentNode.insertBefore(textNode, element);
+  parent.insertBefore(textNode, nextSibling);
   return textNode;
 }
 

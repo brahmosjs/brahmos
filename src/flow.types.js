@@ -46,14 +46,19 @@ export type UpdateSource =
 
 /** Part types */
 export type PartMeta = {|
-  tagAttrs: Array<string>,
+  tagAttrs?: Array<string>,
   attrIndex: number,
   isAttribute: boolean,
+  refNodeIndex: number,
+  prevChildIndex: number,
+  hasExpressionSibling: boolean,
 |};
 
 export type AttributePart = {|
-  ...PartMeta,
+  isAttribute: true,
   domNode: ExtendedElement,
+  tagAttrs: Array<string>,
+  attrIndex: number,
 |};
 
 export type NodePart = {|
@@ -116,13 +121,14 @@ export interface TemplateTagType {
   svgTemplate: ?HTMLTemplateElement;
   strings: Array<string>;
   partsMeta: Array<PartMeta>;
+  partMetaCode: string;
 
   +create: (isSvgPart: boolean) => void;
 }
 
 export interface TemplateNodeType {
   templateResult: TemplateTagType;
-  fragment: Node;
+  fragment: DocumentFragment;
   parts: Array<Part>;
   domNodes: Array<Node>;
   patched: boolean;
