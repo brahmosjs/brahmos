@@ -51,8 +51,10 @@ export default class TemplateNode implements TemplateNodeType {
 
     const parts = [];
 
+    // get the flattened list of elements.
     const elements = fragment.querySelectorAll('*');
 
+    // generate part information which actual dom nodes which will be added in dom
     // eslint-disable-next-line no-unmodified-loop-condition
     for (let i = 0, ln = partsMeta.length; i < ln; i++) {
       const partMeta = partsMeta[i];
@@ -66,6 +68,7 @@ export default class TemplateNode implements TemplateNodeType {
       let refNode = elements[refNodeIndex];
 
       if (isAttribute) {
+        // cache the tagAttribute calculate in templateTag part object, so we don't need to calculate it again.
         if (!partMeta.tagAttrs) partMeta.tagAttrs = toArray(refNode.attributes);
         parts.push({
           isAttribute: true,
@@ -81,6 +84,12 @@ export default class TemplateNode implements TemplateNodeType {
 
         let previousSibling;
 
+        /**
+         * If we get a dynamic part between two consecutive text node,
+         * that gets combined as single text node when we create template element with static part.
+         * For that we add an extra comment node during the compile time (babel-plugin), so they don't mix.
+         * On runtime we need to check if that comment node is present, and if present remove the comment node.
+         */
         const possibleCommentNode = refNode.childNodes[prevChildIndex + 1];
 
         if (hasPreviousSibling && isBrahmosCommentNode(possibleCommentNode)) {
@@ -90,6 +99,10 @@ export default class TemplateNode implements TemplateNodeType {
         if (!hasPreviousSibling) {
           previousSibling = null;
         } else if (hasExpressionSibling) {
+          /**
+           * If there are two consecutive dynamic parts, we add an empty text node,
+           * So it gets easier to locate any dynamic part there.
+           */
           previousSibling = createEmptyTextNode(refNode, prevChildIndex);
         } else {
           previousSibling = refNode.childNodes[prevChildIndex];
