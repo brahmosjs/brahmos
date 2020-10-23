@@ -8,7 +8,7 @@ type TagReturn = (partMetaCode: string) => BrahmosNode;
 const templateTagCache = new WeakMap();
 
 export function createTagNode(template: TemplateTagType, values: Array<any>): BrahmosNode {
-  const node = brahmosNode(null, values, '');
+  const node = brahmosNode(null, values, undefined);
 
   node.nodeType = TAG_NODE;
   node.template = template;

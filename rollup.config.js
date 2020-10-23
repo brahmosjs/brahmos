@@ -53,14 +53,4 @@ const defaultConfig = {
   ],
 };
 
-const minConfig = {
-  ...defaultConfig,
-  output: {
-    file: 'dist/brahmos.min.js',
-    format: 'umd',
-    name: 'Brahmos',
-  },
-  plugins: [...defaultConfig.plugins],
-};
-
-export default [defaultConfig, minConfig];
+export default [defaultConfig];

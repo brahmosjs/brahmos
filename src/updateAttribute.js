@@ -28,30 +28,33 @@ function applyDiffProperty(newObj, oldObj, resetValue, cb) {
 
   // remove old attributes
   loopEntries(oldObj, (key, value) => {
-    if (newObj[key] === undefined) {
+    if (newObj[key] === undefined && value !== undefined) {
       cb(key, resetValue, value);
     }
   });
 }
 
 function setAttribute(node, attrName, attrValue, oldAttrValue, isSvgAttribute) {
-  /*
-      if node has property with attribute name, set the value directly as property
-      otherwise set it as attribute
-    */
+  /**
+   * children attrName is not a valid attribute, if the attrName is coming as children
+   * ignore it. This happens when we are the brahmos nodeType is tag element node.
+   * We don't remove children from props to avoid extra object creation.
+   */
+  if (attrName === 'children') return;
 
   const isEventAttr = isEventAttribute(attrName);
 
   // Handle event attributes
   if (isEventAttr) {
     // Reference https://github.com/facebook/react/blob/master/packages/react-dom/src/events/DOMPluginEventSystem.js#L498
-    const isCaptureEvent = attrName.substr(-7) === 'Capture' && attrName.substr(-14, 7) === 'Pointer';
+    const isCaptureEvent =
+      attrName.substr(-7) === 'Capture' && attrName.substr(-14, 7) === 'Pointer';
     let eventName = getEventName(attrName, isCaptureEvent);
     eventName = getEffectiveEventName(eventName, node);
 
     // get patched event handler
     const patchedHandler = getPatchedEventHandler(node, attrName, attrValue);
-    
+
     // if new event handler is not there but it had old handler, remove the old one
     if (oldAttrValue && !attrValue) {
       node.removeEventListener(eventName, patchedHandler, isCaptureEvent);

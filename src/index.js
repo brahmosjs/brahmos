@@ -3,6 +3,7 @@ import {
   Component,
   PureComponent,
   createElement,
+  createBrahmosNode,
   Suspense,
   SuspenseList,
   lazy,
@@ -53,7 +54,6 @@ const Brahmos = {
   render,
   Component,
   PureComponent,
-  html,
   useState,
   useEffect,
   useRef,
@@ -85,7 +85,6 @@ export {
   render,
   Component,
   PureComponent,
-  html,
   useState,
   useEffect,
   useRef,
@@ -111,5 +110,8 @@ export {
   syncUpdates as unstable_syncUpdates,
   memo,
 };
+
+// runtime export
+export { html, createBrahmosNode as jsx, createBrahmosNode as jsxs, createBrahmosNode as jsxDEV };
 
 export default Brahmos;
