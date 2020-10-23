@@ -21,6 +21,7 @@ export class Component implements ComponentInstance {
   state: ?ObjectLiteral;
 
   context: any;
+  isReactComponent: boolean;
 
   constructor(props: ObjectLiteral) {
     this.props = props;
@@ -79,15 +80,10 @@ export class Component implements ComponentInstance {
   }
 }
 
-export function isClassComponent(element: Function) {
-  return element.prototype instanceof Component;
-}
+Component.prototype.isReactComponent = true;
 
 export class PureComponent extends Component implements PureComponentInstance {
   isPureReactComponent: boolean;
-
-  constructor(props: ObjectLiteral) {
-    super(props);
-    this.isPureReactComponent = true;
-  }
 }
+
+PureComponent.prototype.isPureReactComponent = true;

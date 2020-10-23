@@ -75,12 +75,16 @@ export function addDataContainer(domNode: Node): void {
  * function to separate props, key and ref
  */
 export function getNormalizedProps(props: ObjectLiteral, includeRef: boolean): ObjectLiteral {
-  const newObj = {};
+  // if we don't have to remove anything from props no need to create a new object
+  if (!('key' in props || ('ref' in props && !includeRef))) return props;
+
+  const newProps = {};
+
   let key;
   for (key in props) {
-    if (key !== 'key' && (key !== 'ref' || includeRef)) newObj[key] = props[key];
+    if (key !== 'key' && (key !== 'ref' || includeRef)) newProps[key] = props[key];
   }
-  return newObj;
+  return newProps;
 }
 
 /**

@@ -47,38 +47,16 @@ export function isRenderableNode(node: any): boolean {
 /**
  * Get the key of looped node
  */
-export function getKey(node: BrahmosNode, index: number): string {
-  /**
-   * Get the key from node directly if not
-   * found search key on the values
-   */
-  let key = node && node.key;
-  if (key === '' && node && isTagNode(node)) {
-    /**
-     * TODO: This might be buggy, it can give key from any node,
-     * not necessarily key from the root node.
-     */
-    const values = ((node.values: any): Array<any>);
-    for (let i = 0, ln = values.length; i < ln; i++) {
-      const value = values[i];
-      if (value && value.key !== undefined) {
-        key = '' + value.key;
-        break;
-      }
-    }
-
-    // store the calculated key on node so we don't have to search next time on same node
-    node.key = key === undefined ? '' : '' + key;
-  }
+export function getKey(node: BrahmosNode, index: number): number | string {
+  const key = node && node.key;
 
   /**
    * if key is defined use key or else use index as key.
-   * Also key should always be a string
    */
-  return key === '' ? '' + index : key;
+  return key === undefined ? index : key;
 }
 
-export function brahmosNode(props: ?ObjectLiteral, values: ?Array<any>, key: string): BrahmosNode {
+export function brahmosNode(props: ?ObjectLiteral, values: ?Array<any>, key?: string): BrahmosNode {
   return {
     /** Common node properties */
     nodeType: null,
@@ -91,7 +69,6 @@ export function brahmosNode(props: ?ObjectLiteral, values: ?Array<any>, key: str
     props,
 
     /** tag node specific properties */
-    element: '',
     values,
     template: null,
   };

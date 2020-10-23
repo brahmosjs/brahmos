@@ -14,10 +14,10 @@ function isAttrOverridden(tagAttrs, attrName, attrIndex) {
   return attrIndex <= lastIndex;
 }
 
-function attributeNode(attributes, ref) {
+function attributeNode(props, ref) {
   return {
     nodeType: ATTRIBUTE_NODE,
-    attributes,
+    props,
     ref,
   };
 }
@@ -96,17 +96,13 @@ export default function processTagFiber(fiber: Fiber): void {
   const isTagElement = nodeType === TAG_ELEMENT_NODE;
 
   // if the node is an svg element, or fiber is already mentioned as svgPart set the isSvgPart true
-  const isSvgPart = fiber.isSvgPart || (isTagElement && node.element === 'svg');
+  const isSvgPart = fiber.isSvgPart || node.type === 'svg';
 
   // store isSvgPart info back to fiber, this will be forwarded to children
   fiber.isSvgPart = isSvgPart;
 
   let { nodeInstance } = fiber;
 
-  /**
-   * if you don't get the old template node it means you have to render the node first time
-   * in such cases delete the nodes where the template node is supposed to be present.
-   */
   if (!nodeInstance) {
     nodeInstance = isTagElement
       ? getTagNode(node, isSvgPart)
@@ -135,7 +131,11 @@ export default function processTagFiber(fiber: Fiber): void {
    * and process is called.
    */
   if (node !== oldNode) {
-    partsToFiber(nodeInstance.parts, values, fiber);
+    if (isTagElement) {
+      createAndLink(node.props.children, nodeInstance.parts[0], fiber.child, fiber, fiber);
+    } else {
+      partsToFiber(nodeInstance.parts, values, fiber);
+    }
   } else {
     cloneChildrenFibers(fiber);
   }

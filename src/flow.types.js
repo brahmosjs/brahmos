@@ -146,12 +146,11 @@ export interface TagNodeType {
 /** Brahmos Node type */
 export type BrahmosNode = {|
   nodeType: ?symbol,
-  key: string,
+  key?: number | string,
   ref: ?Ref,
   portalContainer: ?ExtendedElement,
   type: Function,
   props: ?ObjectLiteral,
-  element: string,
   values: ?Array<any>,
   template: ?TemplateTagType,
 |};

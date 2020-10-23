@@ -1,5 +1,6 @@
 // @flow
 import {
+  isTagElementNode,
   isTagNode,
   isComponentNode,
   isPrimitiveNode,
@@ -121,7 +122,7 @@ function reArrangeExistingNode(fiber: Fiber, alternate: Fiber): void {
 }
 
 function updateTagNode(fiber: Fiber) {
-  const { nodeInstance, alternate } = fiber;
+  const { nodeInstance, alternate, node } = fiber;
 
   // $FlowFixMe: TagNode will always be inside Array part of node part
   const part: ArrayPart | NodePart = fiber.part;
@@ -133,13 +134,23 @@ function updateTagNode(fiber: Fiber) {
   } else {
     const previousSibling = getCorrectPreviousSibling(part);
     const nextSibling = getNextSibling(parentNode, previousSibling);
+    const _isTagElement = isTagElementNode(node);
+
+    const domNodes = insertBefore(parentNode, nextSibling, nodeInstance.fragment);
 
     /**
      * when we add nodes first time
      * and we are rendering as fragment it means the fragment might have childNodes
      * which nodeInstance does not have, so for such cases we should reset nodeList on nodeInstance;
      */
-    nodeInstance.domNodes = insertBefore(parentNode, nextSibling, nodeInstance.fragment);
+    if (!_isTagElement) {
+      nodeInstance.domNodes = domNodes;
+    }
+
+    // if it is the tag element handle the attributes from same fiber
+    if (isTagElementNode(node)) {
+      handleAttributeEffect(fiber, nodeInstance.fragment);
+    }
 
     // set the last item of domNodes in parentNode
     setLastItemInParentDOM(parentNode, nodeInstance);
@@ -244,15 +255,12 @@ function handleComponentPostCommitEffect(fiber) {
   brahmosData.fiber = fiber;
 }
 
-function handleAttributeEffect(fiber) {
+function handleAttributeEffect(fiber, domNode) {
   const { node, alternate, isSvgPart } = fiber;
-  // $FlowFixMe: attribute will always be inside attribute part
-  const part: AttributePart = fiber.part;
-  const { domNode } = part;
-  const { attributes, ref } = node;
-  const oldAttributes = alternate && alternate.node.attributes;
+  const { props, ref } = node;
+  const oldProps = alternate && alternate.node.props;
 
-  updateNodeAttributes(domNode, attributes, oldAttributes, isSvgPart);
+  updateNodeAttributes(domNode, props, oldProps, isSvgPart);
 
   // set ref if present
   if (ref) setRef(ref, domNode);
@@ -312,7 +320,7 @@ function handleFiberEffect(fiber) {
     } else if (_isComponentNode) {
       handleComponentEffect(fiber);
     } else if (node.nodeType === ATTRIBUTE_NODE) {
-      handleAttributeEffect(fiber);
+      handleAttributeEffect(fiber, fiber.part.domNode);
     }
 
     // reset the hasUncommittedEffect flag

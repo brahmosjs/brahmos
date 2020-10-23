@@ -4,13 +4,10 @@ import {
   getNodeName,
   getEventName,
   isCustomElement,
-  omit,
 } from '../utils';
 
 describe('Test utility functions', () => {
-
   describe('Test isHTMLElement', () => {
-
     it('should return true for valid HTML element tag', () => {
       expect(isHTMLElement('a')).toBe(true);
       expect(isHTMLElement('span')).toBe(true);
@@ -24,7 +21,6 @@ describe('Test utility functions', () => {
   });
 
   describe('Test isEventAttribute', () => {
-
     it('should return true if valid event attribute', () => {
       expect(isEventAttribute('onChange')).toBe(true);
       expect(isEventAttribute('onLoad')).toBe(true);
@@ -39,7 +35,6 @@ describe('Test utility functions', () => {
   });
 
   describe('Test getNodeName', () => {
-
     it('should return name of the current node', () => {
       const node = document.createElement('a');
       expect(getNodeName(node)).toBe('a');
@@ -50,7 +45,6 @@ describe('Test utility functions', () => {
   });
 
   describe('Test getEventName', () => {
-
     it('should return event name from handler attribute', () => {
       expect(getEventName('onChange')).toBe('change');
       expect(getEventName('onKeyDown')).toBe('keydown');
@@ -58,7 +52,6 @@ describe('Test utility functions', () => {
   });
 
   describe('Test isCustomElement', () => {
-
     it('should return true for custom web components', () => {
       expect(isCustomElement('web-component')).toBe(true);
     });
@@ -66,27 +59,6 @@ describe('Test utility functions', () => {
     it('should return false for components and native elements', () => {
       expect(isCustomElement('span')).toBe(false);
       expect(isCustomElement('MyComponent')).toBe(false);
-    });
-  });
-
-  describe('Test omit', () => {
-
-    it('should remove particular keys from existing object', () => {
-      const a = { x: 'x', y: 'y' };
-      const b = { x: 'x' };
-      expect(omit(a, b).x).toBeUndefined();
-    })
-
-    it('should not remove other keys from existing object', () => {
-      const a = { x: 'x', y: 'y' };
-      const b = { x: 'x' };
-      expect(omit(a, b).y).toBe('y');
-    });
-
-    it('should not mutate existing object', () => {
-      const a = { x: 'x', y: 'y' };
-      const b = { x: 'x' };
-      expect(omit(a, b)).not.toBe(a);
     });
   });
 });
