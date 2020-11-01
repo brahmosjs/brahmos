@@ -9,15 +9,16 @@ import {
 
 import type { BrahmosNode, Ref } from './flow.types';
 
-type Configs = { key: string, ref: Ref };
+type Configs = { key: string, ref: Ref, children: any };
 
-export function createBrahmosNode(element, props, key) {
+export function createBrahmosNode(element: string | Function, props: Configs, key: string) {
   const { ref } = props;
 
   // There can be chances key might be in props, if key is not passed as arg try to find it in props
   if (key === undefined) key = props.key;
 
   // remove key and ref property from props if present
+  // $FlowFixMe: It's okay to access __isForwardRef always.
   props = getNormalizedProps(props, element.__isForwardRef);
 
   const node = brahmosNode(props, null, key);

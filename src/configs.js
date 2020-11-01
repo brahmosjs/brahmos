@@ -1,4 +1,9 @@
 // @flow
+// React element types
+// We have to add same type of to support third party plugins
+export const REACT_ELEMENT = Symbol.for('react.element');
+export const REACT_FORWARD_REF = Symbol.for('react.forward_ref');
+
 // Brahmos placeholder
 export const BRAHMOS_PLACEHOLDER = '{{brahmos}}';
 

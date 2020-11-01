@@ -1,5 +1,5 @@
 // @flow
-import { createElement } from './circularDep';
+import { createBrahmosNode } from './circularDep';
 import { BrahmosRootComponent } from './utils';
 import { createFiber, createHostFiber, setUpdateTime } from './fiber';
 import { doSyncProcessing } from './workLoop';
@@ -18,7 +18,7 @@ export default function render(node: any, target: ExtendedElement) {
   let fiber;
 
   if (!rootFiber) {
-    const rootNode = createElement(BrahmosRootComponent, {}, node);
+    const rootNode = createBrahmosNode(BrahmosRootComponent, { children: node });
 
     const part = {
       parentNode: target,

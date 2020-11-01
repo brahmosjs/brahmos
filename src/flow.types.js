@@ -122,7 +122,7 @@ export interface TemplateTagType {
   strings: Array<string>;
   partsMeta: Array<PartMeta>;
   partMetaCode: string;
-
+  staticTree: any;
   +create: (isSvgPart: boolean) => void;
 }
 
@@ -145,6 +145,7 @@ export interface TagNodeType {
 
 /** Brahmos Node type */
 export type BrahmosNode = {|
+  $$typeof: symbol,
   nodeType: ?symbol,
   key?: number | string,
   ref: ?Ref,

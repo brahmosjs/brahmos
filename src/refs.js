@@ -1,15 +1,17 @@
 // @flow
 import { getNormalizedProps } from './utils';
 import type { ObjectLiteral, Ref, ObjectRef, FunctionalComponent } from './flow.types';
+import { REACT_FORWARD_REF } from './configs';
 
 export function forwardRef(Component: FunctionalComponent): FunctionalComponent {
-  function forwardRefComponent(props: ObjectLiteral) {
+  function ForwardRefComponent(props: ObjectLiteral) {
     return Component(getNormalizedProps(props, false), props.ref);
   }
 
-  forwardRefComponent.__isForwardRef = true;
+  ForwardRefComponent.__isForwardRef = true;
+  ForwardRefComponent.$$typeof = REACT_FORWARD_REF;
 
-  return forwardRefComponent;
+  return ForwardRefComponent;
 }
 
 export function createRef(): ObjectRef {

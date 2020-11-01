@@ -18,7 +18,7 @@ const banner = `${PACKAGE.name} - ${PACKAGE.version}
 }, released under the ${PACKAGE.license} license.
   ${PACKAGE.repository.url}`;
 
-const defaultConfig = {
+const rollupConfig = {
   input: './src/index.js',
   output: [
     {
@@ -53,4 +53,4 @@ const defaultConfig = {
   ],
 };
 
-export default [defaultConfig];
+export default [rollupConfig];

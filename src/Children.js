@@ -1,7 +1,8 @@
 // @flow
-import { isTagElementNode, isComponentNode, isTagNode } from './brahmosNode';
+import { isTagElementNode, isComponentNode, isTagNode, isHtmlTagNode } from './brahmosNode';
 import { isNil } from './utils';
 import type { BrahmosNode, ArrayCallback, ObjectLiteral } from './flow.types';
+import parseChildren from './parseChildren';
 
 function isPlaceholderTagNode(children: BrahmosNode): boolean {
   /**
@@ -21,6 +22,11 @@ function getChildrenArray(children: any): ?Array<any> {
   // if children is a tag node and is just a placeholder for all the children use the values from the node
   if (isPlaceholderTagNode(children)) {
     children = children.values;
+  }
+
+  // if the children is a html tag node parse the whole static tree
+  if (isHtmlTagNode(children)) {
+    children = parseChildren(children);
   }
 
   if (!Array.isArray(children)) children = [children];
@@ -85,6 +91,9 @@ export function cloneElement(node: any, props: ObjectLiteral, children: any): ?B
     if (isTagElementNode(node)) {
       const newProps = { ...node.values[0], ...props };
       return { ...node, values: [newProps, children] };
+    } else if (isHtmlTagNode(node)) {
+      const parsedChildren = parseChildren(node);
+      return cloneElement(parsedChildren, props, children);
     } else if (isComponentNode(node)) {
       return { ...node, props: { ...node.props, ...props, children } };
     }

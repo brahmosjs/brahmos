@@ -1,5 +1,5 @@
 // @flow
-import { createElement, Component } from './circularDep';
+import { createBrahmosNode, Component } from './circularDep';
 
 import { forwardRef } from './refs';
 import { getPromiseSuspendedValue, timestamp, resolvedPromise, isMounted } from './utils';
@@ -513,10 +513,10 @@ export const lazy = (lazyCallback: () => Promise<LazyComponentModule>) => {
     const ComponentModule = componentSuspender.read();
 
     // $FlowFixMe: lazy
-    return createElement(ComponentModule.default, { ...props, ref: ref }, props.children);
+    return createBrahmosNode(ComponentModule.default, { ...props, ref: ref });
   });
 
-  // assign a method to lazy load to start loading during createElement call
+  // assign a method to lazy load to start loading during createBrahmosNode call
   LazyComponent.__loadLazyComponent = () => {
     if (!componentSuspender) componentSuspender = getPromiseSuspendedValue(lazyCallback());
   };
