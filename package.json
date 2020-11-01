@@ -1,8 +1,9 @@
 {
   "name": "brahmos",
-  "version": "0.11.0-alpha",
+  "version": "0.11.0-alpha3",
   "description": "Super charged UI library with modern React API and native templates.",
   "main": "dist/brahmos.js",
+  "module": "dist/brahmos.es.js",
   "author": "s-yadav <sudhanshuyadav2@gmail.com>",
   "license": "MIT",
   "scripts": {
@@ -37,7 +38,7 @@
     "babel-eslint": "^10.1.0",
     "babel-jest": "^26.3.0",
     "babel-loader": "^8.1.0",
-    "babel-plugin-brahmos": "0.6.0-alpha",
+    "babel-plugin-brahmos": "0.6.0-alpha5",
     "bulma": "^0.9.0",
     "bundlesize": "^0.18.0",
     "cross-env": "^7.0.2",

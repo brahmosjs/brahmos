@@ -50,6 +50,8 @@ export default class TemplateTag implements TemplateTagType {
 
   partMetaCode: string;
 
+  staticTree: any;
+
   constructor(strings: Array<string>, partMetaCode: string) {
     this.strings = strings;
     this.template = null;

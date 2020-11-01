@@ -2,12 +2,13 @@
 import { isNil } from './utils';
 
 import type { BrahmosNode, ObjectLiteral } from './flow.types';
+import { REACT_ELEMENT } from './configs';
 
-export const TAG_NODE = Symbol('tag');
-export const TAG_ELEMENT_NODE = Symbol('tag-element');
-export const CLASS_COMPONENT_NODE = Symbol('class-component');
-export const FUNCTIONAL_COMPONENT_NODE = Symbol('functional-component');
-export const ATTRIBUTE_NODE = Symbol('attribute');
+export const TAG_NODE = Symbol.for('tag');
+export const TAG_ELEMENT_NODE = Symbol.for('tag-element');
+export const CLASS_COMPONENT_NODE = Symbol.for('class-component');
+export const FUNCTIONAL_COMPONENT_NODE = Symbol.for('functional-component');
+export const ATTRIBUTE_NODE = Symbol.for('attribute');
 
 type NotNil = $NonMaybeType<mixed>;
 
@@ -17,8 +18,12 @@ export function isTagElementNode({ nodeType }: NotNil): boolean {
 }
 
 // $FlowFixMe: As we are just comparing a property, on any type of non nil node
-export function isTagNode({ nodeType }: NotNil): boolean {
-  return nodeType === TAG_NODE || nodeType === TAG_ELEMENT_NODE;
+export function isHtmlTagNode({ nodeType }: NotNil): boolean {
+  return nodeType === TAG_NODE;
+}
+
+export function isTagNode(node: NotNil): boolean {
+  return isTagElementNode(node) || isHtmlTagNode(node);
 }
 
 // $FlowFixMe: As we are just comparing a property, on any type of non nil node
@@ -58,6 +63,7 @@ export function getKey(node: BrahmosNode, index: number): number | string {
 
 export function brahmosNode(props: ?ObjectLiteral, values: ?Array<any>, key?: string): BrahmosNode {
   return {
+    $$typeof: REACT_ELEMENT,
     /** Common node properties */
     nodeType: null,
     key,

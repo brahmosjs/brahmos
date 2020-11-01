@@ -2270,10 +2270,10 @@ babel-loader@^8.1.0:
     pify "^4.0.1"
     schema-utils "^2.6.5"
 
-babel-plugin-brahmos@0.6.0-alpha:
-  version "0.6.0-alpha"
-  resolved "https://registry.yarnpkg.com/babel-plugin-brahmos/-/babel-plugin-brahmos-0.6.0-alpha.tgz#e608ff345054c3a72cde88128b3eaa388fb7aad3"
-  integrity sha512-swPwNcCSe3/x6GWkZWicrja9DJxQW/4Y9NVb/d22UNDf1N7vg+dVor7IccVsSaorULnx/mi7BPn1UFaZeCr1Hw==
+babel-plugin-brahmos@0.6.0-alpha5:
+  version "0.6.0-alpha5"
+  resolved "https://registry.yarnpkg.com/babel-plugin-brahmos/-/babel-plugin-brahmos-0.6.0-alpha5.tgz#565283a4f5ebf40cce452eef7f8a0d0650cab99e"
+  integrity sha512-4Z5L1T0/8ug9rr5cG8s/jEE6V+QEdPuDPJ1To5reMKIodbzHGadxUC2QrZ2krwWTgWcNdAOcKoXVF2LlcD/qMQ==
   dependencies:
     "@babel/plugin-syntax-jsx" "^7.2.0"
     "@babel/types" "^7.11.5"
