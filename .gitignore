@@ -4,6 +4,7 @@ dist
 lib
 *.log
 reference
+.DS_Store
 
 # editor specific files
 .vscode

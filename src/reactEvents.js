@@ -1,13 +1,17 @@
 import { getNodeName } from './utils';
 import { syncUpdates } from './updateUtils';
-import { RENAMED_EVENTS } from './configs';
+import { RENAMED_EVENTS, ONCHANGE_INPUT_TYPES } from './configs';
 
 export function getEffectiveEventName(eventName, node) {
+  const { type } = node;
   const nodeName = getNodeName(node);
 
   if (RENAMED_EVENTS[eventName]) return RENAMED_EVENTS[eventName];
 
-  return nodeName === 'input' && eventName === 'change' ? 'input' : eventName;
+  /**
+   * Logic Source:  (https://github.com/preactjs/preact/blob/master/src/constants.js)
+   */
+  return /^change(textarea|input)/i.test(eventName + nodeName) && !ONCHANGE_INPUT_TYPES.test(type) ? 'input': eventName;
 }
 
 export function getInputStateType(node) {

@@ -25,7 +25,7 @@ export default function getTagNode(node: BrahmosNode, isSvgPart: boolean): TagNo
   };
 
   return {
-    fragment: domNode,
+    fragment: [domNode],
     domNodes: [domNode],
     parts: [nodePart],
   };

@@ -51,9 +51,9 @@ export function getCurrentTransition() {
   return currentTransition;
 }
 
-export function resetUpdateSource() {
+function resetUpdateSource() {
   /**
-   * reset update source one the current stack execution is done,
+   * reset update source when the current stack execution is done,
    * This will make sure if there is sync update like event or
    * force update, or initial render all the sync render and commit phase is done
    */
@@ -68,7 +68,7 @@ export function resetUpdateSource() {
 export function withUpdateSource(source: UpdateSource, cb: Function): void {
   updateSource = source;
   cb();
-  resetUpdateSource();
+  updateSource = UPDATE_SOURCE_DEFAULT;
 }
 
 export function withTransition(transition: AnyTransition, cb: Function): void {

@@ -27,6 +27,7 @@ import { setRef } from './refs';
 import type {
   HostFiber,
   Fiber,
+  Part,
   NodePart,
   ArrayPart,
   TemplateNodeType,
@@ -72,10 +73,49 @@ function setLastItemInParentDOM(parentNode: ExtendedElement, nodeInstance: Templ
   parentNode[LAST_ARRAY_DOM_KEY] = domNodes[domNodes.length - 1];
 }
 
+/**
+ * For array item we need to store first element reference in the part of parent fiber.
+ * This is required to calculate correct prev sibling of first dom node in the list .
+ */
+function setFirstNodeReference(part: Part, firstDOMNode: Node) {
+  if (part.isArrayNode && part.nodeIndex === 0) {
+    // $FlowFixMe: the while loop here checks if part is not undefined
+    while ((part = part.parentArrayPart)) {
+      part.firstDOMNode = firstDOMNode;
+    }
+  }
+}
+
 function getCorrectPreviousSibling(part: NodePart | ArrayPart): ?Node {
   let { previousSibling } = part;
+
+  /**
+   * When the part is a array part we might not have correct previous sibling
+   * In such case we have different ways to find the previous sibling
+   */
   if (part.isArrayNode) {
-    previousSibling = part.nodeIndex === 0 ? previousSibling : part.parentNode[LAST_ARRAY_DOM_KEY];
+    const { firstDOMNode, nodeIndex } = part;
+    /**
+     * if the the nodeIndex is > 0 then we can always rely on the LAST_ARRAY_DOM_KEY,
+     * As during mount and update we maintain this information.
+     */
+    if (nodeIndex > 0) {
+      previousSibling = part.parentNode[LAST_ARRAY_DOM_KEY];
+    } else if (part.parentArrayPart) {
+      /**
+       * If the part has parentArrayPart. It means there is array inside array.
+       * With that there can be two cases.
+       *
+       * 1. On mount phase where the elements are not inserted yet, we will not have first node info.
+       * In which case we want to rely on LAST_ARRAY_DOM_KEY on parent element.
+       *
+       * 2. On update we will always have firstDOMNode reference, in this case we find the previousSibling
+       * using firstDOMNode, so we always get the correct prevSibling of the array part.
+       */
+      previousSibling = firstDOMNode
+        ? firstDOMNode.previousSibling
+        : part.parentNode[LAST_ARRAY_DOM_KEY];
+    }
   }
 
   return previousSibling;
@@ -115,18 +155,27 @@ function reArrangeExistingNode(fiber: Fiber, alternate: Fiber): void {
     ) {
       insertBefore(parentNode, nextSibling, domNodes);
     }
+
+    setFirstNodeReference(part, firstDOMNode);
   }
 
   // set the last item of domNodes in parentNode
   setLastItemInParentDOM(parentNode, nodeInstance);
 }
 
-function updateTagNode(fiber: Fiber) {
+function handleTagEffect(fiber: Fiber) {
   const { nodeInstance, alternate, node } = fiber;
 
   // $FlowFixMe: TagNode will always be inside Array part of node part
   const part: ArrayPart | NodePart = fiber.part;
   const { parentNode } = part;
+
+  const _isTagElement = isTagElementNode(node);
+
+  // if it is the tag element handle the attributes from same fiber
+  if (_isTagElement) {
+    handleAttributeEffect(fiber, nodeInstance.domNodes[0]);
+  }
 
   // if the alternate node is there rearrange the element if required, or else just add the new node
   if (alternate) {
@@ -134,9 +183,8 @@ function updateTagNode(fiber: Fiber) {
   } else {
     const previousSibling = getCorrectPreviousSibling(part);
     const nextSibling = getNextSibling(parentNode, previousSibling);
-    const _isTagElement = isTagElementNode(node);
 
-    const domNodes = insertBefore(parentNode, nextSibling, nodeInstance.fragment);
+    const domNodes: Array<Node> = insertBefore(parentNode, nextSibling, nodeInstance.fragment);
 
     /**
      * when we add nodes first time
@@ -147,10 +195,7 @@ function updateTagNode(fiber: Fiber) {
       nodeInstance.domNodes = domNodes;
     }
 
-    // if it is the tag element handle the attributes from same fiber
-    if (isTagElementNode(node)) {
-      handleAttributeEffect(fiber, nodeInstance.fragment);
-    }
+    setFirstNodeReference(part, domNodes[0]);
 
     // set the last item of domNodes in parentNode
     setLastItemInParentDOM(parentNode, nodeInstance);
@@ -315,7 +360,7 @@ function handleFiberEffect(fiber) {
     if (isPrimitiveNode(node)) {
       updateTextNode(fiber);
     } else if (isTagNode(node)) {
-      updateTagNode(fiber);
+      handleTagEffect(fiber);
       // TODO: Handle rearrange type of effect
     } else if (_isComponentNode) {
       handleComponentEffect(fiber);

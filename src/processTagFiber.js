@@ -3,8 +3,8 @@ import { TAG_ELEMENT_NODE, ATTRIBUTE_NODE } from './brahmosNode';
 import { createAndLink, cloneChildrenFibers, markPendingEffect } from './fiber';
 import getTagNode from './TagNode';
 import TemplateNode from './TemplateNode';
-import { loopEntries } from './utils';
-import { RESERVED_ATTRIBUTES, MODIFIED_ATTRIBUTES, EFFECT_TYPE_OTHER } from './configs';
+import { getEffectiveAttrName, loopEntries } from './utils';
+import { RESERVED_ATTRIBUTES, EFFECT_TYPE_OTHER } from './configs';
 
 import type { Fiber, AttributePart } from './flow.types';
 
@@ -41,10 +41,10 @@ function partsToFiber(parts, values, parentFiber) {
       while (part && domNode === part.domNode) {
         loopEntries(values[i], (attrName, attrValue) => {
           const attributePart = ((part: any): AttributePart);
-          const overrideAttrNameCheck = MODIFIED_ATTRIBUTES[attrName];
+          const effectiveAttrName = getEffectiveAttrName(attrName);
           const isOverridden = isAttrOverridden(
             attributePart.tagAttrs,
-            overrideAttrNameCheck,
+            effectiveAttrName,
             attributePart.attrIndex,
           );
           if (!isOverridden && !RESERVED_ATTRIBUTES[attrName]) {

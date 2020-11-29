@@ -11,8 +11,8 @@ import functionalComponentInstance from './functionalComponentInstance';
 import { CLASS_COMPONENT_NODE, isComponentNode } from './brahmosNode';
 import { getClosestSuspenseFiber, resetSiblingFibers } from './circularDep';
 
-import { callLifeCycle, getComponentName, BrahmosRootComponent } from './utils';
-import { getPendingUpdates } from './updateUtils';
+import { callLifeCycle, getComponentName, BrahmosRootComponent, afterCurrentStack } from './utils';
+import { getPendingUpdates, withUpdateSource } from './updateUtils';
 
 import shallowEqual from './helpers/shallowEqual';
 import { BRAHMOS_DATA_KEY, EFFECT_TYPE_OTHER, UPDATE_TYPE_DEFERRED } from './configs';
@@ -193,10 +193,6 @@ export default function processComponentFiber(fiber: Fiber): void {
       // $FlowFixMe
       state = { ...state, ...derivedState, ...derivedErrorState };
     }
-    // call callbacks of setState with new state
-    pendingUpdates.forEach(({ callback }) => {
-      if (callback) callback(state);
-    });
     /**
      * check if component is instance of PureComponent, if yes then,
      * do shallow check for props and states
@@ -228,7 +224,7 @@ export default function processComponentFiber(fiber: Fiber): void {
       if (provider && isFirstRender) {
         provider.sub(componentClassInstance);
       }
-      nodeInstance.context = contextValue;
+      componentClassInstance.context = contextValue;
     }
 
     // set the new state, props, context and reset uncommitted state
@@ -236,6 +232,17 @@ export default function processComponentFiber(fiber: Fiber): void {
 
     // $FlowFixMe: We are just setting the existing prop, so we can ignore the error
     componentClassInstance.props = props;
+
+    // call setState callbacks after its set to component instance
+    pendingUpdates.forEach(({ callback }) => {
+      if (callback) {
+        // call the callback with same update source as callbacks can have setState, and we want to reduce repaints
+        const { updateSource } = root;
+        afterCurrentStack(() => {
+          withUpdateSource(updateSource, () => callback(state));
+        });
+      }
+    });
 
     // store the state and props on memoized value as well
     if (currentTransition) {

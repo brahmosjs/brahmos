@@ -72,6 +72,8 @@ export type ArrayPart = {|
   parentNode: ExtendedElement,
   previousSibling: ?Node,
   nodeIndex: number,
+  firstDOMNode?: Node,
+  parentArrayPart?: ArrayPart,
 |};
 
 export type Part = AttributePart | NodePart | ArrayPart;
@@ -137,7 +139,7 @@ export interface TemplateNodeType {
 }
 
 export interface TagNodeType {
-  fragment: Node;
+  fragment: Array<Node>;
   parts: Array<Part>;
   domNodes: Array<Node>;
 }
@@ -195,7 +197,7 @@ export type HostFiber = {|
   pendingTransitions: Array<AnyTransition>,
   tearDownFibers: Array<Fiber>,
   postCommitEffects: Array<Fiber>,
-  batchUpdates: { [key: string]: ?Promise<any> },
+  batchUpdates: { [key: string]: number },
   lastDeferredCompleteTime: number,
   lastCompleteTime: number,
   deferredUpdateTime: number,
