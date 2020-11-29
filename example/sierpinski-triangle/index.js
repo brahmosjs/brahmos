@@ -1,4 +1,4 @@
-import Brahmos, { Component, unstable_deferredUpdates, unstable_syncUpdates } from 'brahmos';
+import { Component, unstable_deferredUpdates, unstable_syncUpdates } from 'brahmos';
 
 /**
  * Source: https://github.com/facebook/react/blob/master/fixtures/fiber-triangle/index.html
@@ -185,7 +185,7 @@ class SierpinskiWrapper extends Component {
         </div>
         <div style={{ ...containerStyle, transform }}>
           <div className="dot-container">
-            <SierpinskiTriangle x={0} y={0} s={500}>
+            <SierpinskiTriangle x={0} y={0} s={1000}>
               {seconds}
             </SierpinskiTriangle>
           </div>

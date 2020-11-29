@@ -1,4 +1,4 @@
-import Brahmos, { useState, useEffect } from 'brahmos';
+import { useState, useEffect } from 'brahmos';
 
 import { BrahmosLogo, GithubLogo } from './Logos';
 import TodoList from './todo-list';
@@ -12,6 +12,7 @@ import ErrorBoundariesDemo from './error-boundaries';
 import SVGDemo from './svg-chart';
 import HooksDemo from './hooks';
 import ContextDemo from './context-api';
+import RechartExample from './third-party-component';
 
 import './App.scss';
 
@@ -70,6 +71,11 @@ const examples = [
     title: 'Lazy Component Demo',
     id: 'lazy-component',
     Component: LazyComponentDemo,
+  },
+  {
+    title: 'Third Party React Component',
+    id: 'third-party-component',
+    Component: RechartExample,
   },
 ];
 
