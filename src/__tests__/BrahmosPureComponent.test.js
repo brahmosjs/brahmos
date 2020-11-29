@@ -5,15 +5,15 @@ https://github.com/facebook/react/blob/master/packages/react/src/__tests__/React
 import Brahmos, { render } from '..';
 
 describe('BrahmosPureComponent', () => {
-  it('should re-render only when old and new props or state are not shallow equal', done => {
+  it('should re-render only when old and new props or state are not shallow equal', (done) => {
     let renders = 0;
     class Component extends Brahmos.PureComponent {
-      constructor () {
+      constructor() {
         super();
         this.state = { type: 'mushrooms' };
       }
 
-      render () {
+      render() {
         renders++;
         return <div>{this.props.text[0]}</div>;
       }
@@ -54,19 +54,16 @@ describe('BrahmosPureComponent', () => {
   it('extends Brahmos.Component', () => {
     let renders = 0;
     class Component extends Brahmos.PureComponent {
-      constructor () {
+      constructor() {
         super(); // Doesn't render if constructor is removed
       }
 
-      render () {
+      render() {
         renders++;
         return <div />;
       }
     }
-    const pureComponentInstance = render(
-      <Component />,
-      document.createElement('div')
-    );
+    const pureComponentInstance = render(<Component />, document.createElement('div'));
     expect(pureComponentInstance instanceof Brahmos.Component).toBe(true);
     expect(pureComponentInstance instanceof Brahmos.PureComponent).toBe(true);
     expect(renders).toBe(1);

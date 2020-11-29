@@ -11,7 +11,7 @@ export default function processArrayFiber(fiber: Fiber): void {
   let refFiber = fiber;
 
   // $FlowFixMe: part will always be node part on array fiber
-  const { parentNode, previousSibling } = part;
+  const { parentNode, previousSibling, firstDOMNode } = part;
 
   const childKeyMap = new Map();
 
@@ -60,8 +60,10 @@ export default function processArrayFiber(fiber: Fiber): void {
          * undefined property
          */
         a: undefined,
+        firstDOMNode,
         isArrayNode: true,
         nodeIndex: index,
+        parentArrayPart: part.isArrayNode ? part : null,
       },
       currentFiber,
       previousFiber,

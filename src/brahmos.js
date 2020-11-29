@@ -80,4 +80,7 @@ export {
 };
 
 /** Export transforms */
-export { html, createBrahmosNode as jsx, createBrahmosNode as jsxs, createBrahmosNode as jsxDEV };
+export const jsx = createBrahmosNode;
+export const jsxs = createBrahmosNode;
+export const jsxDev = createBrahmosNode;
+export { html };

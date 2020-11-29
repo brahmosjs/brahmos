@@ -1,4 +1,4 @@
-import { getEventName, isEventAttribute, loopEntries } from './utils';
+import { getEffectiveAttrName, getEventName, isEventAttribute, loopEntries } from './utils';
 
 import {
   getEffectiveEventName,
@@ -103,6 +103,10 @@ function setAttribute(node, attrName, attrValue, oldAttrValue, isSvgAttribute) {
 
     // handle all other node attributes
   } else {
+
+    // if attribute name is modified for JSX props, reset the name
+    attrName = getEffectiveAttrName(attrName);
+
     /**
      * If attribute is prefixed with xlink then we have to set attribute with namespace
      * if attribute value is defined set the new attribute value and if

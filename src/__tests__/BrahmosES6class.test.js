@@ -1,8 +1,11 @@
 /*
 Forked from -
 https://github.com/facebook/react/blob/master/packages/react/src/__tests__/ReactES6Class-test.js
+
+TODO: Simplify this specs.
 */
 import Brahmos, { render } from '..';
+import { sleep } from './testUtils';
 
 describe('BrahmosES6Class', () => {
   let container;
@@ -20,11 +23,11 @@ describe('BrahmosES6Class', () => {
     renderedName = null;
     container = document.createElement('div');
     Inner = class extends Brahmos.Component {
-      getName () {
+      getName() {
         return this.props.name;
       }
 
-      render () {
+      render() {
         attachedListenerWithCallback = (callback) => this.props.onClick(callback);
         attachedListener = this.props.onClick;
         renderedName = this.props.name;
@@ -33,7 +36,7 @@ describe('BrahmosES6Class', () => {
     };
   });
 
-  function test (element, expectedTag, expectedClassName) {
+  function test(element, expectedTag, expectedClassName) {
     const instance = render(element, container);
     expect(container.firstChild).not.toBeNull();
     expect(container.firstChild.tagName).toBe(expectedTag);
@@ -48,7 +51,7 @@ describe('BrahmosES6Class', () => {
 
   it('renders a simple stateless component with prop', () => {
     class Foo extends Brahmos.Component {
-      render () {
+      render() {
         return <Inner name={this.props.bar} />;
       }
     }
@@ -58,12 +61,12 @@ describe('BrahmosES6Class', () => {
 
   it('renders based on state using initial values in this.props', () => {
     class Foo extends Brahmos.Component {
-      constructor (props) {
+      constructor(props) {
         super(props);
         this.state = { bar: this.props.initialValue };
       }
 
-      render () {
+      render() {
         return <span className={this.state.bar} />;
       }
     }
@@ -72,16 +75,16 @@ describe('BrahmosES6Class', () => {
 
   it('renders based on state using props in the constructor', () => {
     class Foo extends Brahmos.Component {
-      constructor (props) {
+      constructor(props) {
         super(props);
         this.state = { bar: props.initialValue };
       }
 
-      changeState () {
+      changeState() {
         this.setState({ bar: 'bar' });
       }
 
-      render () {
+      render() {
         if (this.state.bar === 'foo') {
           return <div className="foo" />;
         }
@@ -97,14 +100,14 @@ describe('BrahmosES6Class', () => {
     class Foo extends Brahmos.Component {
       state = {};
 
-      static getDerivedStateFromProps (nextProps, prevState) {
+      static getDerivedStateFromProps(nextProps, prevState) {
         return {
           foo: nextProps.foo,
           bar: 'bar',
         };
       }
 
-      render () {
+      render() {
         return <div className={`${this.state.foo} ${this.state.bar}`} />;
       }
     }
@@ -118,13 +121,13 @@ describe('BrahmosES6Class', () => {
         bar: 'bar',
       };
 
-      static getDerivedStateFromProps (nextProps, prevState) {
+      static getDerivedStateFromProps(nextProps, prevState) {
         return {
           foo: `not-${prevState.foo}`,
         };
       }
 
-      render () {
+      render() {
         return <div className={`${this.state.foo} ${this.state.bar}`} />;
       }
     }
@@ -137,7 +140,7 @@ describe('BrahmosES6Class', () => {
         value: 'initial',
       };
 
-      static getDerivedStateFromProps (nextProps, prevState) {
+      static getDerivedStateFromProps(nextProps, prevState) {
         if (nextProps.update) {
           return {
             value: 'updated',
@@ -146,7 +149,7 @@ describe('BrahmosES6Class', () => {
         return null;
       }
 
-      render () {
+      render() {
         return <div className={this.state.value} />;
       }
     }
@@ -156,12 +159,12 @@ describe('BrahmosES6Class', () => {
 
   it('should render with null in the initial state property', () => {
     class Foo extends Brahmos.Component {
-      constructor () {
+      constructor() {
         super();
         this.state = null;
       }
 
-      render () {
+      render() {
         return <span />;
       }
     }
@@ -170,19 +173,17 @@ describe('BrahmosES6Class', () => {
 
   it('setState through an event handler', () => {
     class Foo extends Brahmos.Component {
-      constructor (props) {
+      constructor(props) {
         super(props);
         this.state = { bar: props.initialValue };
       }
 
-      handleClick (callback) {
+      handleClick(callback) {
         this.setState({ bar: 'bar' }, () => callback());
       }
 
-      render () {
-        return (
-          <Inner name={this.state.bar} onClick={this.handleClick.bind(this)} />
-        );
+      render() {
+        return <Inner name={this.state.bar} onClick={this.handleClick.bind(this)} />;
       }
     }
     test(<Foo initialValue="foo" />, 'DIV', 'foo');
@@ -192,16 +193,16 @@ describe('BrahmosES6Class', () => {
 
   it('should not implicitly bind event handlers', () => {
     class Foo extends Brahmos.Component {
-      constructor (props) {
+      constructor(props) {
         super(props);
         this.state = { bar: props.initialValue };
       }
 
-      handleClick () {
+      handleClick() {
         this.setState({ bar: 'bar' });
       }
 
-      render () {
+      render() {
         return <Inner name={this.state.bar} onClick={this.handleClick} />;
       }
     }
@@ -212,51 +213,54 @@ describe('BrahmosES6Class', () => {
   it('will call all the normal life cycle methods', () => {
     let lifeCycles = [];
     class Foo extends Brahmos.Component {
-      constructor () {
+      constructor() {
         super();
         this.state = {};
       }
 
-      componentDidMount () {
+      componentDidMount() {
         lifeCycles.push('did-mount');
       }
 
-      shouldComponentUpdate (nextProps, nextState) {
+      shouldComponentUpdate(nextProps, nextState) {
         lifeCycles.push('should-update', nextProps, nextState);
         return true;
       }
 
-      componentDidUpdate (prevProps, prevState) {
+      componentDidUpdate(prevProps, prevState) {
         lifeCycles.push('did-update', prevProps, prevState);
       }
 
-      componentWillUnmount () {
+      componentWillUnmount() {
         lifeCycles.push('will-unmount');
       }
 
-      render () {
+      render() {
         return <span className={this.props.value} />;
       }
     }
     class Outer extends Brahmos.Component {
-      constructor (props) {
+      constructor(props) {
         super(props);
         this.state = {
           isFooVisible: this.props.visible,
         };
       }
 
-      unmountFoo (callback) {
-        this.setState({
-          isFooVisible: false,
-        }, () => callback);
+      unmountFoo(callback) {
+        this.setState(
+          {
+            isFooVisible: false,
+          },
+          () => callback,
+        );
       }
 
-      render () {
+      render() {
         if (this.state.isFooVisible) {
-          return <Foo value={this.props.value}/>;
+          return <Foo value={this.props.value} />;
         }
-        return <div/>;
+        return <div />;
       }
     }
     test(<Outer visible value="foo" />, 'SPAN', 'foo');
@@ -264,35 +268,36 @@ describe('BrahmosES6Class', () => {
     lifeCycles = []; // reset
     const instance = test(<Outer visible value="bar" />, 'SPAN', 'bar');
     expect(lifeCycles).toEqual([
-      'should-update', freeze({ value: 'bar' }), {},
-      'did-update', freeze({ value: 'foo' }), {},
+      'should-update',
+      freeze({ value: 'bar' }),
+      {},
+      'did-update',
+      freeze({ value: 'foo' }),
+      {},
     ]);
     lifeCycles = []; // reset
     instance.unmountFoo(() => expect(lifeCycles).toEqual(['will-unmount']));
   });
 
-  it('renders using forceUpdate even when there is no state', () => {
+  it('renders using forceUpdate even when there is no state', async () => {
     class Foo extends Brahmos.Component {
-      constructor (props) {
+      constructor(props) {
         super(props);
         this.mutativeValue = props.initialValue;
       }
 
-      handleClick (callback) {
+      handleClick(callback) {
         this.mutativeValue = 'bar';
         this.forceUpdate(() => callback());
       }
 
-      render () {
-        return (
-          <Inner
-            name={this.mutativeValue}
-            onClick={this.handleClick.bind(this)}
-          />
-        );
+      render() {
+        return <Inner name={this.mutativeValue} onClick={this.handleClick.bind(this)} />;
       }
     }
     test(<Foo initialValue="foo" />, 'DIV', 'foo');
-    attachedListenerWithCallback(() => expect(renderedName).toBe('bar'));
+    attachedListenerWithCallback(() => {});
+    await sleep(10);
+    expect(renderedName).toBe('bar');
   });
 });

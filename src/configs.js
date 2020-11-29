@@ -18,13 +18,25 @@ export const MODIFIED_ATTRIBUTES: { [key: string]: string } = {
   htmlFor: 'for',
   acceptCharset: 'accept-charset',
   httpEquiv: 'http-equiv',
+  tabIndex: 'tabindex', // tabIndex is supported both on svg and html, but in svg the camelCase does not work. So transform this
 };
 
 export const RENAMED_EVENTS = {
   doubleclick: 'dblclick',
 };
 
-export const SUSPENSE_REVEAL_INTERVAL = 100; // in ms
+
+/**
+ * Regex taken from Preact. (https://github.com/preactjs/preact/blob/master/compat/src/render.js)
+ */
+// Input types for which onchange should not be converted to oninput.
+// type="file|checkbox|radio", plus "range" in IE11.
+// (IE11 doesn't support Symbol, which we use here to turn `rad` into `ra` which matches "range")
+export const ONCHANGE_INPUT_TYPES =
+	typeof Symbol !== 'undefined' ? /fil|che|rad/i : /fil|che|ra/i;
+
+export const CAMEL_ATTRIBUTES = /^(?:accent|alignment|arabic|baseline|cap|clip(?!PathU)|color|fill|flood|font|glyph(?!R)|horiz|marker(?!H|W|U)|overline|paint|stop|strikethrough|stroke|text(?!L)|underline|unicode|units|v|vector|vert|word|writing|x(?!C))[A-Z]/;
+
 
 /**
  * Regex taken from Preact. (https://github.com/preactjs/preact/blob/master/src/constants.js)
@@ -35,6 +47,8 @@ export const IS_NON_DIMENSIONAL = /acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine
  * xlink namespace for svgs
  */
 export const XLINK_NS = 'http://www.w3.org/1999/xlink';
+
+export const SUSPENSE_REVEAL_INTERVAL = 100; // in ms
 
 /**
  * Brahmos data key which shouldn't be touched

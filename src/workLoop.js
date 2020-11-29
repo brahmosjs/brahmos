@@ -13,6 +13,7 @@ import {
   UPDATE_TYPE_DEFERRED,
   EFFECT_TYPE_OTHER,
   UPDATE_TYPE_SYNC,
+  UPDATE_SOURCE_IMMEDIATE_ACTION,
 } from './configs';
 
 import processComponentFiber from './processComponentFiber';
@@ -149,7 +150,11 @@ const avoidInlineCommitChange = {
     }
 
     // After correcting the tree flush the effects on new fibers
-    effectLoop(root, fibersWithEffect);
+    /**
+     * There can be state updates inside effects/lifecycle, so we should mark it as
+     * immediate update  so we don't have multiple paints
+     */
+    withUpdateSource(UPDATE_SOURCE_IMMEDIATE_ACTION, () => effectLoop(root, fibersWithEffect));
   },
 };
 

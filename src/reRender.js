@@ -22,7 +22,7 @@ export default function reRender(component: AnyComponentInstance): void {
   const fiber = getFiberFromComponent(component);
 
   const { root } = fiber;
-  const { pendingTransitions } = root;
+  const { pendingTransitions, batchUpdates } = root;
 
   const currentUpdateSource = getCurrentUpdateSource();
   const currentTransition = getCurrentTransition();
@@ -54,14 +54,20 @@ export default function reRender(component: AnyComponentInstance): void {
   }
 
   /**
-   * if there is already a batch update happening, early return
-   * as all the state change will be covered with that batch update
+   * if there is already a batch update happening, increment the reRender count and
+   * early return as all the state change will be covered with that batch update
    */
-  if (root.batchUpdates[currentUpdateSource]) return;
+  if (batchUpdates[currentUpdateSource]) {
+    batchUpdates[currentUpdateSource] += 1;
+    return;
+  }
 
-  root.batchUpdates[currentUpdateSource] = afterCurrentStack(() => {
+  batchUpdates[currentUpdateSource] = 1;
+
+  afterCurrentStack(() => {
+    const reRenderCount = batchUpdates[currentUpdateSource];
     // reset batch update so it can start taking new updates
-    root.batchUpdates[currentUpdateSource] = null;
+    batchUpdates[currentUpdateSource] = 0;
 
     const isDeferredUpdate = currentUpdateSource === UPDATE_SOURCE_TRANSITION;
 
@@ -80,10 +86,14 @@ export default function reRender(component: AnyComponentInstance): void {
        * if the update source is event and we don't have any ongoing sync update
        * which we can figure out based on last updateType and if there is any cancelSchedule
        * Start the processing from the fiber which cause the update.
+       *
+       * Also, when reRenderCount is more than one it means there are multiple update pending
        */
       const hasOngoingSyncUpdates = root.updateType === UPDATE_TYPE_SYNC && root.cancelSchedule;
       const startFromFiber =
-        currentUpdateSource === UPDATE_SOURCE_IMMEDIATE_ACTION && !hasOngoingSyncUpdates;
+        currentUpdateSource === UPDATE_SOURCE_IMMEDIATE_ACTION &&
+        !hasOngoingSyncUpdates &&
+        reRenderCount === 1;
 
       doSyncProcessing(startFromFiber ? fiber : root.current);
     }

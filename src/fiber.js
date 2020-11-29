@@ -1,6 +1,12 @@
 // @flow
 
-import { isComponentNode, isTagNode, isPrimitiveNode, ATTRIBUTE_NODE } from './brahmosNode';
+import {
+  isComponentNode,
+  isPrimitiveNode,
+  ATTRIBUTE_NODE,
+  isTagElementNode,
+  isHtmlTagNode,
+} from './brahmosNode';
 import {
   UPDATE_TYPE_DEFERRED,
   BRAHMOS_DATA_KEY,
@@ -288,10 +294,10 @@ function shouldClone(newNode: any, oldNode: any): boolean {
     newNode.nodeType === ATTRIBUTE_NODE ||
     // if both are array type than clone
     (Array.isArray(newNode) && Array.isArray(oldNode)) ||
-    // if it is component node and node type matches with oldNode's type we should clone the current
-    (isComponentNode(newNode) && newNode.type === oldNode.type) ||
+    // if it is component node or tag element node and node type matches with oldNode's type we should clone the current
+    ((isComponentNode(newNode) || isTagElementNode(newNode)) && newNode.type === oldNode.type) ||
     // if it is tag node and node's template matches with oldNode's template we should clone the current
-    (isTagNode(newNode) && newNode.template === oldNode.template)
+    (isHtmlTagNode(newNode) && newNode.template === oldNode.template)
   );
 }
 

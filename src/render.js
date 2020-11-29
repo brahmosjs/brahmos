@@ -1,5 +1,6 @@
 // @flow
 import { createBrahmosNode } from './circularDep';
+import { CLASS_COMPONENT_NODE } from './brahmosNode';
 import { BrahmosRootComponent } from './utils';
 import { createFiber, createHostFiber, setUpdateTime } from './fiber';
 import { doSyncProcessing } from './workLoop';
@@ -59,4 +60,8 @@ export default function render(node: any, target: ExtendedElement) {
     rootFiber.updateSource = getCurrentUpdateSource();
     doSyncProcessing(fiber);
   });
+
+  // if it is a class component return the component instance, or else return null
+  // $FlowFixMe: As the fiber is a wrapper component, it will always have child
+  return node && node.nodeType === CLASS_COMPONENT_NODE ? fiber.child.nodeInstance : null;
 }

@@ -1,5 +1,5 @@
 // @flow
-import { BRAHMOS_DATA_KEY } from './configs';
+import { BRAHMOS_DATA_KEY, CAMEL_ATTRIBUTES, MODIFIED_ATTRIBUTES } from './configs';
 import type {
   ObjectLiteral,
   AnyComponentInstance,
@@ -18,8 +18,25 @@ export function isHTMLElement(tagName: string): boolean {
 
 export function isEventAttribute(attrName: string): boolean {
   // must start with on prefix
-  // used indexOf for cross browser support
-  return attrName.indexOf('on') === 0;
+  /**
+   * Check inspired by preact.
+   * Benchmark for comparison: https://esbench.com/bench/574c954bdb965b9a00965ac6
+   */
+  return attrName[0] === 'o' && attrName[1] === 'n';
+}
+
+// Convert React's camel-cased attributes to hypen cased.
+export function getEffectiveAttrName(attrName: string): string {
+  /**
+   * if the attribute is camel cased for react, convert it to lower case and return it
+   * Or else
+   * If the attribute is an modified attribute return the html attribute.
+   */
+  const hyphenCasedAttribute = CAMEL_ATTRIBUTES.test(attrName)
+    ? attrName.replace(/[A-Z0-9]/, '-$&').toLowerCase()
+    : attrName;
+
+  return MODIFIED_ATTRIBUTES[attrName] || hyphenCasedAttribute;
 }
 
 // get the node name from the node in lowercase format
@@ -155,14 +172,22 @@ export function changeToNode(value: Array<Node> | NodeList<Node> | Node | string
  * Function to add child nodes before endNode, if it is not defined or null
  * It will add nodes on the last
  */
-export function insertBefore(parent: Element, end: ?Node, value: any): Node {
+export function insertBefore(parent: Element, end: ?Node, value: any): Array<Node> {
   const node = changeToNode(value);
 
   /**
    * Fragment child nodes gets cleared after its appended to dom.
    * So if it is fragment keep the reference of all childNodes as array.
    */
-  const persistentNode = node instanceof DocumentFragment ? toArray(node.childNodes) : node;
+  let persistentNode;
+  if (Array.isArray(value)) {
+    // if value was already an array no need to convert document fragment to array
+    persistentNode = value;
+  } else if (node instanceof DocumentFragment) {
+    persistentNode = toArray(node.childNodes);
+  } else {
+    persistentNode = value;
+  }
 
   parent.insertBefore(node, end);
 

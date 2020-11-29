@@ -1,0 +1,65 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Test list rendering Test Stateful Components in Array should handle adding item on state full component which is part of an array. 1`] = `
+"<div>
+    <li>a</li>
+    <li><button data-testid=\\"bcount\\">Increase Count</button></li>
+    <li>b0</li>
+    <li>b1</li>
+    <li>b2</li>
+    <li><button data-testid=\\"ccount\\">Decrease Count</button></li>
+    <li>c0</li>
+    <li>c1</li>
+    <li><button data-testid=\\"dreverse\\">Reverse List</button></li>
+    <li>d0</li>
+    <li>d1</li>
+    <li>e</li>
+</div>"
+`;
+
+exports[`Test list rendering Test Stateful Components in Array should handle removing item on state full component which is part of an array. 1`] = `
+"<div>
+    <li>a</li>
+    <li><button data-testid=\\"bcount\\">Increase Count</button></li>
+    <li>b0</li>
+    <li>b1</li>
+    <li><button data-testid=\\"ccount\\">Decrease Count</button></li>
+    <li>c0</li>
+    <li><button data-testid=\\"dreverse\\">Reverse List</button></li>
+    <li>d0</li>
+    <li>d1</li>
+    <li>e</li>
+</div>"
+`;
+
+exports[`Test list rendering Test Stateful Components in Array should handle shuffle of items on state full component which is part of an array. 1`] = `
+"<div>
+    <li>a</li>
+    <li><button data-testid=\\"bcount\\">Increase Count</button></li>
+    <li>b0</li>
+    <li>b1</li>
+    <li><button data-testid=\\"ccount\\">Decrease Count</button></li>
+    <li>c0</li>
+    <li>c1</li>
+    <li>d1</li>
+    <li>d0</li>
+    <li><button data-testid=\\"dreverse\\">Reverse List</button></li>
+    <li>e</li>
+</div>"
+`;
+
+exports[`Test list rendering Test Stateful Components in Array should render nested elements in correct order 1`] = `
+"<div>
+    <li>a</li>
+    <li><button data-testid=\\"bcount\\">Increase Count</button></li>
+    <li>b0</li>
+    <li>b1</li>
+    <li><button data-testid=\\"ccount\\">Decrease Count</button></li>
+    <li>c0</li>
+    <li>c1</li>
+    <li><button data-testid=\\"dreverse\\">Reverse List</button></li>
+    <li>d0</li>
+    <li>d1</li>
+    <li>e</li>
+</div>"
+`;
