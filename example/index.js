@@ -1,4 +1,4 @@
-import Brahmos, { render } from 'brahmos';
+import { render } from 'brahmos';
 
 import App from './App.js';
 

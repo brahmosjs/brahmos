@@ -1,5 +1,3 @@
-import Brahmos from 'brahmos';
-
 export default function ReactCredit({ name, link }) {
   return (
     <p className="react-credit">
