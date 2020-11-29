@@ -1,6 +1,6 @@
 // @flow
 import { isTagElementNode, isComponentNode, isTagNode, isHtmlTagNode } from './brahmosNode';
-import { isNil } from './utils';
+import { getNormalizedProps, isNil } from './utils';
 import type { BrahmosNode, ArrayCallback, ObjectLiteral } from './flow.types';
 import parseChildren from './parseChildren';
 
@@ -9,7 +9,7 @@ function isPlaceholderTagNode(children: BrahmosNode): boolean {
    * if the template string for a tag node does not have any thing,
    * it means the tag node is just used to wrap children.
    * Note: We always wrap the children except when children is already an array
-   * or there is single child. We do this to make the all the children positional
+   * or there is single child. We do this to make the all of the child positional
    * */
   // $FlowFixMe: We are checking for tag node so template key will be present
   return isTagNode(children) && !children.template.strings.some(Boolean);
@@ -75,11 +75,17 @@ function only(children: any) {
   return _children && children.length === 1;
 }
 
+function count(children: any): number {
+  const _children = getChildrenArray(children);
+  return _children ? _children.length : 0;
+}
+
 export const Children = {
   map,
   toArray,
   forEach,
   only,
+  count,
 };
 
 export function isValidElement(node: any) {
@@ -87,15 +93,17 @@ export function isValidElement(node: any) {
 }
 
 export function cloneElement(node: any, props: ObjectLiteral, children: any): ?BrahmosNode {
+  // extend props can be undefined, so have default value for it
+  props = props || {};
   if (node) {
     if (isTagElementNode(node)) {
-      const newProps = { ...node.values[0], ...props };
-      return { ...node, values: [newProps, children] };
+      const newProps = { ...node.values[0], ...getNormalizedProps(props, false)};
+      return { ...node, values: [newProps, children], ref: props.ref };
     } else if (isHtmlTagNode(node)) {
       const parsedChildren = parseChildren(node);
       return cloneElement(parsedChildren, props, children);
     } else if (isComponentNode(node)) {
-      return { ...node, props: { ...node.props, ...props, children } };
+      return { ...node, props: { ...node.props, ...getNormalizedProps(props, false), children }, ref: props.ref };
     }
   }
 
