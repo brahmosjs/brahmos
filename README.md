@@ -70,6 +70,12 @@ alias: {
 },
 ```
 
+-  **webpack** ([https://webpack.js.org/configuration/resolve/#resolvealias](https://webpack.js.org/configuration/resolve/#resolvealias))
+- **parcel** ([https://parceljs.org/module_resolution.html#aliases](https://parceljs.org/module_resolution.html#aliases))
+- **rollup** ([https://www.npmjs.com/package/@rollup/plugin-alias](https://www.npmjs.com/package/@rollup/plugin-alias))
+- **babel** ([https://www.npmjs.com/package/babel-plugin-module-resolver](https://www.npmjs.com/package/babel-plugin-module-resolver))
+
+
 ## Idea
 
 It is inspired by the rendering patterns used on hyperHTML and lit-html.
@@ -162,13 +168,6 @@ The following demo demonstrates the support of all the APIs coming in future ver
 
 [https://codesandbox.io/s/brahmos-demo-3t8r6](https://codesandbox.io/s/brahmos-demo-3t8r6)
 
-
-
-
--  **webpack** ([https://webpack.js.org/configuration/resolve/#resolvealias](https://webpack.js.org/configuration/resolve/#resolvealias))
-- **parcel** ([https://parceljs.org/module_resolution.html#aliases](https://parceljs.org/module_resolution.html#aliases))
-- **rollup** ([https://www.npmjs.com/package/@rollup/plugin-alias](https://www.npmjs.com/package/@rollup/plugin-alias))
-- **babel** ([https://www.npmjs.com/package/babel-plugin-module-resolver](https://www.npmjs.com/package/babel-plugin-module-resolver))
 
 ## Talk on the Idea of Brahmos
 
