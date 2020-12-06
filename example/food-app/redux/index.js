@@ -1,6 +1,5 @@
 import { StrictMode } from 'brahmos';
 import { Provider } from 'react-redux';
-import ReactCredit from '../../common/ReactCredit';
 
 import App from './App';
 import { createReduxStore } from './redux';

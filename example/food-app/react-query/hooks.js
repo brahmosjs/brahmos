@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo } from 'brahmos';
 import { useQuery } from 'react-query';
 
 import { useDietStore, useCartStore } from './zustand';

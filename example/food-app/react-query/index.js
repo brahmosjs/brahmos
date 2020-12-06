@@ -1,6 +1,5 @@
 import { StrictMode } from 'brahmos';
 import { QueryCache, ReactQueryCacheProvider } from 'react-query';
-import ReactCredit from '../../common/ReactCredit';
 
 import App from './App';
 

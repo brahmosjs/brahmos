@@ -8,16 +8,67 @@ Supercharged JavaScript library to build user interfaces with modern React API a
 
 Brahmos supports all the APIs of React including the upcoming concurrent mode APIs and the existing ones. It has its own custom fiber architecture and concurrent mode implementation to support the concurrent UI patterns.
 
-## Installation
-
-[Create a New Brahmos App](https://www.npmjs.com/package/create-brahmos-app) if you're looking for a powerful JavaScript toolchain.
-
 ## Features
 
 - Lightweight and Fast.
 - Exact same React's Declarative APIs with JSX.
 - Fast alternative to Virtual DOM. (JSX without VDOM).
 - Smaller transpiled footprint of your source code, than traditional JSX.
+
+## Installation
+### Create Brahmos App
+Use [Create a New Brahmos App](https://www.npmjs.com/package/create-brahmos-app) if you're looking for a powerful JavaScript toolchain.
+
+### Manual installation
+
+Add `brahmos` as dependency. And `babel-plugin-brahmos` as dev dependency.
+```
+npm install brahmos
+npm install babel-plugin-brahmos --save-dev
+```
+
+Add brahmos in your babel config.
+```
+{
+  presets: ['@babel/preset-env'],
+  plugins: [
+    //...
+    'brahmos'
+  ]
+}
+```
+**Note:** You will have to remove react preset from babel if you trying brahmos on existing project.
+
+## Usage
+The API is exact same as React so build how you build application with React, but instead of importing from `react` or `react-dom` import from `brahmos`;
+
+```js
+import {useState, useEffect} from 'brahmos';
+
+export default function App(props) {
+  const [state, setState] = useState(0);
+
+  return (
+    <div>
+      ...
+    </div>
+  )
+}
+```
+
+
+### Using React 3rd party libraries
+
+Just alias react and react-dom with brahmos. And you are good to go using 3rd party react libraries.
+
+You need to add following aliases.
+```js
+alias: {
+  react: 'brahmos',
+  'react-dom': 'brahmos',
+  'react/jsx-runtime': 'brahmos'
+},
+```
 
 ## Idea
 
@@ -92,7 +143,7 @@ class TodoList extends Component {
           )}
         </ul>
       </form>
-    `;
+    `("0|0|1,0|1|0,1|3|");
   }
 }
 ```
@@ -111,9 +162,17 @@ The following demo demonstrates the support of all the APIs coming in future ver
 
 [https://codesandbox.io/s/brahmos-demo-3t8r6](https://codesandbox.io/s/brahmos-demo-3t8r6)
 
+
+
+
+-  **webpack** ([https://webpack.js.org/configuration/resolve/#resolvealias](https://webpack.js.org/configuration/resolve/#resolvealias))
+- **parcel** ([https://parceljs.org/module_resolution.html#aliases](https://parceljs.org/module_resolution.html#aliases))
+- **rollup** ([https://www.npmjs.com/package/@rollup/plugin-alias](https://www.npmjs.com/package/@rollup/plugin-alias))
+- **babel** ([https://www.npmjs.com/package/babel-plugin-module-resolver](https://www.npmjs.com/package/babel-plugin-module-resolver))
+
 ## Talk on the Idea of Brahmos
 
-<a href="https://www.youtube.com/watch?v=GUrL5ovCWyw&t" target="_blank" rel="noopener">
+<a href="https://www.youtube.com/watch?v=oYdVhIzPBr8&feature=youtu.be&ab_channel=BristolJS" target="_blank" rel="noopener">
   <img src="https://unpkg.com/brahmos@0.10.0-alpha4/brahmos_talk.jpg" alt="Brahmos.js: React without VDOM"
 	title="Brahmos.js: React without VDOM" width="400px" />
 </a>
@@ -135,9 +194,10 @@ https://join.slack.com/t/brahmoscommunity/shared_invite/enQtODM5NDMwODgwMzQyLTc4
 - [x] SVG Support
 - [x] Suspense, Lazy, Suspense for data fetch, Suspense List
 - [x] Concurrent Mode
-- [ ] React Utilities and Methods
+- [x] 3rd Party React library support (Tested React-router, redux, mobx, react-query, zustand, recharts)
+- [x] React Utilities and Methods
 - [ ] Handle server rendering
 - [ ] Performance improvement
 - [ ] Bug fixes
 - [ ] Test Cases
-- [ ] 3rd Party React Component support (In Progress, partially supported)
+
