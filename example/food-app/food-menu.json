@@ -1,0 +1,41 @@
+[
+  {
+    "id": "SN",
+    "label": "Schezwan Noodles",
+    "diet": "veg",
+    "description": "Spicy Noodles soaked in Schezwan sauce and topped with exotic herbs",
+    "price": 8
+  },
+  {
+    "id": "SM",
+    "label": "Sausage McMuffin",
+    "description": "Lightly seasoned sausage patty and cheese slice on a hot toasted English muffin.",
+    "price": 12
+  },
+  {
+    "id": "MP",
+    "label": "Mushroom Pizza",
+    "diet": "veg",
+    "description": "Loaded with 2 types of cheese and garlic herb sautéed mushrooms!! ",
+    "price": 20
+  },
+  {
+    "id": "CF",
+    "label": "Chicken Foldover Spicy",
+    "description": "Two succulent chicken patties, add some crisp lettuce.",
+    "price": 10
+  },
+  {
+    "id": "FF",
+    "label": "French Fries",
+    "diet": "veg",
+    "description": "Crispy golden fries with a pinch of salt.",
+    "price": 6
+  },
+  {
+    "id": "BQ",
+    "label": "BBQ Double Burger",
+    "description": "Beef patties with a slice of cheese, shredded lettuce, tomato and onions",
+    "price": 16
+  }
+]

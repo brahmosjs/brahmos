@@ -29,6 +29,7 @@ import {
   useContext,
   useTransition,
   useDeferredValue,
+  useDebugValue,
 } from './hooks';
 
 /** createContext */
@@ -48,6 +49,20 @@ import { Children, isValidElement, cloneElement } from './Children';
 
 import memo from './memo';
 
+const NoopComponent = (props) => props.children;
+
+// add a noop component for StrictMode and Fragment, as brahmos don't support any deprecated API
+const StrictMode = NoopComponent;
+const Fragment = NoopComponent;
+
+/**
+ * Mock for unstable_batchedUpdates as third party lib like Redux uses it.
+ * Brahmos by default batches update so we can just call the passed callback directly
+ */
+function unstable_batchedUpdates(cb) {
+  cb();
+}
+
 export {
   createElement,
   render,
@@ -63,6 +78,7 @@ export {
   useContext,
   useTransition,
   useDeferredValue,
+  useDebugValue,
   createContext,
   forwardRef,
   createRef,
@@ -76,7 +92,10 @@ export {
   cloneElement,
   deferredUpdates as unstable_deferredUpdates,
   syncUpdates as unstable_syncUpdates,
+  unstable_batchedUpdates,
   memo,
+  StrictMode,
+  Fragment,
 };
 
 /** Export transforms */

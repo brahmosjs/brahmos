@@ -66,7 +66,7 @@ function setAttribute(node, attrName, attrValue, oldAttrValue, isSvgAttribute) {
     // handle style attributes
   } else if (attrName === 'style') {
     const { style } = node;
-    applyDiffProperty(attrValue, oldAttrValue, '', (key, value) => {
+    applyDiffProperty(attrValue || {}, oldAttrValue, '', (key, value) => {
       /**
        * check if it is custom property (--some-custom-property),then use setProperty to assign value
        * otherwise just add the property in style object
@@ -103,7 +103,6 @@ function setAttribute(node, attrName, attrValue, oldAttrValue, isSvgAttribute) {
 
     // handle all other node attributes
   } else {
-
     // if attribute name is modified for JSX props, reset the name
     attrName = getEffectiveAttrName(attrName);
 

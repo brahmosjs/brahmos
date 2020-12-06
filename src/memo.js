@@ -1,4 +1,5 @@
 import shallowEqual from './helpers/shallowEqual';
+import { createBrahmosNode } from './circularDep';
 
 export default function memo(Component, comparator) {
   let cachedComponent = null;
@@ -14,7 +15,7 @@ export default function memo(Component, comparator) {
 
     // Cache the latest copy, and return
     prevProps = props;
-    cachedComponent = Component(props);
+    cachedComponent = createBrahmosNode(Component, props);
     return cachedComponent;
   };
 }

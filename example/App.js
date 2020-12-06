@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'brahmos';
+import { useState, useEffect, useMemo } from 'brahmos';
+
+import { Switch, Route, NavLink, useLocation } from 'react-router-dom';
 
 import { BrahmosLogo, GithubLogo } from './Logos';
 import TodoList from './todo-list';
@@ -13,6 +15,9 @@ import SVGDemo from './svg-chart';
 import HooksDemo from './hooks';
 import ContextDemo from './context-api';
 import RechartExample from './third-party-component';
+import ReduxExample from './food-app/redux';
+import MobxExample from './food-app/mobx';
+import ReactQueryExample from './food-app/react-query';
 
 import './App.scss';
 
@@ -77,27 +82,31 @@ const examples = [
     id: 'third-party-component',
     Component: RechartExample,
   },
+  {
+    title: 'Redux Demo',
+    id: 'redux',
+    Component: ReduxExample,
+  },
+  {
+    title: 'Mobx Demo',
+    id: 'mobx',
+    Component: MobxExample,
+  },
+  {
+    title: 'React Query and Zustand Demo',
+    id: 'rq-zustand',
+    Component: ReactQueryExample,
+  },
 ];
 
-function getCurrentExample() {
-  const currentHash = document.location.hash.replace(/^#/, '');
-  const routeIndex = Math.max(
-    examples.findIndex((route) => route.id === currentHash),
-    0,
-  );
-  return examples[routeIndex];
-}
-
 export default function App() {
-  const [currentExample, setCurrentExample] = useState(getCurrentExample);
-  const { Component: CurrentComponent, title } = currentExample;
+  const { pathname } = useLocation();
 
-  useEffect(() => {
-    window.addEventListener('popstate', () => {
-      const newExample = getCurrentExample();
-      setCurrentExample(newExample);
-    });
-  }, []);
+  const title = useMemo(() => {
+    const pathWithoutHash = pathname.substr(1);
+    const currentSelected = examples.find((obj) => obj.id === pathWithoutHash);
+    return currentSelected ? currentSelected.title : examples[0].title;
+  }, [pathname]);
 
   return (
     <div className="app-container">
@@ -138,10 +147,10 @@ export default function App() {
               {examples.map((example) => {
                 const { title, id } = example;
                 return (
-                  <li className="menu-list-item">
-                    <a href={`#${id}`} className={example === currentExample ? 'is-active' : ''}>
+                  <li className="menu-list-item" key={id}>
+                    <NavLink to={`/${id}`} activeClassName="is-active">
                       {title}
-                    </a>
+                    </NavLink>
                   </li>
                 );
               })}
@@ -150,7 +159,16 @@ export default function App() {
         </aside>
         <div className="example-container content column">
           <h2>{title}</h2>
-          <CurrentComponent />
+          <Switch>
+            <Route key={'/'} exact path={`/`} component={examples[0].Component} />
+            {examples.map(({ id, Component }) => {
+              return (
+                <Route key={id} path={`/${id}`}>
+                  <Component />
+                </Route>
+              );
+            })}
+          </Switch>
         </div>
       </div>
     </div>
