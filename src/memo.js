@@ -1,21 +1,14 @@
-import shallowEqual from './helpers/shallowEqual';
+import { PureComponent } from './Component';
 import { createBrahmosNode } from './circularDep';
 
 export default function memo(Component, comparator) {
-  let cachedComponent = null;
-  let prevProps = null;
-  comparator = comparator || shallowEqual;
+  class MemoizedComponent extends PureComponent {
+    render() {
+      return createBrahmosNode(Component, this.props);
+    }
+  }
 
-  return function MemoizedComponent(props) {
-    // Compare with latest props
-    const isEqual = prevProps && comparator(prevProps, props);
+  MemoizedComponent.displayName = `Memo(${Component.displayName || Component.name})`;
 
-    // Return Caches version
-    if (isEqual) return cachedComponent;
-
-    // Cache the latest copy, and return
-    prevProps = props;
-    cachedComponent = createBrahmosNode(Component, props);
-    return cachedComponent;
-  };
+  return MemoizedComponent;
 }

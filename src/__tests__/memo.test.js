@@ -24,4 +24,31 @@ describe('Test memoization', () => {
 
     expect(container.querySelector('.value').textContent).toEqual('2');
   });
+
+  it('should work for multiple memoized instance ', async () => {
+    const Test = memo(({ onRender, testId }) => {
+      onRender();
+      return <div className="wrap">Hello World</div>;
+    });
+
+    let renderCount1 = 0;
+    let renderCount2 = 0;
+
+    const onRender1 = () => (renderCount1 += 1);
+    const onRender2 = () => (renderCount2 += 1);
+
+    const { update: update1 } = render(<Test onRender={onRender1} testId={0} />);
+    const { update: update2 } = render(<Test onRender={onRender2} testId={0} />);
+
+    expect(renderCount1).toEqual(1);
+    expect(renderCount2).toEqual(1);
+
+    // try re rendering with same props,  render count should not change
+    update1({ onRender: onRender1, testId: 0 });
+    expect(renderCount1).toEqual(1);
+
+    // try re rendering with other props, render count should change
+    update2({ onRender: onRender2, testId: 1 });
+    expect(renderCount2).toEqual(2);
+  });
 });
