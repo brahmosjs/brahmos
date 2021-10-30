@@ -173,7 +173,7 @@ The following demo demonstrates the support of all the APIs coming in future ver
 
 <a href="https://www.youtube.com/watch?v=oYdVhIzPBr8&feature=youtu.be&ab_channel=BristolJS" target="_blank" rel="noopener">
   <img src="https://unpkg.com/brahmos@0.10.0-alpha4/brahmos_talk.jpg" alt="Brahmos.js: React without VDOM"
-	title="Brahmos.js: React without VDOM" width="400px" />
+	title="Brahmos.js: React without VDOM" width="410px" />
 </a>
 
 ## Slack Channel
