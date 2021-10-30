@@ -87,7 +87,7 @@ Tagged template literals also have a unique property where the reference of the 
 Taking advantage of this behaviour Brahmos uses literal parts as a cache key to keep the intermediate states to avoid the work done to process a template literal again.
 
 Tagged template is natively supported by the browser, unlike the React's JSX which has to be transformed to React.createElement calls. So the output generated to run Brahmos has a smaller footprint than the output generated for the react.
-For the above example, the Brahmos output is 685 bytes, compared to 824 bytes from the React output. More the static part of an HTML,  greater the difference will be.
+For the above example, the Brahmos output is 685 bytes, compared to 824 bytes from the React output. More the static part of an HTML,  greater the difference will be..
 
 
 ## How it works?
